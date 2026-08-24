@@ -40,6 +40,9 @@ def test_animation_embeds_vehicle_sprite_and_two_dynamic_traffic_lights():
     assert "background-color:#20d866" in html
     assert "background-color:#ef2b2d" in html
     assert "bulb.style.backgroundColor=active?signalColors[color]" in html
+    assert "frame.second<departure" in html
+    assert "28+progress*84" in html
+    assert "68-progress*80" in html
 
 
 def test_signal_markup_falls_back_to_visible_red_signal():

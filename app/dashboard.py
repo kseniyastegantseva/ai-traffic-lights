@@ -401,12 +401,13 @@ function paint(){{
       const departure=departureTimes[lane][i];
       const waitingIndex=Math.max(0,i-departedByLane);
       const gap=Math.min(5.2,26/Math.max(initial[lane],1));
-      const progress=departure===undefined?null:Math.min(1,Math.max(0,(frame.second-departure)/5));
+      const progress=departure===undefined||frame.second<departure
+        ?null:Math.min(1,Math.max(0,(frame.second-departure)/5));
       let left,top;
-      if(lane==='north'){{left=44;top=progress===null?28-waitingIndex*gap:-12+progress*124;}}
-      if(lane==='south'){{left=56;top=progress===null?68+waitingIndex*gap:112-progress*124;}}
-      if(lane==='west'){{left=progress===null?28-waitingIndex*gap:-12+progress*124;top=44;}}
-      if(lane==='east'){{left=progress===null?68+waitingIndex*gap:112-progress*124;top=56;}}
+      if(lane==='north'){{left=44;top=progress===null?28-waitingIndex*gap:28+progress*84;}}
+      if(lane==='south'){{left=56;top=progress===null?68+waitingIndex*gap:68-progress*80;}}
+      if(lane==='west'){{left=progress===null?28-waitingIndex*gap:28+progress*84;top=44;}}
+      if(lane==='east'){{left=progress===null?68+waitingIndex*gap:68-progress*80;top=56;}}
       car.style.left=left+'%';car.style.top=top+'%';
     }});
   }});
