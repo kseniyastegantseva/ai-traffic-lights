@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import Literal
 
 from traffic_light.config import LaneName, PhaseName
@@ -27,6 +27,7 @@ class InteractiveFrame:
     signals: dict[PhaseName, SignalColor]
     queues: dict[LaneName, int]
     departed: int
+    departed_by_lane: dict[LaneName, int] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -113,6 +114,7 @@ def simulate_interactive_traffic(
             {"north_south": "red", "east_west": "red"},
             queues.copy(),
             0,
+            {lane: 0 for lane in LANES},
         )
         return InteractiveSimulationResult(initial, scenario, [frame], [], 0, 0, 0, 0, 0)
 
@@ -123,6 +125,7 @@ def simulate_interactive_traffic(
     next_phase: PhaseName | None = None
     last_service_at = 0
     departed = 0
+    departed_by_lane = {lane: 0 for lane in LANES}
     switches = 0
     frames: list[InteractiveFrame] = []
     raw_intervals: list[tuple[PhaseName, SignalColor, int]] = [
@@ -153,6 +156,7 @@ def simulate_interactive_traffic(
                 if queues[lane] > 0:
                     queues[lane] -= 1
                     departed += 1
+                    departed_by_lane[lane] += 1
             last_service_at = second
 
         frames.append(
@@ -161,11 +165,28 @@ def simulate_interactive_traffic(
                 _signal_states(current_phase, signal_color),
                 queues.copy(),
                 departed,
+                departed_by_lane.copy(),
             )
         )
         second += 1
         if second > 7200:
             raise RuntimeError("Интерактивная симуляция превысила ограничение в два часа.")
+
+    # A vehicle needs time to leave the visible intersection after its queue
+    # position is released. Keep the final frames so the last vehicles cross
+    # the junction instead of vanishing at the stop line.
+    travel_clearance_seconds = 5
+    for _ in range(travel_clearance_seconds):
+        frames.append(
+            InteractiveFrame(
+                second,
+                _signal_states(current_phase, signal_color),
+                queues.copy(),
+                departed,
+                departed_by_lane.copy(),
+            )
+        )
+        second += 1
 
     phases = _build_intervals(raw_intervals, second)
     north_south_green = sum(

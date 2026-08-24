@@ -24,6 +24,25 @@ def test_interactive_simulation_uses_exact_input_and_clears_all_queues():
     assert result.departed == sum(queues.values())
     assert all(value == 0 for value in result.frames[-1].queues.values())
     assert result.total_time_seconds > 0
+    assert result.frames[-1].departed_by_lane == queues
+
+
+def test_interactive_simulation_keeps_both_directions_separate_until_they_cross():
+    result = simulate_interactive_traffic({"north": 2, "west": 2, "south": 2, "east": 2})
+
+    assert all("departed_by_lane" in frame.to_dict() for frame in result.frames)
+    assert result.frames[-1].departed_by_lane == {
+        "north": 2,
+        "west": 2,
+        "south": 2,
+        "east": 2,
+    }
+    # The clearance frames are retained after the queues reach zero so the
+    # final vehicles have time to travel across the intersection.
+    zero_queue_frame = next(
+        frame for frame in result.frames if sum(frame.queues.values()) == 0
+    )
+    assert result.frames[-1].second - zero_queue_frame.second >= 4
 
 
 def test_interactive_simulation_switches_to_waiting_direction():

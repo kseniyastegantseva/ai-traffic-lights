@@ -304,19 +304,11 @@ button.primary {{ background:#166534; border-color:#166534; color:#fff; }}
 .road-v {{ position:absolute; width:30%; height:100%; left:35%; top:0; background:#414844; border-left:3px solid #f8faf9; border-right:3px solid #f8faf9; }}
 .road-h {{ position:absolute; width:100%; height:30%; left:0; top:35%; background:#414844; border-top:3px solid #f8faf9; border-bottom:3px solid #f8faf9; }}
 .center {{ position:absolute; width:30%; height:30%; left:35%; top:35%; background:#4b534e; z-index:2; }}
-.lane {{ --slot:{car_slot_size}px; position:absolute; z-index:4; display:flex; gap:1px; align-content:flex-start; overflow:hidden; }}
-.lane.north {{ width:25%; height:32%; left:37.5%; top:2%; flex-wrap:wrap-reverse; align-content:flex-end; }}
-.lane.south {{ width:25%; height:32%; left:37.5%; bottom:2%; flex-wrap:wrap; align-content:flex-start; }}
-.lane.west {{ width:33%; height:25%; left:2%; top:37.5%; flex-wrap:wrap-reverse; align-content:flex-end; justify-content:flex-end; }}
-.lane.east {{ width:33%; height:25%; right:2%; top:37.5%; flex-wrap:wrap; align-content:flex-start; }}
-.car-slot {{ width:var(--slot); height:var(--slot); display:flex; align-items:center; justify-content:center; flex:0 0 var(--slot); opacity:1; transition:opacity .35s,transform .45s ease-in; }}
+.lane {{ --slot:{car_slot_size}px; position:absolute; z-index:4; inset:0; overflow:visible; pointer-events:none; }}
+.car-slot {{ position:absolute; left:0; top:0; width:var(--slot); height:var(--slot); display:flex; align-items:center; justify-content:center; transition:left .85s linear,top .85s linear; }}
 .car-model {{ display:block; width:62%; height:92%; background-color:#414844; background-image:url("{sprite_uri}"); background-size:400% 300%; background-position:var(--sprite-x) var(--sprite-y); background-repeat:no-repeat; background-blend-mode:multiply; filter:saturate(2.4) contrast(1.05) drop-shadow(0 1px 1px #0008); }}
 .north .car-model {{ transform:rotate(180deg); }} .south .car-model {{ transform:rotate(0deg); }}
 .west .car-model {{ transform:rotate(90deg); }} .east .car-model {{ transform:rotate(-90deg); }}
-.north .car-slot.passed {{ opacity:0; transform:translateY(190px); }}
-.south .car-slot.passed {{ opacity:0; transform:translateY(-190px); }}
-.west .car-slot.passed {{ opacity:0; transform:translateX(240px); }}
-.east .car-slot.passed {{ opacity:0; transform:translateX(-240px); }}
 .lane-label {{ position:absolute; z-index:6; padding:5px 8px; background:#ffffffed; border:1px solid #cad4cd; border-radius:5px; font-size:12px; font-weight:700; }}
 .label-north {{ left:8px; top:8px; }} .label-south {{ right:8px; bottom:8px; }}
 .label-west {{ left:8px; bottom:8px; }} .label-east {{ right:8px; top:8px; }}
@@ -342,7 +334,7 @@ button.primary {{ background:#166534; border-color:#166534; color:#fff; }}
 <body><div class="sim">
   <div class="toolbar">
     <button id="play" class="primary">Пауза</button><button id="reset">Сначала</button>
-    <select id="speed" aria-label="Скорость"><option value="0.5">0.5x</option><option value="1">1x</option><option value="2">2x</option><option value="4" selected>4x</option><option value="8">8x</option></select>
+    <select id="speed" aria-label="Скорость"><option value="0.5" selected>0.5x</option><option value="1">1x</option><option value="2">2x</option><option value="4">4x</option><option value="8">8x</option></select>
     <div class="status"><strong id="clock">0 с / {result.total_time_seconds} с</strong><span id="remaining">Ожидает: {sum(initial.values())}</span></div>
   </div>
   <div class="progress"><div id="progress"></div></div>
@@ -367,6 +359,13 @@ button.primary {{ background:#166534; border-color:#166534; color:#fff; }}
 <script>
 const frames={json.dumps(frames, ensure_ascii=False)};
 const initial={json.dumps(initial)};
+const departureTimes={{north:[],west:[],south:[],east:[]}};
+frames.forEach(frame=>{{
+  Object.keys(departureTimes).forEach(lane=>{{
+    const count=(frame.departed_by_lane||{{}})[lane]||0;
+    while(departureTimes[lane].length<count)departureTimes[lane].push(frame.second);
+  }});
+}});
 const signalColors={{red:'#ef2b2d',yellow:'#ffd21f',green:'#20d866'}};
 let index=0,playing=true,timer;
 const lanes=['north','west','south','east'];
@@ -375,7 +374,19 @@ function paint(){{
   lanes.forEach(lane=>{{
     document.getElementById('count-'+lane).textContent=frame.queues[lane];
     const cars=document.querySelectorAll('#cars-'+lane+' .car-slot');
-    cars.forEach((car,i)=>car.classList.toggle('passed',i>=frame.queues[lane]));
+    const departedByLane=(frame.departed_by_lane||{{}})[lane]||0;
+    cars.forEach((car,i)=>{{
+      const departure=departureTimes[lane][i];
+      const waitingIndex=Math.max(0,i-departedByLane);
+      const gap=Math.min(5.2,26/Math.max(initial[lane],1));
+      const progress=departure===undefined?null:Math.min(1,Math.max(0,(frame.second-departure)/5));
+      let left,top;
+      if(lane==='north'){{left=44;top=progress===null?28-waitingIndex*gap:-12+progress*124;}}
+      if(lane==='south'){{left=56;top=progress===null?68+waitingIndex*gap:112-progress*124;}}
+      if(lane==='west'){{left=progress===null?28-waitingIndex*gap:-12+progress*124;top=44;}}
+      if(lane==='east'){{left=progress===null?68+waitingIndex*gap:112-progress*124;top=56;}}
+      car.style.left=left+'%';car.style.top=top+'%';
+    }});
   }});
   function setSignal(axis,color){{
     const unit=document.getElementById('signal-'+axis);
