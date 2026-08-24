@@ -270,8 +270,30 @@ def _phase_rows(phases: list[object]) -> list[dict[str, str]]:
 
 
 def _animation_html(result: InteractiveSimulationResult) -> str:
-    frames = [_frame_to_dict(frame) for frame in result.frames]
     initial = result.initial_queues
+    frames: list[dict] = []
+    previous_queues = initial.copy()
+    departed_by_lane = {lane: 0 for lane in LANE_LABELS}
+    for frame in result.frames:
+        data = _frame_to_dict(frame)
+        stored_departures = data.get("departed_by_lane")
+        if isinstance(stored_departures, dict):
+            departed_by_lane = {
+                lane: int(stored_departures.get(lane, 0)) for lane in LANE_LABELS
+            }
+        else:
+            # Keep animations working for a result created by a cached older
+            # Streamlit session that predates per-lane departure timestamps.
+            current_queues = data.get("queues", {})
+            for lane in LANE_LABELS:
+                departed_by_lane[lane] += max(
+                    0,
+                    int(previous_queues.get(lane, 0))
+                    - int(current_queues.get(lane, 0)),
+                )
+        data["departed_by_lane"] = departed_by_lane.copy()
+        frames.append(data)
+        previous_queues = data.get("queues", {}).copy()
     initial_signals = (
         frames[0]["signals"]
         if frames
@@ -305,7 +327,7 @@ button.primary {{ background:#166534; border-color:#166534; color:#fff; }}
 .road-h {{ position:absolute; width:100%; height:30%; left:0; top:35%; background:#414844; border-top:3px solid #f8faf9; border-bottom:3px solid #f8faf9; }}
 .center {{ position:absolute; width:30%; height:30%; left:35%; top:35%; background:#4b534e; z-index:2; }}
 .lane {{ --slot:{car_slot_size}px; position:absolute; z-index:4; inset:0; overflow:visible; pointer-events:none; }}
-.car-slot {{ position:absolute; left:0; top:0; width:var(--slot); height:var(--slot); display:flex; align-items:center; justify-content:center; transition:left .85s linear,top .85s linear; }}
+.car-slot {{ position:absolute; left:0; top:0; width:var(--slot); height:var(--slot); display:flex; align-items:center; justify-content:center; transition:left 1.8s linear,top 1.8s linear; }}
 .car-model {{ display:block; width:62%; height:92%; background-color:#414844; background-image:url("{sprite_uri}"); background-size:400% 300%; background-position:var(--sprite-x) var(--sprite-y); background-repeat:no-repeat; background-blend-mode:multiply; filter:saturate(2.4) contrast(1.05) drop-shadow(0 1px 1px #0008); }}
 .north .car-model {{ transform:rotate(180deg); }} .south .car-model {{ transform:rotate(0deg); }}
 .west .car-model {{ transform:rotate(90deg); }} .east .car-model {{ transform:rotate(-90deg); }}
@@ -421,7 +443,14 @@ function paint(){{
   document.getElementById('progress').style.width=(100*(index+1)/frames.length)+'%';
   if(index>=frames.length-1){{playing=false;document.getElementById('play').textContent='Повторить';clearInterval(timer);}}
 }}
-function startTimer(){{clearInterval(timer);if(playing)timer=setInterval(()=>{{if(index<frames.length-1){{index++;paint();}}}},1000/Number(document.getElementById('speed').value));}}
+function startTimer(){{
+  clearInterval(timer);
+  const speed=Number(document.getElementById('speed').value);
+  document.querySelectorAll('.car-slot').forEach(car=>{{
+    car.style.transitionDuration=Math.max(.12,Math.min(1.8,0.9/speed))+'s';
+  }});
+  if(playing)timer=setInterval(()=>{{if(index<frames.length-1){{index++;paint();}}}},1000/speed);
+}}
 document.getElementById('play').onclick=()=>{{if(index>=frames.length-1){{index=0;playing=false;}}playing=!playing;document.getElementById('play').textContent=playing?'Пауза':'Продолжить';paint();startTimer();}};
 document.getElementById('reset').onclick=()=>{{index=0;playing=true;document.getElementById('play').textContent='Пауза';paint();startTimer();}};
 document.getElementById('speed').onchange=startTimer;
