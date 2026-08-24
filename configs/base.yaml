@@ -1,0 +1,20 @@
+simulation:
+  duration_seconds: 900
+  seed: 42
+  service_time_seconds: 2.0
+
+intersection:
+  lanes:
+    north: {arrival_rate_per_minute: 8}
+    south: {arrival_rate_per_minute: 8}
+    east: {arrival_rate_per_minute: 5}
+    west: {arrival_rate_per_minute: 5}
+  min_green_seconds: 15
+  yellow_seconds: 3
+
+controller:
+  type: fixed
+  phase_duration_seconds: 35
+
+output:
+  path: outputs/base_result.json

@@ -1,0 +1,37 @@
+name: demo_uniform
+title: "Демонстрационный эксперимент: равномерная нагрузка"
+description: >
+  Первый демонстрационный сценарий проекта. Поток транспорта распределён
+  равномерно по четырём направлениям, что позволяет проверить базовую
+  работоспособность сравнения стратегий без перекоса спроса.
+
+simulation:
+  duration_seconds: 900
+  seeds: [1, 2, 3, 4, 5]
+  service_time_seconds: 2.0
+
+scenarios:
+  - name: uniform_demo
+    title: Равномерная нагрузка
+    description: Все направления получают одинаковую интенсивность 6 автомобилей в минуту.
+    intersection:
+      lanes:
+        north: {arrival_rate_per_minute: 6}
+        south: {arrival_rate_per_minute: 6}
+        east: {arrival_rate_per_minute: 6}
+        west: {arrival_rate_per_minute: 6}
+      min_green_seconds: 15
+      yellow_seconds: 3
+
+controllers:
+  - type: fixed
+    phase_duration_seconds: 35
+  - type: actuated
+    decision_interval_seconds: 10
+  - type: ai
+    decision_interval_seconds: 10
+
+output:
+  path: outputs/demo_uniform_results.json
+  summary_csv: outputs/demo_uniform_summary.csv
+  report_markdown: outputs/demo_uniform_report.md

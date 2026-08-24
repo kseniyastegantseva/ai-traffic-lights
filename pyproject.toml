@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "traffic-light-ai"
+version = "0.1.0"
+description = "Discrete-event simulation for intelligent traffic light phase control."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "gymnasium>=0.29",
+  "numpy>=1.26",
+  "opencv-python-headless>=4.10",
+  "pandas>=2.2",
+  "pydantic>=2.8",
+  "pyyaml>=6.0",
+  "simpy>=4.1",
+  "typer>=0.12",
+  "ultralytics>=8.3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "fastapi>=0.115",
+  "plotly>=5.24",
+  "pytest>=8.2",
+  "ruff>=0.6",
+  "streamlit>=1.37",
+  "uvicorn>=0.30",
+]
+dashboard = [
+  "fastapi>=0.115",
+  "plotly>=5.24",
+  "streamlit>=1.37",
+  "uvicorn>=0.30",
+]
+ai = [
+  "stable-baselines3>=2.3",
+]
+
+[project.scripts]
+traffic-sim = "traffic_light.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

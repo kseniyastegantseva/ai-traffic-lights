@@ -1,0 +1,88 @@
+name: experiment_suite_rl
+title: "Единый экспериментальный отчёт: baseline и обученная Q-learning policy"
+description: >
+  Расширенный набор сценариев, где fixed, actuated и AI-эвристика сравниваются
+  с обученной табличной Q-learning policy. Перед запуском нужно создать policy:
+  traffic-sim train --config configs/ai.yaml --episodes 200.
+
+simulation:
+  duration_seconds: 900
+  seeds: [1, 2, 3, 4, 5]
+  service_time_seconds: 2.0
+
+scenarios:
+  - name: uniform_demo
+    title: Равномерная нагрузка
+    description: Все направления получают одинаковую интенсивность 6 автомобилей в минуту.
+    intersection:
+      lanes:
+        north: {arrival_rate_per_minute: 6}
+        south: {arrival_rate_per_minute: 6}
+        east: {arrival_rate_per_minute: 6}
+        west: {arrival_rate_per_minute: 6}
+      min_green_seconds: 15
+      yellow_seconds: 3
+
+  - name: low_load
+    title: Низкая нагрузка
+    description: Все направления получают умеренный поток 3 автомобиля в минуту.
+    intersection:
+      lanes:
+        north: {arrival_rate_per_minute: 3}
+        south: {arrival_rate_per_minute: 3}
+        east: {arrival_rate_per_minute: 3}
+        west: {arrival_rate_per_minute: 3}
+      min_green_seconds: 15
+      yellow_seconds: 3
+
+  - name: morning_peak_ns
+    title: Утренний пик north/south
+    description: Основная нагрузка идёт по направлению north/south, поперечный поток ниже.
+    intersection:
+      lanes:
+        north: {arrival_rate_per_minute: 10}
+        south: {arrival_rate_per_minute: 10}
+        east: {arrival_rate_per_minute: 4}
+        west: {arrival_rate_per_minute: 4}
+      min_green_seconds: 15
+      yellow_seconds: 3
+
+  - name: evening_peak_ew
+    title: Вечерний пик east/west
+    description: Основная нагрузка идёт по направлению east/west, поток north/south ниже.
+    intersection:
+      lanes:
+        north: {arrival_rate_per_minute: 4}
+        south: {arrival_rate_per_minute: 4}
+        east: {arrival_rate_per_minute: 10}
+        west: {arrival_rate_per_minute: 10}
+      min_green_seconds: 15
+      yellow_seconds: 3
+
+  - name: oversaturated
+    title: Перегруженный перекрёсток
+    description: Все направления получают высокую интенсивность 9 автомобилей в минуту.
+    intersection:
+      lanes:
+        north: {arrival_rate_per_minute: 9}
+        south: {arrival_rate_per_minute: 9}
+        east: {arrival_rate_per_minute: 9}
+        west: {arrival_rate_per_minute: 9}
+      min_green_seconds: 15
+      yellow_seconds: 3
+
+controllers:
+  - type: fixed
+    phase_duration_seconds: 35
+  - type: actuated
+    decision_interval_seconds: 10
+  - type: ai
+    decision_interval_seconds: 10
+  - type: q_learning
+    decision_interval_seconds: 10
+    policy_path: outputs/q_learning_policy.json
+
+output:
+  path: outputs/experiment_suite_rl_results.json
+  summary_csv: outputs/experiment_suite_rl_summary.csv
+  report_markdown: outputs/experiment_suite_rl_report.md
