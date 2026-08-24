@@ -381,16 +381,15 @@ button.primary {{ background:#166534; border-color:#166534; color:#fff; }}
 <script>
 const frames={json.dumps(frames, ensure_ascii=False)};
 const initial={json.dumps(initial)};
-const departureTimes={{north:[],west:[],south:[],east:[]}};
-frames.forEach(frame=>{{
-  Object.keys(departureTimes).forEach(lane=>{{
-    const count=(frame.departed_by_lane||{{}})[lane]||0;
-    while(departureTimes[lane].length<count)departureTimes[lane].push(frame.second);
-  }});
-}});
 const signalColors={{red:'#ef2b2d',yellow:'#ffd21f',green:'#20d866'}};
 let index=0,playing=true,timer;
 const lanes=['north','west','south','east'];
+function departureTime(lane,vehicleIndex){{
+  for(const frame of frames){{
+    if(((frame.departed_by_lane||{{}})[lane]||0)>vehicleIndex)return frame.second;
+  }}
+  return undefined;
+}}
 function paint(){{
   const frame=frames[index];if(!frame)return;
   lanes.forEach(lane=>{{
@@ -398,7 +397,7 @@ function paint(){{
     const cars=document.querySelectorAll('#cars-'+lane+' .car-slot');
     const departedByLane=(frame.departed_by_lane||{{}})[lane]||0;
     cars.forEach((car,i)=>{{
-      const departure=departureTimes[lane][i];
+      const departure=departureTime(lane,i);
       const waitingIndex=Math.max(0,i-departedByLane);
       const gap=Math.min(5.2,26/Math.max(initial[lane],1));
       const progress=departure===undefined||frame.second<departure
