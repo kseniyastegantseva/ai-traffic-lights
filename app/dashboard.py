@@ -867,8 +867,15 @@ function paint(){{
     cars.forEach((car,i)=>{{
       const departure=departureTime(lane,i);
       const scene=document.querySelector('.scene');
-      const gapX=Math.max(1.8,Math.min(5.5,100*({car_slot_size}+4)/(scene?.clientWidth||640)));
-      const gapY=Math.max(2.8,Math.min(6.5,100*({car_slot_size}+4)/(scene?.clientHeight||555)));
+      // On a narrow mobile iframe the spacing must remain at least one car long.
+      // The desktop spacing stays unchanged.
+      const isMobile=window.matchMedia('(max-width:700px)').matches;
+      const gapX=isMobile
+        ?100*({car_slot_size}+6)/(scene?.clientWidth||640)
+        :Math.max(1.8,Math.min(5.5,100*({car_slot_size}+4)/(scene?.clientWidth||640)));
+      const gapY=isMobile
+        ?100*({car_slot_size}+6)/(scene?.clientHeight||555)
+        :Math.max(2.8,Math.min(6.5,100*({car_slot_size}+4)/(scene?.clientHeight||555)));
       const progress=departure===undefined||frame.second<departure
         ?null:Math.min(1,Math.max(0,(frame.second-departure)/travelSeconds));
       const waitingIndex=Math.max(0,i-completed);

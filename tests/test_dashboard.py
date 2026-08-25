@@ -29,6 +29,17 @@ def test_animation_embeds_vehicle_sprite_and_two_dynamic_traffic_lights():
     assert "data:image/png;base64," in html
     assert html.count('class="signal-unit"') == 2
     assert "setSignal('north_south',northSouth)" in html
+
+
+def test_animation_keeps_pixel_based_car_gaps_on_narrow_screens():
+    result = simulate_interactive_traffic({"north": 5, "west": 5, "south": 5, "east": 5})
+
+    html = DASHBOARD._animation_html(result)
+
+    assert "const isMobile=window.matchMedia('(max-width:700px)').matches;" in html
+    assert "?100*(30+6)/(scene?.clientWidth||640)" in html
+    assert "?100*(30+6)/(scene?.clientHeight||555)" in html
+    assert ":Math.max(1.8,Math.min(5.5" in html
     assert "setSignal('east_west',eastWest)" in html
     assert "@keyframes lampPulse" in html
     assert 'id="status-north_south"' in html
@@ -54,8 +65,6 @@ def test_animation_embeds_vehicle_sprite_and_two_dynamic_traffic_lights():
     assert "repeating-linear-gradient(to bottom" in html
     assert "repeating-linear-gradient(to right" in html
     assert 'class="stop-line stop-north"' in html
-    assert "gapX=Math.max(1.8" in html
-    assert "gapY=Math.max(2.8" in html
     assert "background:transparent url" in html
     assert ".scene.ready .car-slot" in html
     assert "left*scene.clientWidth/100" in html
