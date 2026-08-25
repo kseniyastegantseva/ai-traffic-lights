@@ -25,6 +25,7 @@ VEHICLE_SPRITE_PATH = Path(__file__).parent / "assets" / "vehicle_sprites.jpeg"
 SPRITE_X = (0, 33.333, 66.667, 100)
 SPRITE_Y = (0, 50, 100)
 DASHBOARD_STATE_VERSION = 4
+RESEARCH_RESULTS_PATH = Path("outputs/experiment_suite_results.json")
 SIGNAL_COLORS = {
     "red": ("КРАСНЫЙ", "#ef2b2d"),
     "yellow": ("ЖЁЛТЫЙ", "#ffd21f"),
@@ -37,6 +38,12 @@ def main() -> None:
     _apply_styles()
 
     st.title("Интеллектуальный светофор")
+    if st.sidebar.button("Исследовательские графики"):
+        st.session_state.dashboard_page = "research"
+        st.rerun()
+    if st.session_state.get("dashboard_page") == "research":
+        _research_screen()
+        return
     if st.session_state.get("dashboard_page", "upload") == "upload":
         _upload_screen()
         return
@@ -59,6 +66,8 @@ def _upload_screen() -> None:
     )
     if not uploaded:
         st.info("После загрузки анализ начнётся автоматически.")
+        if RESEARCH_RESULTS_PATH.exists():
+            st.caption("Для научного сравнения стратегий откройте раздел «Исследовательские графики» в боковой панели.")
         return
 
     file_bytes = uploaded.getvalue()
@@ -119,7 +128,197 @@ def _simulation_screen(result: InteractiveSimulationResult) -> None:
             "Линия показывает, сколько автомобилей ещё ожидает проезда. "
             "Снижение до нуля означает завершение работы алгоритма."
         )
-        _phase_table(result)
+    _phase_table(result)
+
+
+def _research_screen() -> None:
+    """Показывает научные графики по результатам CLI-эксперимента."""
+    if st.sidebar.button("Вернуться к симуляции"):
+        st.session_state.dashboard_page = "upload"
+        st.rerun()
+
+    st.header("Исследовательские графики")
+    st.caption(
+        "Сравнение стратегий на одинаковых сценариях и random seed. "
+        "Основная метрика — среднее время ожидания одного автомобиля."
+    )
+    payload = _load_research_payload(RESEARCH_RESULTS_PATH)
+    if payload is None:
+        st.warning(
+            "Результаты эксперимента ещё не созданы. Запустите "
+            "`traffic-sim compare --config configs/experiment_suite.yaml`."
+        )
+        return
+
+    summary = pd.DataFrame(payload.get("summary", []))
+    runs = pd.DataFrame(payload.get("runs", []))
+    if summary.empty:
+        st.warning("В файле результатов нет сводных данных.")
+        return
+
+    st.plotly_chart(_research_wait_chart(summary), width="stretch", config={"displayModeBar": False})
+    left, right = st.columns(2)
+    with left:
+        st.plotly_chart(_research_throughput_chart(summary), width="stretch", config={"displayModeBar": False})
+    with right:
+        st.plotly_chart(_research_improvement_chart(summary), width="stretch", config={"displayModeBar": False})
+    left, right = st.columns(2)
+    with left:
+        st.plotly_chart(_research_queue_chart(summary), width="stretch", config={"displayModeBar": False})
+    with right:
+        if not runs.empty:
+            st.plotly_chart(_research_distribution_chart(runs), width="stretch", config={"displayModeBar": False})
+    if not runs.empty and "queue_series" in runs:
+        st.plotly_chart(_research_dynamic_queue_chart(runs), width="stretch", config={"displayModeBar": False})
+    st.subheader("Сводные результаты")
+    st.dataframe(summary, hide_index=True, width="stretch")
+
+
+def _load_research_payload(path: Path) -> dict | None:
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _research_base_layout(figure, title: str):
+    figure.update_layout(
+        title=title,
+        height=390,
+        margin={"l": 10, "r": 10, "t": 55, "b": 10},
+        paper_bgcolor="#ffffff",
+        plot_bgcolor="#ffffff",
+        legend_title_text="Стратегия",
+    )
+    figure.update_yaxes(gridcolor="#e5e7eb", rangemode="tozero")
+    figure.update_xaxes(gridcolor="#f3f4f6")
+    return figure
+
+
+def _research_wait_chart(summary: pd.DataFrame):
+    figure = px.bar(
+        summary,
+        x="scenario_title",
+        y="average_wait_seconds",
+        color="controller",
+        error_y="wait_95ci_half_width",
+        barmode="group",
+        labels={
+            "scenario_title": "Сценарий",
+            "average_wait_seconds": "Среднее ожидание, с",
+            "controller": "Стратегия",
+        },
+        color_discrete_map={"fixed": "#64748b", "actuated": "#f59e0b", "ai": "#16a34a"},
+    )
+    return _research_base_layout(figure, "Среднее время ожидания автомобиля")
+
+
+def _research_throughput_chart(summary: pd.DataFrame):
+    figure = px.bar(
+        summary,
+        x="scenario_title",
+        y="throughput_per_hour",
+        color="controller",
+        barmode="group",
+        labels={
+            "scenario_title": "Сценарий",
+            "throughput_per_hour": "Автомобилей в час",
+            "controller": "Стратегия",
+        },
+        color_discrete_map={"fixed": "#64748b", "actuated": "#f59e0b", "ai": "#16a34a"},
+    )
+    return _research_base_layout(figure, "Пропускная способность")
+
+
+def _research_improvement_chart(summary: pd.DataFrame):
+    figure = px.bar(
+        summary,
+        x="scenario_title",
+        y="wait_improvement_vs_fixed_pct",
+        color="controller",
+        barmode="group",
+        labels={
+            "scenario_title": "Сценарий",
+            "wait_improvement_vs_fixed_pct": "Улучшение к fixed, %",
+            "controller": "Стратегия",
+        },
+        color_discrete_map={"fixed": "#64748b", "actuated": "#f59e0b", "ai": "#16a34a"},
+    )
+    return _research_base_layout(figure, "Сокращение ожидания относительно fixed")
+
+
+def _research_queue_chart(summary: pd.DataFrame):
+    figure = px.bar(
+        summary,
+        x="scenario_title",
+        y="average_queue_length",
+        color="controller",
+        barmode="group",
+        labels={
+            "scenario_title": "Сценарий",
+            "average_queue_length": "Средняя длина очереди, авто",
+            "controller": "Стратегия",
+        },
+        color_discrete_map={"fixed": "#64748b", "actuated": "#f59e0b", "ai": "#16a34a"},
+    )
+    return _research_base_layout(figure, "Средняя длина очереди")
+
+
+def _research_distribution_chart(runs: pd.DataFrame):
+    figure = px.box(
+        runs,
+        x="controller",
+        y="average_wait_seconds",
+        color="controller",
+        facet_col="scenario_title",
+        points="all",
+        labels={
+            "controller": "Стратегия",
+            "average_wait_seconds": "Среднее ожидание, с",
+            "scenario_title": "Сценарий",
+        },
+        color_discrete_map={"fixed": "#64748b", "actuated": "#f59e0b", "ai": "#16a34a"},
+    )
+    figure.update_layout(height=390, margin={"l": 10, "r": 10, "t": 55, "b": 10}, showlegend=False)
+    figure.update_yaxes(gridcolor="#e5e7eb", rangemode="tozero")
+    return figure
+
+
+def _research_dynamic_queue_chart(runs: pd.DataFrame):
+    rows = []
+    for row in runs.to_dict("records"):
+        for second, queue in enumerate(row.get("queue_series") or []):
+            rows.append(
+                {
+                    "Время, с": second,
+                    "Очередь, авто": queue,
+                    "Сценарий": row["scenario_title"],
+                    "Стратегия": row["controller"],
+                }
+            )
+    frame = pd.DataFrame(rows)
+    if frame.empty:
+        return px.line(title="Динамика очереди во времени")
+    frame = frame.groupby(
+        ["Сценарий", "Стратегия", "Время, с"], as_index=False
+    )["Очередь, авто"].mean()
+    figure = px.line(
+        frame,
+        x="Время, с",
+        y="Очередь, авто",
+        color="Стратегия",
+        facet_col="Сценарий",
+        color_discrete_map={"fixed": "#64748b", "actuated": "#f59e0b", "ai": "#16a34a"},
+    )
+    figure.update_layout(
+        title="Динамика очереди во времени",
+        height=460,
+        margin={"l": 10, "r": 10, "t": 75, "b": 10},
+    )
+    figure.update_yaxes(gridcolor="#e5e7eb", rangemode="tozero")
+    return figure
 
 
 def _scenario_banner(result: InteractiveSimulationResult) -> None:

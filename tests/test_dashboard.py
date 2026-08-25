@@ -120,3 +120,51 @@ def test_phase_table_supports_legacy_phase_objects_without_crashing():
     assert rows[0]["Сигнал"] == "Зелёный"
     assert rows[1]["Светофор"] == "Смена фазы"
     assert rows[1]["Сигнал"] == "Жёлтый"
+
+
+def test_research_charts_use_expected_metrics():
+    import pandas as pd
+
+    summary = pd.DataFrame(
+        [
+            {
+                "scenario_title": "Низкая нагрузка",
+                "controller": "fixed",
+                "average_wait_seconds": 10.0,
+                "wait_95ci_half_width": 1.0,
+                "throughput_per_hour": 100.0,
+                "wait_improvement_vs_fixed_pct": 0.0,
+                "average_queue_length": 2.0,
+            },
+            {
+                "scenario_title": "Низкая нагрузка",
+                "controller": "ai",
+                "average_wait_seconds": 7.0,
+                "wait_95ci_half_width": 0.8,
+                "throughput_per_hour": 120.0,
+                "wait_improvement_vs_fixed_pct": 30.0,
+                "average_queue_length": 1.2,
+            },
+        ]
+    )
+
+    assert DASHBOARD._research_wait_chart(summary).layout.title.text == "Среднее время ожидания автомобиля"
+    assert DASHBOARD._research_throughput_chart(summary).layout.title.text == "Пропускная способность"
+    assert DASHBOARD._research_improvement_chart(summary).layout.title.text == "Сокращение ожидания относительно fixed"
+    assert DASHBOARD._research_queue_chart(summary).layout.title.text == "Средняя длина очереди"
+
+
+def test_dynamic_queue_chart_aggregates_seed_series():
+    import pandas as pd
+
+    runs = pd.DataFrame(
+        [
+            {"scenario_title": "Низкая нагрузка", "controller": "ai", "queue_series": [4, 2, 0]},
+            {"scenario_title": "Низкая нагрузка", "controller": "ai", "queue_series": [2, 2, 0]},
+        ]
+    )
+
+    figure = DASHBOARD._research_dynamic_queue_chart(runs)
+
+    assert figure.layout.title.text == "Динамика очереди во времени"
+    assert len(figure.data) == 1

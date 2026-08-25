@@ -31,6 +31,7 @@ class SimulationResult:
     stops: int
     fairness_index: float
     lane_waits: dict[str, float]
+    queue_series: list[int]
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -131,6 +132,7 @@ class IntersectionSimulation:
             stops=self.stops,
             fairness_index=_jain_index(list(lane_waits.values())),
             lane_waits=lane_waits,
+            queue_series=self.queue_samples,
         )
 
 
