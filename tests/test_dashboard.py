@@ -54,7 +54,8 @@ def test_animation_embeds_vehicle_sprite_and_two_dynamic_traffic_lights():
     assert "gapY=Math.max(2.8" in html
     assert "background:transparent url" in html
     assert ".scene.ready .car-slot" in html
-    assert "translate3d('+left+'%,'+top+'%,0)" in html
+    assert "left*scene.clientWidth/100" in html
+    assert "top*scene.clientHeight/100" in html
     assert "car-slot.cleared" in html
 
 

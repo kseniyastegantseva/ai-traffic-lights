@@ -714,7 +714,9 @@ function paint(){{
       if(lane==='south'){{left=56;top=progress===null?waitingSouth:movingSouth-progress*(movingSouth+12);}}
       if(lane==='west'){{left=progress===null?waitingWest:movingWest+progress*(112-movingWest);top=44;}}
       if(lane==='east'){{left=progress===null?waitingEast:movingEast-progress*(movingEast+12);top=56;}}
-      car.style.transform='translate3d('+left+'%,'+top+'%,0)';
+      // CSS percentages inside transform are relative to the vehicle itself,
+      // not the intersection. Convert the road coordinates to scene pixels.
+      car.style.transform='translate3d('+(left*scene.clientWidth/100)+'px,'+(top*scene.clientHeight/100)+'px,0)';
     }});
   }});
   if(!animationReady){{
