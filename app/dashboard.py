@@ -325,6 +325,11 @@ button.primary {{ background:#166534; border-color:#166534; color:#fff; }}
 .scene {{ position:relative; height:555px; background:#dce8dc; overflow:hidden; }}
 .road-v {{ position:absolute; width:30%; height:100%; left:35%; top:0; background:#414844; border-left:3px solid #f8faf9; border-right:3px solid #f8faf9; }}
 .road-h {{ position:absolute; width:100%; height:30%; left:0; top:35%; background:#414844; border-top:3px solid #f8faf9; border-bottom:3px solid #f8faf9; }}
+.road-v::after {{ content:""; position:absolute; z-index:1; left:50%; top:0; width:2px; height:100%; transform:translateX(-50%); background:repeating-linear-gradient(to bottom, #f7f2b0 0 18px, transparent 18px 34px); opacity:.9; }}
+.road-h::after {{ content:""; position:absolute; z-index:1; left:0; top:50%; width:100%; height:2px; transform:translateY(-50%); background:repeating-linear-gradient(to right, #f7f2b0 0 18px, transparent 18px 34px); opacity:.9; }}
+.stop-line {{ position:absolute; z-index:3; background:#f8faf9; box-shadow:0 0 0 1px #ffffff55; }}
+.stop-north {{ left:35%; top:34%; width:30%; height:4px; }} .stop-south {{ left:35%; top:66%; width:30%; height:4px; }}
+.stop-west {{ left:34%; top:35%; width:4px; height:30%; }} .stop-east {{ left:66%; top:35%; width:4px; height:30%; }}
 .center {{ position:absolute; width:30%; height:30%; left:35%; top:35%; background:#4b534e; z-index:2; }}
 .lane {{ --slot:{car_slot_size}px; position:absolute; z-index:4; inset:0; overflow:visible; pointer-events:none; }}
 .car-slot {{ position:absolute; left:0; top:0; width:var(--slot); height:var(--slot); display:flex; align-items:center; justify-content:center; transition:left 1.8s linear,top 1.8s linear; }}
@@ -332,10 +337,10 @@ button.primary {{ background:#166534; border-color:#166534; color:#fff; }}
 .north .car-model {{ transform:rotate(180deg); }} .south .car-model {{ transform:rotate(0deg); }}
 .west .car-model {{ transform:rotate(90deg); }} .east .car-model {{ transform:rotate(-90deg); }}
 .lane-label {{ position:absolute; z-index:6; padding:5px 8px; background:#ffffffed; border:1px solid #cad4cd; border-radius:5px; font-size:12px; font-weight:700; }}
-.label-north {{ left:50%; top:8px; transform:translateX(-50%); }}
-.label-south {{ left:50%; bottom:8px; transform:translateX(-50%); }}
-.label-west {{ left:8px; top:50%; transform:translateY(-50%); }}
-.label-east {{ right:8px; top:50%; transform:translateY(-50%); }}
+.label-north {{ left:18px; top:16px; }}
+.label-east {{ right:18px; top:16px; }}
+.label-west {{ left:18px; bottom:16px; }}
+.label-south {{ right:18px; bottom:16px; }}
 .signal-panel {{ position:absolute; z-index:8; left:50%; top:50%; transform:translate(-50%,-50%); width:180px; display:flex; align-items:flex-start; justify-content:center; gap:14px; flex-wrap:wrap; }}
 .signal-unit {{ width:76px; padding:6px; border-radius:6px; background:#f7faf8; border:2px solid #cbd5ce; text-align:center; transition:border-color .2s,box-shadow .2s; }}
 .signal-unit.changed {{ animation:housingFlash .55s ease-out; }}
@@ -363,7 +368,10 @@ button.primary {{ background:#166534; border-color:#166534; color:#fff; }}
   </div>
   <div class="progress"><div id="progress"></div></div>
   <div class="scene">
-    <div class="road-v"></div><div class="road-h"></div><div class="center"></div>
+    <div class="road-v"></div><div class="road-h"></div>
+    <div class="stop-line stop-north"></div><div class="stop-line stop-south"></div>
+    <div class="stop-line stop-west"></div><div class="stop-line stop-east"></div>
+    <div class="center"></div>
     <div class="lane north" id="cars-north">{car_markup['north']}</div>
     <div class="lane west" id="cars-west">{car_markup['west']}</div>
     <div class="lane south" id="cars-south">{car_markup['south']}</div>

@@ -43,8 +43,11 @@ def test_animation_embeds_vehicle_sprite_and_two_dynamic_traffic_lights():
     assert "frame.second<departure" in html
     assert "28+progress*84" in html
     assert "68-progress*80" in html
-    assert "left:50%; top:8px; transform:translateX(-50%)" in html
-    assert "left:8px; top:50%; transform:translateY(-50%)" in html
+    assert "left:18px; top:16px" in html
+    assert "right:18px; bottom:16px" in html
+    assert "repeating-linear-gradient(to bottom" in html
+    assert "repeating-linear-gradient(to right" in html
+    assert 'class="stop-line stop-north"' in html
     assert "gapX=Math.max(1.8" in html
     assert "gapY=Math.max(2.8" in html
 
