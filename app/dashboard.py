@@ -687,7 +687,7 @@ const signalColors={{red:'#ef2b2d',yellow:'#ffd21f',green:'#20d866'}};
 let index=0,playing=true,timer,animationReady=false,queueRenderVersion=0;
 const lanes=['north','west','south','east'];
 const travelSeconds=5;
-const clearedByLane={north:0,west:0,south:0,east:0};
+const clearedByLane={{north:0,west:0,south:0,east:0}};
 function departureTime(lane,vehicleIndex){{
   for(const frame of frames){{
     if(((frame.departed_by_lane||{{}})[lane]||0)>vehicleIndex)return frame.second;
