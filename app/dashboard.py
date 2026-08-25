@@ -27,6 +27,28 @@ SPRITE_X = (0, 33.333, 66.667, 100)
 SPRITE_Y = (0, 50, 100)
 DASHBOARD_STATE_VERSION = 4
 RESEARCH_RESULTS_PATH = Path("outputs/experiment_suite_results.json")
+INTERACTIVE_TO_RESEARCH_SCENARIO = {
+    "low_load": "low_load",
+    "uniform": "uniform_demo",
+    "north_south_peak": "morning_peak_ns",
+    "east_west_peak": "evening_peak_ew",
+    "oversaturated": "oversaturated",
+    "empty": "low_load",
+}
+STRATEGY_DESCRIPTIONS = {
+    "fixed": (
+        "Фиксированный светофор: переключает фазы через одинаковые интервалы, "
+        "не учитывая текущие очереди. Это базовый вариант для сравнения."
+    ),
+    "actuated": (
+        "Адаптивный светофор: после минимальной зелёной фазы переключается, "
+        "если очередь на другой оси заметно больше."
+    ),
+    "ai": (
+        "AI-baseline: на каждом шаге сравнивает давление очередей на двух осях "
+        "и выбирает фазу с большей очередью."
+    ),
+}
 SIGNAL_COLORS = {
     "red": ("КРАСНЫЙ", "#ef2b2d"),
     "yellow": ("ЖЁЛТЫЙ", "#ffd21f"),
@@ -89,6 +111,9 @@ def _upload_screen() -> None:
     st.session_state.interactive_result = simulate_interactive_traffic(
         st.session_state.detected_queues
     )
+    st.session_state.research_scenario = INTERACTIVE_TO_RESEARCH_SCENARIO[
+        st.session_state.interactive_result.scenario.code
+    ]
     st.session_state.dashboard_state_version = DASHBOARD_STATE_VERSION
     st.session_state.dashboard_page = "simulation"
     st.rerun()
@@ -122,17 +147,14 @@ def _simulation_screen(result: InteractiveSimulationResult) -> None:
             "Снижение до нуля означает завершение работы алгоритма."
         )
     _phase_table(result)
-    _research_charts()
+    _research_charts(result.scenario.code)
 
 
-def _research_charts() -> None:
+def _research_charts(interactive_scenario_code: str) -> None:
     """Показывает результаты заранее проведённого исследовательского эксперимента."""
     st.divider()
     st.subheader("Исследовательские графики")
-    st.caption(
-        "Сравнение стратегий на одинаковых сценариях и random seed. "
-        "Основная метрика — среднее время ожидания одного автомобиля."
-    )
+    st.caption("Графики интерактивны: наведите курсор, масштабируйте область или скачайте данные.")
     payload = _load_research_payload(RESEARCH_RESULTS_PATH)
     if payload is None:
         st.warning(
@@ -147,22 +169,58 @@ def _research_charts() -> None:
         st.warning("В файле результатов нет сводных данных.")
         return
 
-    st.plotly_chart(_research_wait_chart(summary), width="stretch", config={"displayModeBar": False})
+    available = summary[["scenario", "scenario_title"]].drop_duplicates().to_dict("records")
+    scenario_names = [row["scenario"] for row in available]
+    default_scenario = INTERACTIVE_TO_RESEARCH_SCENARIO.get(
+        interactive_scenario_code,
+        scenario_names[0] if scenario_names else "low_load",
+    )
+    selected = st.session_state.get("research_scenario", default_scenario)
+    if selected not in scenario_names:
+        selected = default_scenario if default_scenario in scenario_names else scenario_names[0]
+    st.session_state.research_scenario = selected
+
+    buttons = st.columns(len(available))
+    for button, scenario in zip(buttons, available, strict=True):
+        if button.button(
+            scenario["scenario_title"],
+            key=f"research-scenario-{scenario['scenario']}",
+            type="primary" if scenario["scenario"] == selected else "secondary",
+            width="stretch",
+        ):
+            st.session_state.research_scenario = scenario["scenario"]
+            st.rerun()
+
+    selected_summary = summary[summary["scenario"] == selected].copy()
+    selected_runs = runs[runs["scenario"] == selected].copy() if not runs.empty else runs
+    scenario_title = selected_summary.iloc[0]["scenario_title"]
+    st.markdown(f"### Сценарий: {scenario_title}")
+    _strategy_explanation()
+
+    chart_config = {"displayModeBar": True, "scrollZoom": True, "responsive": True}
+    st.plotly_chart(_research_wait_chart(selected_summary), width="stretch", config=chart_config)
     left, right = st.columns(2)
     with left:
-        st.plotly_chart(_research_throughput_chart(summary), width="stretch", config={"displayModeBar": False})
+        st.plotly_chart(_research_throughput_chart(selected_summary), width="stretch", config=chart_config)
     with right:
-        st.plotly_chart(_research_improvement_chart(summary), width="stretch", config={"displayModeBar": False})
+        st.plotly_chart(_research_improvement_chart(selected_summary), width="stretch", config=chart_config)
     left, right = st.columns(2)
     with left:
-        st.plotly_chart(_research_queue_chart(summary), width="stretch", config={"displayModeBar": False})
+        st.plotly_chart(_research_queue_chart(selected_summary), width="stretch", config=chart_config)
     with right:
-        if not runs.empty:
-            st.plotly_chart(_research_distribution_chart(runs), width="stretch", config={"displayModeBar": False})
-    if not runs.empty and "queue_series" in runs:
-        st.plotly_chart(_research_dynamic_queue_chart(runs), width="stretch", config={"displayModeBar": False})
+        if not selected_runs.empty:
+            st.plotly_chart(_research_distribution_chart(selected_runs), width="stretch", config=chart_config)
+    if not selected_runs.empty and "queue_series" in selected_runs:
+        st.plotly_chart(_research_dynamic_queue_chart(selected_runs), width="stretch", config=chart_config)
     st.subheader("Сводные результаты")
-    st.dataframe(summary, hide_index=True, width="stretch")
+    st.dataframe(selected_summary, hide_index=True, width="stretch")
+
+
+def _strategy_explanation() -> None:
+    columns = st.columns(3)
+    for column, strategy in zip(columns, ("fixed", "actuated", "ai"), strict=True):
+        column.markdown(f"**{strategy}**")
+        column.caption(STRATEGY_DESCRIPTIONS[strategy])
 
 
 def _load_research_payload(path: Path) -> dict | None:
@@ -201,7 +259,7 @@ def _load_research_payload(path: Path) -> dict | None:
 def _research_base_layout(figure, title: str):
     figure.update_layout(
         title=title,
-        height=390,
+        height=560,
         margin={"l": 10, "r": 10, "t": 55, "b": 10},
         paper_bgcolor="#ffffff",
         plot_bgcolor="#ffffff",
@@ -296,7 +354,7 @@ def _research_distribution_chart(runs: pd.DataFrame):
         },
         color_discrete_map={"fixed": "#64748b", "actuated": "#f59e0b", "ai": "#16a34a"},
     )
-    figure.update_layout(height=390, margin={"l": 10, "r": 10, "t": 55, "b": 10}, showlegend=False)
+    figure.update_layout(height=520, margin={"l": 10, "r": 10, "t": 55, "b": 10}, showlegend=False)
     figure.update_yaxes(gridcolor="#e5e7eb", rangemode="tozero")
     return figure
 
@@ -329,7 +387,7 @@ def _research_dynamic_queue_chart(runs: pd.DataFrame):
     )
     figure.update_layout(
         title="Динамика очереди во времени",
-        height=460,
+        height=560,
         margin={"l": 10, "r": 10, "t": 75, "b": 10},
     )
     figure.update_yaxes(gridcolor="#e5e7eb", rangemode="tozero")

@@ -178,4 +178,20 @@ def test_research_graphs_are_not_a_navigation_control():
     source = DASHBOARD_PATH.read_text(encoding="utf-8")
 
     assert 'st.sidebar.button("Исследовательские графики")' not in source
-    assert "_research_charts()" in source
+    assert "_research_charts(result.scenario.code)" in source
+
+
+def test_research_scenario_mapping_follows_detected_load():
+    assert DASHBOARD.INTERACTIVE_TO_RESEARCH_SCENARIO["low_load"] == "low_load"
+    assert DASHBOARD.INTERACTIVE_TO_RESEARCH_SCENARIO["north_south_peak"] == "morning_peak_ns"
+    assert DASHBOARD.INTERACTIVE_TO_RESEARCH_SCENARIO["east_west_peak"] == "evening_peak_ew"
+    assert DASHBOARD._research_wait_chart(
+        __import__("pandas").DataFrame(
+            [{
+                "scenario_title": "Низкая нагрузка",
+                "controller": "fixed",
+                "average_wait_seconds": 1.0,
+                "wait_95ci_half_width": 0.1,
+            }]
+        )
+    ).layout.height == 560
