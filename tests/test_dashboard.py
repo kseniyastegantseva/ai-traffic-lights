@@ -41,8 +41,10 @@ def test_animation_embeds_vehicle_sprite_and_two_dynamic_traffic_lights():
     assert "background-color:#ef2b2d" in html
     assert "bulb.style.backgroundColor=active?signalColors[color]" in html
     assert "frame.second<departure" in html
-    assert "completedCount(lane,frame.second)" in html
+    assert "const clearedByLane={north:0,west:0,south:0,east:0}" in html
     assert "waitingIndex=Math.max(0,i-completed)" in html
+    assert "clearVehicleAfterExit(lane,i,car)" in html
+    assert "event.propertyName!=='transform'" in html
     assert "movingNorth+progress*(112-movingNorth)" in html
     assert "movingEast-progress*(movingEast+12)" in html
     assert "left:50%; top:8px; transform:translateX(-50%)" in html

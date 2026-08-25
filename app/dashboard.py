@@ -684,9 +684,10 @@ button.primary {{ background:#166534; border-color:#166534; color:#fff; }}
 const frames={json.dumps(frames, ensure_ascii=False)};
 const initial={json.dumps(initial)};
 const signalColors={{red:'#ef2b2d',yellow:'#ffd21f',green:'#20d866'}};
-let index=0,playing=true,timer,animationReady=false;
+let index=0,playing=true,timer,animationReady=false,queueRenderVersion=0;
 const lanes=['north','west','south','east'];
 const travelSeconds=5;
+const clearedByLane={north:0,west:0,south:0,east:0};
 function departureTime(lane,vehicleIndex){{
   for(const frame of frames){{
     if(((frame.departed_by_lane||{{}})[lane]||0)>vehicleIndex)return frame.second;
@@ -701,12 +702,34 @@ function completedCount(lane,second){{
     completed++;
   }}
 }}
+function clearVehicleAfterExit(lane,vehicleIndex,car){{
+  if(vehicleIndex!==clearedByLane[lane] || car.dataset.clearScheduled==='true') return;
+  car.dataset.clearScheduled='true';
+  const version=queueRenderVersion;
+  const finish=event=>{{
+    if(event.propertyName!=='transform') return;
+    car.removeEventListener('transitionend',finish);
+    if(version!==queueRenderVersion || vehicleIndex!==clearedByLane[lane]) return;
+    clearedByLane[lane]++;
+    car.classList.add('cleared');
+    paint();
+  }};
+  car.addEventListener('transitionend',finish);
+}}
+function resetQueue(){{
+  queueRenderVersion++;
+  lanes.forEach(lane=>{{clearedByLane[lane]=0;}});
+  document.querySelectorAll('.car-slot').forEach(car=>{{
+    car.classList.remove('cleared');
+    delete car.dataset.clearScheduled;
+  }});
+}}
 function paint(){{
   const frame=frames[index];if(!frame)return;
   lanes.forEach(lane=>{{
     document.getElementById('count-'+lane).textContent=frame.queues[lane];
     const cars=document.querySelectorAll('#cars-'+lane+' .car-slot');
-    const completed=completedCount(lane,frame.second);
+    const completed=clearedByLane[lane];
     cars.forEach((car,i)=>{{
       const departure=departureTime(lane,i);
       const scene=document.querySelector('.scene');
@@ -717,7 +740,7 @@ function paint(){{
       const waitingIndex=Math.max(0,i-completed);
       const departureIndex=departure===undefined
         ?waitingIndex:Math.max(0,i-completedCount(lane,departure));
-      const isCleared=departure!==undefined && frame.second>departure+travelSeconds;
+      const isCleared=i<completed;
       car.classList.toggle('cleared',isCleared);
       let left,top;
       const waitingNorth=28-waitingIndex*gapY;
@@ -735,6 +758,7 @@ function paint(){{
       // CSS percentages inside transform are relative to the vehicle itself,
       // not the intersection. Convert the road coordinates to scene pixels.
       car.style.transform='translate3d('+(left*scene.clientWidth/100)+'px,'+(top*scene.clientHeight/100)+'px,0)';
+      if(progress===1 && !isCleared) clearVehicleAfterExit(lane,i,car);
     }});
   }});
   if(!animationReady){{
@@ -782,8 +806,8 @@ function startTimer(){{
   }});
   if(playing)timer=setInterval(()=>{{if(index<frames.length-1){{index++;paint();}}}},1000/speed);
 }}
-document.getElementById('play').onclick=()=>{{if(index>=frames.length-1){{index=0;playing=false;}}playing=!playing;document.getElementById('play').textContent=playing?'Пауза':'Продолжить';paint();startTimer();}};
-document.getElementById('reset').onclick=()=>{{animationReady=false;document.querySelector('.scene').classList.remove('ready');index=0;playing=true;document.getElementById('play').textContent='Пауза';paint();startTimer();}};
+document.getElementById('play').onclick=()=>{{if(index>=frames.length-1){{animationReady=false;document.querySelector('.scene').classList.remove('ready');resetQueue();index=0;playing=false;}}playing=!playing;document.getElementById('play').textContent=playing?'Пауза':'Продолжить';paint();startTimer();}};
+document.getElementById('reset').onclick=()=>{{animationReady=false;document.querySelector('.scene').classList.remove('ready');resetQueue();index=0;playing=true;document.getElementById('play').textContent='Пауза';paint();startTimer();}};
 document.getElementById('speed').onchange=startTimer;
 paint();startTimer();
 </script></body></html>
