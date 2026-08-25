@@ -1,5 +1,8 @@
 [browser]
 gatherUsageStats = false
 
+# Keep the built-in theme unset: Streamlit then follows the viewer's browser
+# and operating-system preference (light, dark, or automatic).
+
 [server]
 headless = true

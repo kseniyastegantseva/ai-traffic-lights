@@ -140,7 +140,7 @@ def test_research_charts_use_expected_metrics():
                 "controller": "fixed",
                 "average_wait_seconds": 10.0,
                 "wait_95ci_half_width": 1.0,
-                "throughput_per_hour": 100.0,
+                "max_queue_length": 8.0,
                 "wait_improvement_vs_fixed_pct": 0.0,
                 "average_queue_length": 2.0,
             },
@@ -149,7 +149,7 @@ def test_research_charts_use_expected_metrics():
                 "controller": "ai",
                 "average_wait_seconds": 7.0,
                 "wait_95ci_half_width": 0.8,
-                "throughput_per_hour": 120.0,
+                "max_queue_length": 5.0,
                 "wait_improvement_vs_fixed_pct": 30.0,
                 "average_queue_length": 1.2,
             },
@@ -157,7 +157,7 @@ def test_research_charts_use_expected_metrics():
     )
 
     assert DASHBOARD._research_wait_chart(summary).layout.title.text == "Среднее время ожидания автомобиля"
-    assert DASHBOARD._research_throughput_chart(summary).layout.title.text == "Пропускная способность"
+    assert DASHBOARD._research_peak_queue_chart(summary).layout.title.text == "Максимальная длина очереди"
     assert DASHBOARD._research_improvement_chart(summary).layout.title.text == "Сокращение ожидания относительно fixed"
     assert DASHBOARD._research_queue_chart(summary).layout.title.text == "Средняя длина очереди"
 

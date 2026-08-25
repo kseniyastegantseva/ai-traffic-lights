@@ -28,6 +28,7 @@ class SimulationResult:
     median_wait_seconds: float
     max_wait_seconds: float
     average_queue_length: float
+    max_queue_length: int
     stops: int
     fairness_index: float
     lane_waits: dict[str, float]
@@ -129,6 +130,7 @@ class IntersectionSimulation:
             median_wait_seconds=median(self.waits) if self.waits else 0.0,
             max_wait_seconds=max(self.waits) if self.waits else 0.0,
             average_queue_length=mean(self.queue_samples) if self.queue_samples else 0.0,
+            max_queue_length=max(self.queue_samples) if self.queue_samples else 0,
             stops=self.stops,
             fairness_index=_jain_index(list(lane_waits.values())),
             lane_waits=lane_waits,

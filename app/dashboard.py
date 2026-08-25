@@ -138,7 +138,12 @@ def _simulation_screen(result: InteractiveSimulationResult) -> None:
         st.iframe(_animation_html(result), height=690, width="stretch")
     with right:
         st.subheader("Как меняется очередь")
-        st.plotly_chart(_queue_chart(result), width="stretch", config={"displayModeBar": False})
+        st.plotly_chart(
+            _queue_chart(result),
+            width="stretch",
+            theme="streamlit",
+            config={"displayModeBar": False},
+        )
         st.caption(
             "Линия показывает, сколько автомобилей ещё ожидает проезда. "
             "Снижение до нуля означает завершение работы алгоритма."
@@ -151,7 +156,7 @@ def _research_charts(interactive_scenario_code: str) -> None:
     """Показывает результаты заранее проведённого исследовательского эксперимента."""
     st.divider()
     st.subheader("Исследовательские графики")
-    st.caption("Графики интерактивны: наведите курсор, масштабируйте область или скачайте данные.")
+    st.caption("Графики интерактивны: наведите курсор, чтобы увидеть точное значение.")
     payload = _load_research_payload(RESEARCH_RESULTS_PATH)
     if payload is None:
         st.warning(
@@ -209,20 +214,69 @@ def _research_charts(interactive_scenario_code: str) -> None:
         "doubleClick": False,
         "responsive": True,
     }
-    st.plotly_chart(_research_wait_chart(selected_summary), width="stretch", config=chart_config)
+    st.plotly_chart(
+        _research_wait_chart(selected_summary),
+        width="stretch",
+        theme="streamlit",
+        config=chart_config,
+    )
+    st.caption(
+        "Основной критерий эффективности: чем ниже среднее время ожидания, тем быстрее "
+        "автомобили проходят перекрёсток. Усы показывают 95%-й доверительный интервал."
+    )
     left, right = st.columns(2)
     with left:
-        st.plotly_chart(_research_throughput_chart(selected_summary), width="stretch", config=chart_config)
+        st.plotly_chart(
+            _research_peak_queue_chart(selected_summary),
+            width="stretch",
+            theme="streamlit",
+            config=chart_config,
+        )
+        st.caption(
+            "Пик очереди — наибольшее число машин, одновременно ожидавших проезда. "
+            "Меньшее значение означает меньший риск затора."
+        )
     with right:
-        st.plotly_chart(_research_improvement_chart(selected_summary), width="stretch", config=chart_config)
+        st.plotly_chart(
+            _research_improvement_chart(selected_summary),
+            width="stretch",
+            theme="streamlit",
+            config=chart_config,
+        )
     left, right = st.columns(2)
     with left:
-        st.plotly_chart(_research_queue_chart(selected_summary), width="stretch", config=chart_config)
+        st.plotly_chart(
+            _research_queue_chart(selected_summary),
+            width="stretch",
+            theme="streamlit",
+            config=chart_config,
+        )
     with right:
         if not selected_runs.empty:
-            st.plotly_chart(_research_distribution_chart(selected_runs), width="stretch", config=chart_config)
+            st.plotly_chart(
+                _research_distribution_chart(selected_runs),
+                width="stretch",
+                theme="streamlit",
+                config=chart_config,
+            )
+            st.caption(
+                "Этот график проверяет устойчивость результата: каждая точка — отдельный "
+                "запуск, линия внутри прямоугольника — медиана, сам прямоугольник — "
+                "средние 50% результатов."
+            )
     if not selected_runs.empty and "queue_series" in selected_runs:
-        st.plotly_chart(_research_dynamic_queue_chart(selected_runs), width="stretch", config=chart_config)
+        st.plotly_chart(
+            _research_dynamic_queue_chart(selected_runs),
+            width="stretch",
+            theme="streamlit",
+            config=chart_config,
+        )
+    st.info(
+        "Все стратегии получают одинаковый поток и имеют одинаковую физическую скорость "
+        "проезда. Поэтому число проехавших машин за фиксированные 15 минут может совпадать; "
+        "преимущество AI измеряется сокращением ожидания и очередей, а не искусственным "
+        "увеличением ёмкости дороги."
+    )
     st.subheader("Сводные результаты")
     st.dataframe(selected_summary, hide_index=True, width="stretch")
 
@@ -243,7 +297,14 @@ def _load_research_payload(path: Path) -> dict | None:
             payload = None
 
     runs = payload.get("runs", []) if isinstance(payload, dict) else []
-    if payload and payload.get("summary") and runs and "queue_series" in runs[0]:
+    summary = payload.get("summary", []) if isinstance(payload, dict) else []
+    if (
+        payload
+        and summary
+        and runs
+        and "queue_series" in runs[0]
+        and "max_queue_length" in summary[0]
+    ):
         return payload
 
     config_path = Path("configs/experiment_suite.yaml")
@@ -272,13 +333,10 @@ def _research_base_layout(figure, title: str):
         title=title,
         height=560,
         margin={"l": 10, "r": 10, "t": 55, "b": 10},
-        paper_bgcolor="#ffffff",
-        plot_bgcolor="#ffffff",
         legend_title_text="Стратегия",
         dragmode=False,
     )
-    figure.update_yaxes(gridcolor="#e5e7eb", rangemode="tozero")
-    figure.update_xaxes(gridcolor="#f3f4f6")
+    figure.update_yaxes(rangemode="tozero")
     return figure
 
 
@@ -300,21 +358,21 @@ def _research_wait_chart(summary: pd.DataFrame):
     return _research_base_layout(figure, "Среднее время ожидания автомобиля")
 
 
-def _research_throughput_chart(summary: pd.DataFrame):
+def _research_peak_queue_chart(summary: pd.DataFrame):
     figure = px.bar(
         summary,
         x="scenario_title",
-        y="throughput_per_hour",
+        y="max_queue_length",
         color="controller",
         barmode="group",
         labels={
             "scenario_title": "Сценарий",
-            "throughput_per_hour": "Автомобилей в час",
+            "max_queue_length": "Автомобилей",
             "controller": "Стратегия",
         },
         color_discrete_map={"fixed": "#64748b", "actuated": "#f59e0b", "ai": "#16a34a"},
     )
-    return _research_base_layout(figure, "Пропускная способность")
+    return _research_base_layout(figure, "Максимальная длина очереди")
 
 
 def _research_improvement_chart(summary: pd.DataFrame):
@@ -372,7 +430,7 @@ def _research_distribution_chart(runs: pd.DataFrame):
         showlegend=False,
         dragmode=False,
     )
-    figure.update_yaxes(gridcolor="#e5e7eb", rangemode="tozero")
+    figure.update_yaxes(rangemode="tozero")
     return figure
 
 
@@ -408,7 +466,7 @@ def _research_dynamic_queue_chart(runs: pd.DataFrame):
         margin={"l": 10, "r": 10, "t": 75, "b": 10},
         dragmode=False,
     )
-    figure.update_yaxes(gridcolor="#e5e7eb", rangemode="tozero")
+    figure.update_yaxes(rangemode="tozero")
     return figure
 
 
@@ -453,12 +511,9 @@ def _queue_chart(result: InteractiveSimulationResult):
     figure.update_layout(
         height=320,
         margin={"l": 10, "r": 10, "t": 16, "b": 10},
-        paper_bgcolor="#ffffff",
-        plot_bgcolor="#ffffff",
         hovermode="x unified",
     )
-    figure.update_yaxes(rangemode="tozero", gridcolor="#e5e7eb")
-    figure.update_xaxes(gridcolor="#f3f4f6")
+    figure.update_yaxes(rangemode="tozero")
     return figure
 
 
@@ -650,6 +705,17 @@ button.primary {{ background:#166534; border-color:#166534; color:#fff; }}
 .phase-label {{ flex-basis:100%; padding:3px 5px; border-radius:4px; background:#202622e8; color:#fff; text-align:center; font-size:10px; font-weight:750; }}
 .progress {{ height:7px; background:#e6ebe8; }} .progress>div {{ height:100%; background:#166534; width:0; transition:width .2s; }}
 .legend {{ padding:10px 14px; font-size:12px; color:#637068; background:#fff; border-top:1px solid #d9e1dc; }}
+@media(prefers-color-scheme:dark) {{
+  body {{ color:#edf2f7; background:#0e1117; }}
+  .sim {{ background:#111827; border-color:#3b4657; }}
+  .toolbar,.legend {{ background:#111827; border-color:#3b4657; color:#aeb9c6; }}
+  button,select {{ background:#1f2937; border-color:#536174; color:#f8fafc; }}
+  .status span {{ color:#aeb9c6; }}
+  .progress {{ background:#374151; }}
+  .lane-label {{ background:#111827ed; border-color:#64748b; color:#f8fafc; }}
+  .signal-unit {{ background:#1f2937; border-color:#64748b; }}
+  .signal-name {{ color:#f1f5f9; }}
+}}
 @media(max-width:700px) {{ .scene {{ height:470px; }} .signal-panel {{ transform:translate(-50%,-50%) scale(.88); }} }}
 </style></head>
 <body><div class="sim">
@@ -895,6 +961,13 @@ def _apply_styles() -> None:
         .eyebrow {font-size:11px;font-weight:800;color:#166534;}
         div[data-testid="stMetric"] {border-top:2px solid #d7e2da;padding-top:12px;}
         div[data-testid="stForm"] {border-radius:8px;border-color:#d7e2da;}
+        @media(prefers-color-scheme:dark) {
+          .scenario-banner {background:#17251d;border-left-color:#4ade80;}
+          .scenario-banner p {color:#c7d5cb;}
+          .eyebrow {color:#6ee7a0;}
+          div[data-testid="stMetric"] {border-top-color:#3e5145;}
+          div[data-testid="stForm"] {border-color:#3e5145;}
+        }
         @media(max-width:700px) {.scenario-banner {display:block}.scenario-banner p {margin-top:8px}}
         </style>
         """,
