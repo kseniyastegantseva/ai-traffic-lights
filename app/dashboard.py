@@ -22,7 +22,7 @@ LANE_LABELS = {
     "east": "Восток",
 }
 
-VEHICLE_SPRITE_PATH = Path(__file__).parent / "assets" / "vehicle_sprites.jpeg"
+VEHICLE_SPRITE_PATH = Path(__file__).parent / "assets" / "vehicle_sprites_transparent.png"
 SPRITE_X = (0, 33.333, 66.667, 100)
 SPRITE_Y = (0, 50, 100)
 DASHBOARD_STATE_VERSION = 4
@@ -546,8 +546,10 @@ button.primary {{ background:#166534; border-color:#166534; color:#fff; }}
 .stop-west {{ left:34%; top:35%; width:4px; height:30%; }} .stop-east {{ left:66%; top:35%; width:4px; height:30%; }}
 .center {{ position:absolute; width:30%; height:30%; left:35%; top:35%; background:#4b534e; z-index:2; }}
 .lane {{ --slot:{car_slot_size}px; position:absolute; z-index:4; inset:0; overflow:visible; pointer-events:none; }}
-.car-slot {{ position:absolute; left:0; top:0; width:var(--slot); height:var(--slot); display:flex; align-items:center; justify-content:center; transition:left 1.8s linear,top 1.8s linear; }}
-.car-model {{ display:block; width:62%; height:92%; background:transparent url("{sprite_uri}") var(--sprite-x) var(--sprite-y)/400% 300% no-repeat; mix-blend-mode:multiply; filter:saturate(2.4) contrast(1.05) drop-shadow(0 1px 1px #0008); }}
+.car-slot {{ position:absolute; left:0; top:0; width:var(--slot); height:var(--slot); display:flex; align-items:center; justify-content:center; opacity:0; transform:translate3d(0,0,0); transition:none; will-change:transform; backface-visibility:hidden; }}
+.scene.ready .car-slot {{ opacity:1; transition:transform var(--move-duration,1.8s) linear,opacity .12s linear; }}
+.car-slot.cleared {{ visibility:hidden; }}
+.car-model {{ display:block; width:62%; height:92%; background:transparent url("{sprite_uri}") var(--sprite-x) var(--sprite-y)/400% 300% no-repeat; filter:saturate(1.15) contrast(1.03) drop-shadow(0 1px 1px #0008); }}
 .north .car-model {{ transform:rotate(180deg); }} .south .car-model {{ transform:rotate(0deg); }}
 .west .car-model {{ transform:rotate(90deg); }} .east .car-model {{ transform:rotate(-90deg); }}
 .lane-label {{ position:absolute; z-index:6; padding:5px 8px; background:#ffffffed; border:1px solid #cad4cd; border-radius:5px; font-size:12px; font-weight:700; }}
@@ -606,38 +608,61 @@ button.primary {{ background:#166534; border-color:#166534; color:#fff; }}
 const frames={json.dumps(frames, ensure_ascii=False)};
 const initial={json.dumps(initial)};
 const signalColors={{red:'#ef2b2d',yellow:'#ffd21f',green:'#20d866'}};
-let index=0,playing=true,timer;
+let index=0,playing=true,timer,animationReady=false;
 const lanes=['north','west','south','east'];
+const travelSeconds=5;
 function departureTime(lane,vehicleIndex){{
   for(const frame of frames){{
     if(((frame.departed_by_lane||{{}})[lane]||0)>vehicleIndex)return frame.second;
   }}
   return undefined;
 }}
+function completedCount(lane,second){{
+  let completed=0;
+  for(let vehicleIndex=0;;vehicleIndex++){{
+    const departure=departureTime(lane,vehicleIndex);
+    if(departure===undefined || second<=departure+travelSeconds) return completed;
+    completed++;
+  }}
+}}
 function paint(){{
   const frame=frames[index];if(!frame)return;
   lanes.forEach(lane=>{{
     document.getElementById('count-'+lane).textContent=frame.queues[lane];
     const cars=document.querySelectorAll('#cars-'+lane+' .car-slot');
+    const completed=completedCount(lane,frame.second);
     cars.forEach((car,i)=>{{
       const departure=departureTime(lane,i);
       const scene=document.querySelector('.scene');
       const gapX=Math.max(1.8,Math.min(5.5,100*({car_slot_size}+4)/(scene?.clientWidth||640)));
       const gapY=Math.max(2.8,Math.min(6.5,100*({car_slot_size}+4)/(scene?.clientHeight||555)));
       const progress=departure===undefined||frame.second<departure
-        ?null:Math.min(1,Math.max(0,(frame.second-departure)/5));
+        ?null:Math.min(1,Math.max(0,(frame.second-departure)/travelSeconds));
+      const waitingIndex=Math.max(0,i-completed);
+      const departureIndex=departure===undefined
+        ?waitingIndex:Math.max(0,i-completedCount(lane,departure));
+      const isCleared=departure!==undefined && frame.second>departure+travelSeconds;
+      car.classList.toggle('cleared',isCleared);
       let left,top;
-      const verticalStartNorth=28-i*gapY;
-      const verticalStartSouth=68+i*gapY;
-      const horizontalStartWest=28-i*gapX;
-      const horizontalStartEast=68+i*gapX;
-      if(lane==='north'){{left=44;top=progress===null?verticalStartNorth:verticalStartNorth+progress*(112-verticalStartNorth);}}
-      if(lane==='south'){{left=56;top=progress===null?verticalStartSouth:verticalStartSouth-progress*(verticalStartSouth+12);}}
-      if(lane==='west'){{left=progress===null?horizontalStartWest:horizontalStartWest+progress*(112-horizontalStartWest);top=44;}}
-      if(lane==='east'){{left=progress===null?horizontalStartEast:horizontalStartEast-progress*(horizontalStartEast+12);top=56;}}
-      car.style.left=left+'%';car.style.top=top+'%';
+      const waitingNorth=28-waitingIndex*gapY;
+      const waitingSouth=68+waitingIndex*gapY;
+      const waitingWest=28-waitingIndex*gapX;
+      const waitingEast=68+waitingIndex*gapX;
+      const movingNorth=28-departureIndex*gapY;
+      const movingSouth=68+departureIndex*gapY;
+      const movingWest=28-departureIndex*gapX;
+      const movingEast=68+departureIndex*gapX;
+      if(lane==='north'){{left=44;top=progress===null?waitingNorth:movingNorth+progress*(112-movingNorth);}}
+      if(lane==='south'){{left=56;top=progress===null?waitingSouth:movingSouth-progress*(movingSouth+12);}}
+      if(lane==='west'){{left=progress===null?waitingWest:movingWest+progress*(112-movingWest);top=44;}}
+      if(lane==='east'){{left=progress===null?waitingEast:movingEast-progress*(movingEast+12);top=56;}}
+      car.style.transform='translate3d('+left+'%,'+top+'%,0)';
     }});
   }});
+  if(!animationReady){{
+    document.querySelector('.scene').classList.add('ready');
+    animationReady=true;
+  }}
   function setSignal(axis,color){{
     const unit=document.getElementById('signal-'+axis);
     if(unit.dataset.color!==color){{
@@ -675,12 +700,12 @@ function startTimer(){{
   clearInterval(timer);
   const speed=Number(document.getElementById('speed').value);
   document.querySelectorAll('.car-slot').forEach(car=>{{
-    car.style.transitionDuration=Math.max(.12,Math.min(1.8,0.9/speed))+'s';
+    car.style.setProperty('--move-duration',Math.max(.12,Math.min(1.8,0.9/speed))+'s');
   }});
   if(playing)timer=setInterval(()=>{{if(index<frames.length-1){{index++;paint();}}}},1000/speed);
 }}
 document.getElementById('play').onclick=()=>{{if(index>=frames.length-1){{index=0;playing=false;}}playing=!playing;document.getElementById('play').textContent=playing?'Пауза':'Продолжить';paint();startTimer();}};
-document.getElementById('reset').onclick=()=>{{index=0;playing=true;document.getElementById('play').textContent='Пауза';paint();startTimer();}};
+document.getElementById('reset').onclick=()=>{{animationReady=false;document.querySelector('.scene').classList.remove('ready');index=0;playing=true;document.getElementById('play').textContent='Пауза';paint();startTimer();}};
 document.getElementById('speed').onchange=startTimer;
 paint();startTimer();
 </script></body></html>
@@ -731,7 +756,7 @@ def _vehicle_markup(initial: dict[LaneName, int]) -> dict[LaneName, str]:
 
 def _vehicle_sprite_uri() -> str:
     encoded = base64.b64encode(VEHICLE_SPRITE_PATH.read_bytes()).decode("ascii")
-    return f"data:image/jpeg;base64,{encoded}"
+    return f"data:image/png;base64,{encoded}"
 
 
 def _car_slot_size(max_lane_count: int) -> int:

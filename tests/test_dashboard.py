@@ -26,7 +26,7 @@ def test_animation_embeds_vehicle_sprite_and_two_dynamic_traffic_lights():
 
     html = DASHBOARD._animation_html(result)
 
-    assert "data:image/jpeg;base64," in html
+    assert "data:image/png;base64," in html
     assert html.count('class="signal-unit"') == 2
     assert "setSignal('north_south',northSouth)" in html
     assert "setSignal('east_west',eastWest)" in html
@@ -41,8 +41,10 @@ def test_animation_embeds_vehicle_sprite_and_two_dynamic_traffic_lights():
     assert "background-color:#ef2b2d" in html
     assert "bulb.style.backgroundColor=active?signalColors[color]" in html
     assert "frame.second<departure" in html
-    assert "verticalStartNorth+progress*(112-verticalStartNorth)" in html
-    assert "horizontalStartEast-progress*(horizontalStartEast+12)" in html
+    assert "completedCount(lane,frame.second)" in html
+    assert "waitingIndex=Math.max(0,i-completed)" in html
+    assert "movingNorth+progress*(112-movingNorth)" in html
+    assert "movingEast-progress*(movingEast+12)" in html
     assert "left:50%; top:8px; transform:translateX(-50%)" in html
     assert "left:8px; top:50%; transform:translateY(-50%)" in html
     assert "repeating-linear-gradient(to bottom" in html
@@ -50,8 +52,10 @@ def test_animation_embeds_vehicle_sprite_and_two_dynamic_traffic_lights():
     assert 'class="stop-line stop-north"' in html
     assert "gapX=Math.max(1.8" in html
     assert "gapY=Math.max(2.8" in html
-    assert "mix-blend-mode:multiply" in html
     assert "background:transparent url" in html
+    assert ".scene.ready .car-slot" in html
+    assert "translate3d('+left+'%,'+top+'%,0)" in html
+    assert "car-slot.cleared" in html
 
 
 def test_signal_markup_falls_back_to_visible_red_signal():
