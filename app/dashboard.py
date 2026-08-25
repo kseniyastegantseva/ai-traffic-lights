@@ -332,8 +332,10 @@ button.primary {{ background:#166534; border-color:#166534; color:#fff; }}
 .north .car-model {{ transform:rotate(180deg); }} .south .car-model {{ transform:rotate(0deg); }}
 .west .car-model {{ transform:rotate(90deg); }} .east .car-model {{ transform:rotate(-90deg); }}
 .lane-label {{ position:absolute; z-index:6; padding:5px 8px; background:#ffffffed; border:1px solid #cad4cd; border-radius:5px; font-size:12px; font-weight:700; }}
-.label-north {{ left:8px; top:8px; }} .label-south {{ right:8px; bottom:8px; }}
-.label-west {{ left:8px; bottom:8px; }} .label-east {{ right:8px; top:8px; }}
+.label-north {{ left:50%; top:8px; transform:translateX(-50%); }}
+.label-south {{ left:50%; bottom:8px; transform:translateX(-50%); }}
+.label-west {{ left:8px; top:50%; transform:translateY(-50%); }}
+.label-east {{ right:8px; top:50%; transform:translateY(-50%); }}
 .signal-panel {{ position:absolute; z-index:8; left:50%; top:50%; transform:translate(-50%,-50%); width:180px; display:flex; align-items:flex-start; justify-content:center; gap:14px; flex-wrap:wrap; }}
 .signal-unit {{ width:76px; padding:6px; border-radius:6px; background:#f7faf8; border:2px solid #cbd5ce; text-align:center; transition:border-color .2s,box-shadow .2s; }}
 .signal-unit.changed {{ animation:housingFlash .55s ease-out; }}
@@ -399,14 +401,16 @@ function paint(){{
     cars.forEach((car,i)=>{{
       const departure=departureTime(lane,i);
       const waitingIndex=Math.max(0,i-departedByLane);
-      const gap=Math.min(5.2,26/Math.max(initial[lane],1));
+      const scene=document.querySelector('.scene');
+      const gapX=Math.max(1.8,Math.min(5.5,100*({car_slot_size}+4)/(scene?.clientWidth||640)));
+      const gapY=Math.max(2.8,Math.min(6.5,100*({car_slot_size}+4)/(scene?.clientHeight||555)));
       const progress=departure===undefined||frame.second<departure
         ?null:Math.min(1,Math.max(0,(frame.second-departure)/5));
       let left,top;
-      if(lane==='north'){{left=44;top=progress===null?28-waitingIndex*gap:28+progress*84;}}
-      if(lane==='south'){{left=56;top=progress===null?68+waitingIndex*gap:68-progress*80;}}
-      if(lane==='west'){{left=progress===null?28-waitingIndex*gap:28+progress*84;top=44;}}
-      if(lane==='east'){{left=progress===null?68+waitingIndex*gap:68-progress*80;top=56;}}
+      if(lane==='north'){{left=44;top=progress===null?28-waitingIndex*gapY:28+progress*84;}}
+      if(lane==='south'){{left=56;top=progress===null?68+waitingIndex*gapY:68-progress*80;}}
+      if(lane==='west'){{left=progress===null?28-waitingIndex*gapX:28+progress*84;top=44;}}
+      if(lane==='east'){{left=progress===null?68+waitingIndex*gapX:68-progress*80;top=56;}}
       car.style.left=left+'%';car.style.top=top+'%';
     }});
   }});
