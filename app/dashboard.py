@@ -333,14 +333,14 @@ button.primary {{ background:#166534; border-color:#166534; color:#fff; }}
 .center {{ position:absolute; width:30%; height:30%; left:35%; top:35%; background:#4b534e; z-index:2; }}
 .lane {{ --slot:{car_slot_size}px; position:absolute; z-index:4; inset:0; overflow:visible; pointer-events:none; }}
 .car-slot {{ position:absolute; left:0; top:0; width:var(--slot); height:var(--slot); display:flex; align-items:center; justify-content:center; transition:left 1.8s linear,top 1.8s linear; }}
-.car-model {{ display:block; width:62%; height:92%; background-color:#414844; background-image:url("{sprite_uri}"); background-size:400% 300%; background-position:var(--sprite-x) var(--sprite-y); background-repeat:no-repeat; background-blend-mode:multiply; filter:saturate(2.4) contrast(1.05) drop-shadow(0 1px 1px #0008); }}
+.car-model {{ display:block; width:62%; height:92%; background:transparent url("{sprite_uri}") var(--sprite-x) var(--sprite-y)/400% 300% no-repeat; mix-blend-mode:multiply; filter:saturate(2.4) contrast(1.05) drop-shadow(0 1px 1px #0008); }}
 .north .car-model {{ transform:rotate(180deg); }} .south .car-model {{ transform:rotate(0deg); }}
 .west .car-model {{ transform:rotate(90deg); }} .east .car-model {{ transform:rotate(-90deg); }}
 .lane-label {{ position:absolute; z-index:6; padding:5px 8px; background:#ffffffed; border:1px solid #cad4cd; border-radius:5px; font-size:12px; font-weight:700; }}
-.label-north {{ left:18px; top:16px; }}
-.label-east {{ right:18px; top:16px; }}
-.label-west {{ left:18px; bottom:16px; }}
-.label-south {{ right:18px; bottom:16px; }}
+.label-north {{ left:50%; top:8px; transform:translateX(-50%); }}
+.label-south {{ left:50%; bottom:8px; transform:translateX(-50%); }}
+.label-west {{ left:8px; top:50%; transform:translateY(-50%); }}
+.label-east {{ right:8px; top:50%; transform:translateY(-50%); }}
 .signal-panel {{ position:absolute; z-index:8; left:50%; top:50%; transform:translate(-50%,-50%); width:180px; display:flex; align-items:flex-start; justify-content:center; gap:14px; flex-wrap:wrap; }}
 .signal-unit {{ width:76px; padding:6px; border-radius:6px; background:#f7faf8; border:2px solid #cbd5ce; text-align:center; transition:border-color .2s,box-shadow .2s; }}
 .signal-unit.changed {{ animation:housingFlash .55s ease-out; }}
@@ -405,20 +405,22 @@ function paint(){{
   lanes.forEach(lane=>{{
     document.getElementById('count-'+lane).textContent=frame.queues[lane];
     const cars=document.querySelectorAll('#cars-'+lane+' .car-slot');
-    const departedByLane=(frame.departed_by_lane||{{}})[lane]||0;
     cars.forEach((car,i)=>{{
       const departure=departureTime(lane,i);
-      const waitingIndex=Math.max(0,i-departedByLane);
       const scene=document.querySelector('.scene');
       const gapX=Math.max(1.8,Math.min(5.5,100*({car_slot_size}+4)/(scene?.clientWidth||640)));
       const gapY=Math.max(2.8,Math.min(6.5,100*({car_slot_size}+4)/(scene?.clientHeight||555)));
       const progress=departure===undefined||frame.second<departure
         ?null:Math.min(1,Math.max(0,(frame.second-departure)/5));
       let left,top;
-      if(lane==='north'){{left=44;top=progress===null?28-waitingIndex*gapY:28+progress*84;}}
-      if(lane==='south'){{left=56;top=progress===null?68+waitingIndex*gapY:68-progress*80;}}
-      if(lane==='west'){{left=progress===null?28-waitingIndex*gapX:28+progress*84;top=44;}}
-      if(lane==='east'){{left=progress===null?68+waitingIndex*gapX:68-progress*80;top=56;}}
+      const verticalStartNorth=28-i*gapY;
+      const verticalStartSouth=68+i*gapY;
+      const horizontalStartWest=28-i*gapX;
+      const horizontalStartEast=68+i*gapX;
+      if(lane==='north'){{left=44;top=progress===null?verticalStartNorth:verticalStartNorth+progress*(112-verticalStartNorth);}}
+      if(lane==='south'){{left=56;top=progress===null?verticalStartSouth:verticalStartSouth-progress*(verticalStartSouth+12);}}
+      if(lane==='west'){{left=progress===null?horizontalStartWest:horizontalStartWest+progress*(112-horizontalStartWest);top=44;}}
+      if(lane==='east'){{left=progress===null?horizontalStartEast:horizontalStartEast-progress*(horizontalStartEast+12);top=56;}}
       car.style.left=left+'%';car.style.top=top+'%';
     }});
   }});
