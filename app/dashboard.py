@@ -38,12 +38,6 @@ def main() -> None:
     _apply_styles()
 
     st.title("Интеллектуальный светофор")
-    if st.sidebar.button("Исследовательские графики"):
-        st.session_state.dashboard_page = "research"
-        st.rerun()
-    if st.session_state.get("dashboard_page") == "research":
-        _research_screen()
-        return
     if st.session_state.get("dashboard_page", "upload") == "upload":
         _upload_screen()
         return
@@ -66,8 +60,6 @@ def _upload_screen() -> None:
     )
     if not uploaded:
         st.info("После загрузки анализ начнётся автоматически.")
-        if RESEARCH_RESULTS_PATH.exists():
-            st.caption("Для научного сравнения стратегий откройте раздел «Исследовательские графики» в боковой панели.")
         return
 
     file_bytes = uploaded.getvalue()
@@ -129,15 +121,13 @@ def _simulation_screen(result: InteractiveSimulationResult) -> None:
             "Снижение до нуля означает завершение работы алгоритма."
         )
     _phase_table(result)
+    _research_charts()
 
 
-def _research_screen() -> None:
-    """Показывает научные графики по результатам CLI-эксперимента."""
-    if st.sidebar.button("Вернуться к симуляции"):
-        st.session_state.dashboard_page = "upload"
-        st.rerun()
-
-    st.header("Исследовательские графики")
+def _research_charts() -> None:
+    """Показывает результаты заранее проведённого исследовательского эксперимента."""
+    st.divider()
+    st.subheader("Исследовательские графики")
     st.caption(
         "Сравнение стратегий на одинаковых сценариях и random seed. "
         "Основная метрика — среднее время ожидания одного автомобиля."

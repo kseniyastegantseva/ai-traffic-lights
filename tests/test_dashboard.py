@@ -168,3 +168,10 @@ def test_dynamic_queue_chart_aggregates_seed_series():
 
     assert figure.layout.title.text == "Динамика очереди во времени"
     assert len(figure.data) == 1
+
+
+def test_research_graphs_are_not_a_navigation_control():
+    source = DASHBOARD_PATH.read_text(encoding="utf-8")
+
+    assert 'st.sidebar.button("Исследовательские графики")' not in source
+    assert "_research_charts()" in source
