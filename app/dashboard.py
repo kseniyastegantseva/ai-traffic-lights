@@ -21,6 +21,8 @@ LANE_LABELS = {
     "south": "Юг",
     "east": "Восток",
 }
+APP_TITLE = "Адаптивный светофор"
+APP_SUBTITLE = "Интеллектуальная система адаптивного управления транспортными потоками"
 
 VEHICLE_SPRITE_PATH = Path(__file__).parent / "assets" / "vehicle_sprites_transparent.png"
 SPRITE_X = (0, 33.333, 66.667, 100)
@@ -41,11 +43,16 @@ STRATEGY_DESCRIPTIONS = {
         "не учитывая текущие очереди. Это базовый вариант для сравнения."
     ),
     "ai": (
-        "AI-baseline: на каждом шаге сравнивает давление очередей на двух осях "
-        "и выбирает фазу с большей очередью."
+        "Адаптивный режим: на каждом шаге сравнивает очереди на двух осях "
+        "и выбирает направление с большей нагрузкой."
     ),
 }
 DISPLAYED_STRATEGIES = ("fixed", "ai")
+STRATEGY_LABELS = {
+    "fixed": "Стандартный",
+    "ai": "Адаптивный",
+}
+STRATEGY_COLORS = {"Стандартный": "#64748b", "Адаптивный": "#16a34a"}
 SIGNAL_COLORS = {
     "red": ("КРАСНЫЙ", "#ef2b2d"),
     "yellow": ("ЖЁЛТЫЙ", "#ffd21f"),
@@ -54,11 +61,15 @@ SIGNAL_COLORS = {
 
 
 def main() -> None:
-    st.set_page_config(page_title="Интеллектуальный светофор", layout="wide")
-    _apply_styles()
+    st.set_page_config(page_title=APP_TITLE, layout="wide")
+    _apply_styles(st.session_state.get("theme_preference", "Системная"))
+    _site_header()
 
-    st.title("Интеллектуальный светофор")
-    if st.session_state.get("dashboard_page", "upload") == "upload":
+    page = st.session_state.get("dashboard_page", "upload")
+    if page == "samples":
+        _test_photos_screen()
+        return
+    if page == "upload":
         _upload_screen()
         return
 
@@ -71,10 +82,18 @@ def main() -> None:
 
 
 def _upload_screen() -> None:
-    st.subheader("Загрузите фотографию перекрёстка")
-    st.caption("Система сама определит автомобили по четырём направлениям и запустит симуляцию.")
+    heading, action = st.columns([3, 1], vertical_alignment="center")
+    with heading:
+        st.subheader("Загрузите фотографию перекрёстка")
+        st.caption(
+            "Система сама определит автомобили по четырём направлениям и запустит симуляцию."
+        )
+    with action:
+        if st.button("Тестовые фотографии", width="stretch", type="secondary"):
+            st.session_state.dashboard_page = "samples"
+            st.rerun()
     uploaded = st.file_uploader(
-        "Фотография перекрёстка",
+        "Фотография перекрёстка для анализа",
         type=["jpg", "jpeg", "png", "webp"],
         label_visibility="collapsed",
     )
@@ -92,14 +111,17 @@ def _upload_screen() -> None:
     image_path = upload_dir / f"{upload_key}{Path(uploaded.name).suffix.lower()}"
     image_path.write_bytes(file_bytes)
 
-    with st.spinner("Анализируем изображение и определяем очереди..."):
-        try:
-            from traffic_light.vision_detector import analyze_image_json
+    processing = st.empty()
+    processing.markdown(_processing_indicator(), unsafe_allow_html=True)
+    try:
+        from traffic_light.vision_detector import analyze_image_json
 
-            queues = json.loads(analyze_image_json(image_path))
-        except Exception as error:  # noqa: BLE001 - показываем понятную ошибку пользователю
-            st.error(f"Не удалось обработать изображение: {error}")
-            return
+        queues = json.loads(analyze_image_json(image_path))
+    except Exception as error:  # noqa: BLE001 - показываем понятную ошибку пользователю
+        processing.empty()
+        st.error(f"Не удалось обработать изображение: {error}")
+        return
+    processing.empty()
 
     st.session_state.processed_upload_key = upload_key
     st.session_state.detected_queues = {
@@ -116,9 +138,44 @@ def _upload_screen() -> None:
     st.rerun()
 
 
+def _test_photos_screen() -> None:
+    if st.button("← К загрузке фотографии", type="secondary"):
+        st.session_state.dashboard_page = "upload"
+        st.rerun()
+    st.subheader("Тестовые фотографии")
+    st.write(
+        "Здесь собраны три фотографии одного типа перекрёстка с разной интенсивностью "
+        "движения. Они помогают проверить, как система распознаёт автомобили и подбирает "
+        "режим работы светофора при низкой, равномерной и высокой нагрузке."
+    )
+    samples = (
+        ("Низкая нагрузка.png", "low_load.png", "Низкая нагрузка.png"),
+        ("Равномерная нагрузка.png", "uniform_load.png", "Равномерная нагрузка.png"),
+        (
+            "Перегруженный перекрёсток.png",
+            "oversaturated.png",
+            "Перегруженный перекрёсток.png",
+        ),
+    )
+    columns = st.columns(3)
+    for column, (title, asset_name, download_name) in zip(columns, samples, strict=True):
+        image_path = Path(__file__).parent / "assets" / "test_images" / asset_name
+        with column:
+            st.markdown(f"#### {title}")
+            st.image(image_path, use_container_width=True)
+            st.download_button(
+                "Скачать фотографию",
+                data=image_path.read_bytes(),
+                file_name=download_name,
+                mime="image/png",
+                key=f"download-{asset_name}",
+                width="stretch",
+            )
+
+
 def _simulation_screen(result: InteractiveSimulationResult) -> None:
     st.caption("Количество автомобилей определено автоматически по загруженной фотографии.")
-    if st.button("Загрузить другую фотографию", type="secondary"):
+    if st.button("Выбрать другую фотографию", type="secondary"):
         st.session_state.dashboard_page = "upload"
         st.session_state.processed_upload_key = None
         st.session_state.interactive_result = None
@@ -135,7 +192,7 @@ def _simulation_screen(result: InteractiveSimulationResult) -> None:
     left, right = st.columns([1.55, 1], gap="large")
     with left:
         st.subheader("Работа перекрёстка")
-        st.iframe(_animation_html(result), height=690, width="stretch")
+        st.iframe(_animation_html(result, _default_simulation_speed(result.initial_queues)), height=690, width="stretch")
     with right:
         st.subheader("Как меняется очередь")
         st.plotly_chart(
@@ -156,13 +213,10 @@ def _research_charts(interactive_scenario_code: str) -> None:
     """Показывает результаты заранее проведённого исследовательского эксперимента."""
     st.divider()
     st.subheader("Исследовательские графики")
-    st.caption("Графики интерактивны: наведите курсор, чтобы увидеть точное значение.")
+    st.caption("Наведите курсор на график, чтобы увидеть точное значение.")
     payload = _load_research_payload(RESEARCH_RESULTS_PATH)
     if payload is None:
-        st.warning(
-            "Результаты эксперимента ещё не созданы. Запустите "
-            "`traffic-sim compare --config configs/experiment_suite.yaml`."
-        )
+        st.warning("Экспериментальные данные временно недоступны.")
         return
 
     summary = pd.DataFrame(payload.get("summary", []))
@@ -243,27 +297,12 @@ def _research_charts(interactive_scenario_code: str) -> None:
             theme="streamlit",
             config=chart_config,
         )
-    left, right = st.columns(2)
-    with left:
-        st.plotly_chart(
-            _research_queue_chart(selected_summary),
-            width="stretch",
-            theme="streamlit",
-            config=chart_config,
-        )
-    with right:
-        if not selected_runs.empty:
-            st.plotly_chart(
-                _research_distribution_chart(selected_runs),
-                width="stretch",
-                theme="streamlit",
-                config=chart_config,
-            )
-            st.caption(
-                "Этот график проверяет устойчивость результата: каждая точка — отдельный "
-                "запуск, линия внутри прямоугольника — медиана, сам прямоугольник — "
-                "средние 50% результатов."
-            )
+    st.plotly_chart(
+        _research_queue_chart(selected_summary),
+        width="stretch",
+        theme="streamlit",
+        config=chart_config,
+    )
     if not selected_runs.empty and "queue_series" in selected_runs:
         st.plotly_chart(
             _research_dynamic_queue_chart(selected_runs),
@@ -274,17 +313,15 @@ def _research_charts(interactive_scenario_code: str) -> None:
     st.info(
         "Все стратегии получают одинаковый поток и имеют одинаковую физическую скорость "
         "проезда. Поэтому число проехавших машин за фиксированные 15 минут может совпадать; "
-        "преимущество AI измеряется сокращением ожидания и очередей, а не искусственным "
+        "преимущество адаптивного алгоритма измеряется сокращением ожидания и очередей, а не искусственным "
         "увеличением ёмкости дороги."
     )
-    st.subheader("Сводные результаты")
-    st.dataframe(selected_summary, hide_index=True, width="stretch")
 
 
 def _strategy_explanation() -> None:
     columns = st.columns(2)
     for column, strategy in zip(columns, DISPLAYED_STRATEGIES, strict=True):
-        column.markdown(f"**{strategy}**")
+        column.markdown(f"**{STRATEGY_LABELS[strategy]} режим**")
         column.caption(STRATEGY_DESCRIPTIONS[strategy])
 
 
@@ -341,97 +378,76 @@ def _research_base_layout(figure, title: str):
 
 
 def _research_wait_chart(summary: pd.DataFrame):
+    summary = _with_strategy_labels(summary)
     figure = px.bar(
         summary,
         x="scenario_title",
         y="average_wait_seconds",
-        color="controller",
+        color="Стратегия",
         error_y="wait_95ci_half_width",
         barmode="group",
         labels={
             "scenario_title": "Сценарий",
             "average_wait_seconds": "Среднее ожидание, с",
-            "controller": "Стратегия",
+            "Стратегия": "Режим работы",
         },
-        color_discrete_map={"fixed": "#64748b", "actuated": "#f59e0b", "ai": "#16a34a"},
+        color_discrete_map=STRATEGY_COLORS,
     )
     return _research_base_layout(figure, "Среднее время ожидания автомобиля")
 
 
 def _research_peak_queue_chart(summary: pd.DataFrame):
+    summary = _with_strategy_labels(summary)
     figure = px.bar(
         summary,
         x="scenario_title",
         y="max_queue_length",
-        color="controller",
+        color="Стратегия",
         barmode="group",
         labels={
             "scenario_title": "Сценарий",
             "max_queue_length": "Автомобилей",
-            "controller": "Стратегия",
+            "Стратегия": "Режим работы",
         },
-        color_discrete_map={"fixed": "#64748b", "actuated": "#f59e0b", "ai": "#16a34a"},
+        color_discrete_map=STRATEGY_COLORS,
     )
     return _research_base_layout(figure, "Максимальная длина очереди")
 
 
 def _research_improvement_chart(summary: pd.DataFrame):
+    summary = _with_strategy_labels(summary)
     figure = px.bar(
         summary,
         x="scenario_title",
         y="wait_improvement_vs_fixed_pct",
-        color="controller",
+        color="Стратегия",
         barmode="group",
         labels={
             "scenario_title": "Сценарий",
-            "wait_improvement_vs_fixed_pct": "Улучшение к fixed, %",
-            "controller": "Стратегия",
+            "wait_improvement_vs_fixed_pct": "Улучшение к стандартному режиму, %",
+            "Стратегия": "Режим работы",
         },
-        color_discrete_map={"fixed": "#64748b", "actuated": "#f59e0b", "ai": "#16a34a"},
+        color_discrete_map=STRATEGY_COLORS,
     )
-    return _research_base_layout(figure, "Сокращение ожидания относительно fixed")
+    return _research_base_layout(figure, "Сокращение времени ожидания")
 
 
 def _research_queue_chart(summary: pd.DataFrame):
+    summary = _with_strategy_labels(summary)
     figure = px.bar(
         summary,
         x="scenario_title",
         y="average_queue_length",
-        color="controller",
+        color="Стратегия",
         barmode="group",
         labels={
             "scenario_title": "Сценарий",
             "average_queue_length": "Средняя длина очереди, авто",
-            "controller": "Стратегия",
+            "Стратегия": "Режим работы",
         },
-        color_discrete_map={"fixed": "#64748b", "actuated": "#f59e0b", "ai": "#16a34a"},
+        color_discrete_map=STRATEGY_COLORS,
     )
     return _research_base_layout(figure, "Средняя длина очереди")
-
-
-def _research_distribution_chart(runs: pd.DataFrame):
-    figure = px.box(
-        runs,
-        x="controller",
-        y="average_wait_seconds",
-        color="controller",
-        facet_col="scenario_title",
-        points="all",
-        labels={
-            "controller": "Стратегия",
-            "average_wait_seconds": "Среднее ожидание, с",
-            "scenario_title": "Сценарий",
-        },
-        color_discrete_map={"fixed": "#64748b", "actuated": "#f59e0b", "ai": "#16a34a"},
-    )
-    figure.update_layout(
-        height=520,
-        margin={"l": 10, "r": 10, "t": 55, "b": 10},
-        showlegend=False,
-        dragmode=False,
-    )
-    figure.update_yaxes(rangemode="tozero")
-    return figure
 
 
 def _research_dynamic_queue_chart(runs: pd.DataFrame):
@@ -443,7 +459,7 @@ def _research_dynamic_queue_chart(runs: pd.DataFrame):
                     "Время, с": second,
                     "Очередь, авто": queue,
                     "Сценарий": row["scenario_title"],
-                    "Стратегия": row["controller"],
+                    "Стратегия": STRATEGY_LABELS.get(row["controller"], row["controller"]),
                 }
             )
     frame = pd.DataFrame(rows)
@@ -458,7 +474,7 @@ def _research_dynamic_queue_chart(runs: pd.DataFrame):
         y="Очередь, авто",
         color="Стратегия",
         facet_col="Сценарий",
-        color_discrete_map={"fixed": "#64748b", "actuated": "#f59e0b", "ai": "#16a34a"},
+        color_discrete_map=STRATEGY_COLORS,
     )
     figure.update_layout(
         title="Динамика очереди во времени",
@@ -468,6 +484,14 @@ def _research_dynamic_queue_chart(runs: pd.DataFrame):
     )
     figure.update_yaxes(rangemode="tozero")
     return figure
+
+
+def _with_strategy_labels(frame: pd.DataFrame) -> pd.DataFrame:
+    display = frame.copy()
+    display["Стратегия"] = display["controller"].map(STRATEGY_LABELS).fillna(
+        display["controller"]
+    )
+    return display
 
 
 def _scenario_banner(result: InteractiveSimulationResult) -> None:
@@ -614,7 +638,48 @@ def _phase_rows(phases: list[object]) -> list[dict[str, str]]:
     return rows
 
 
-def _animation_html(result: InteractiveSimulationResult) -> str:
+def _site_header() -> None:
+    title, theme = st.columns([4, 1], vertical_alignment="center")
+    with title:
+        st.markdown(
+            f'<h1 class="app-title">{APP_TITLE}</h1>'
+            f'<p class="app-subtitle">{APP_SUBTITLE}</p>',
+            unsafe_allow_html=True,
+        )
+    with theme:
+        st.selectbox(
+            "Тема оформления",
+            ("Системная", "Светлая", "Тёмная"),
+            key="theme_preference",
+            help="Системная тема автоматически повторяет настройки устройства.",
+        )
+
+
+def _processing_indicator() -> str:
+    return """
+    <div class="processing-card" role="status" aria-live="polite">
+      <div class="processing-light" aria-hidden="true">
+        <span class="processing-bulb red"></span>
+        <span class="processing-bulb yellow"></span>
+        <span class="processing-bulb green"></span>
+      </div>
+      <div><strong>Анализируем фотографию</strong><br><span>Светофор обрабатывает потоки автомобилей</span></div>
+    </div>
+    """
+
+
+def _default_simulation_speed(queues: dict[LaneName, int]) -> float:
+    total = sum(queues.values())
+    if total <= 12:
+        return 0.5
+    if total <= 40:
+        return 1.0
+    if total <= 100:
+        return 2.0
+    return 4.0
+
+
+def _animation_html(result: InteractiveSimulationResult, default_speed: float = 0.5) -> str:
     initial = result.initial_queues
     frames: list[dict] = []
     previous_queues = initial.copy()
@@ -655,6 +720,10 @@ def _animation_html(result: InteractiveSimulationResult) -> str:
     }
     sprite_uri = _vehicle_sprite_uri()
     car_slot_size = _car_slot_size(max(initial.values(), default=0))
+    speed_options = "".join(
+        f'<option value="{speed:g}"{" selected" if speed == default_speed else ""}>{speed:g}x</option>'
+        for speed in (0.5, 1.0, 2.0, 4.0)
+    )
     return f"""
 <!doctype html>
 <html lang="ru">
@@ -721,7 +790,7 @@ button.primary {{ background:#166534; border-color:#166534; color:#fff; }}
 <body><div class="sim">
   <div class="toolbar">
     <button id="play" class="primary">Пауза</button><button id="reset">Сначала</button>
-    <select id="speed" aria-label="Скорость"><option value="0.5" selected>0.5x</option><option value="1">1x</option><option value="2">2x</option><option value="4">4x</option><option value="8">8x</option></select>
+    <select id="speed" aria-label="Скорость симуляции">{speed_options}</select>
     <div class="status"><strong id="clock">0 с / {result.total_time_seconds} с</strong><span id="remaining">Ожидает: {sum(initial.values())}</span></div>
   </div>
   <div class="progress"><div id="progress"></div></div>
@@ -948,12 +1017,27 @@ def _format_seconds(seconds: int) -> str:
     return f"{minutes} мин {remainder} с" if minutes else f"{remainder} с"
 
 
-def _apply_styles() -> None:
+def _apply_styles(theme_preference: str) -> None:
+    forced_theme = ""
+    if theme_preference == "Светлая":
+        forced_theme = """
+        :root { color-scheme: light; }
+        [data-testid="stAppViewContainer"], .stApp {background:#ffffff !important;color:#17211b;}
+        """
+    elif theme_preference == "Тёмная":
+        forced_theme = """
+        :root { color-scheme: dark; }
+        [data-testid="stAppViewContainer"], .stApp {background:#0e1117 !important;color:#f1f5f9;}
+        [data-testid="stHeader"] {background:#0e1117 !important;}
+        [data-testid="stFileUploaderDropzone"] {background:#1f2937 !important;border-color:#465569 !important;}
+        """
     st.markdown(
         """
         <style>
         .block-container {max-width:1280px;padding-top:2rem;padding-bottom:3rem;}
         h1,h2,h3 {letter-spacing:0 !important;}
+        .app-title {margin:0 !important;font-size:clamp(2rem,4vw,3.5rem) !important;line-height:1.08;}
+        .app-subtitle {margin:.35rem 0 1.6rem;color:var(--text-color);font-size:1rem;font-weight:500;opacity:.72;}
         .scenario-banner {display:flex;align-items:center;justify-content:space-between;gap:24px;
           margin:18px 0;padding:16px 18px;border-left:5px solid #166534;background:#f2f7f3;}
         .scenario-banner strong {display:block;font-size:19px;margin-top:3px;}
@@ -961,16 +1045,33 @@ def _apply_styles() -> None:
         .eyebrow {font-size:11px;font-weight:800;color:#166534;}
         div[data-testid="stMetric"] {border-top:2px solid #d7e2da;padding-top:12px;}
         div[data-testid="stForm"] {border-radius:8px;border-color:#d7e2da;}
+        [data-testid="stFileUploaderDropzoneInstructions"] > div {display:none;}
+        [data-testid="stFileUploaderDropzoneInstructions"]::after {content:"PNG, JPG или WEBP · не более 200 МБ";font-size:.9rem;opacity:.75;}
+        [data-testid="stFileUploader"] button {font-size:0 !important;}
+        [data-testid="stFileUploader"] button::after {content:"Выбрать файл";font-size:1rem;}
+        .processing-card {display:flex;justify-content:center;align-items:center;gap:16px;min-height:150px;
+          margin:14px 0;border:1px solid #d7e2da;border-radius:12px;background:#f2f7f3;color:#17211b;}
+        .processing-card strong {font-size:1.05rem;}.processing-card span {color:#55635b;font-size:.9rem;}
+        .processing-light {width:46px;padding:7px;display:flex;flex-direction:column;gap:5px;border-radius:10px;background:#17211b;box-shadow:0 4px 10px #0004;}
+        .processing-bulb {width:31px;height:31px;border-radius:50%;background:#3d4540;opacity:.38;}
+        .processing-bulb.red {animation:processing-red 2.4s infinite;}
+        .processing-bulb.yellow {animation:processing-yellow 2.4s infinite;}
+        .processing-bulb.green {animation:processing-green 2.4s infinite;}
+        @keyframes processing-red {0%,28%,100% {background:#ef2b2d;opacity:1;box-shadow:0 0 13px #ef2b2d} 34%,94% {background:#3d4540;opacity:.38;box-shadow:none}}
+        @keyframes processing-yellow {0%,30%,62%,100% {background:#3d4540;opacity:.38;box-shadow:none} 38%,54% {background:#ffd21f;opacity:1;box-shadow:0 0 13px #ffd21f}}
+        @keyframes processing-green {0%,59% {background:#3d4540;opacity:.38;box-shadow:none} 66%,94% {background:#20d866;opacity:1;box-shadow:0 0 13px #20d866} 100% {background:#3d4540;opacity:.38;box-shadow:none}}
         @media(prefers-color-scheme:dark) {
           .scenario-banner {background:#17251d;border-left-color:#4ade80;}
           .scenario-banner p {color:#c7d5cb;}
           .eyebrow {color:#6ee7a0;}
           div[data-testid="stMetric"] {border-top-color:#3e5145;}
           div[data-testid="stForm"] {border-color:#3e5145;}
+          .processing-card {background:#17251d;border-color:#3e5145;color:#f1f5f9;}
+          .processing-card span {color:#c7d5cb;}
         }
         @media(max-width:700px) {.scenario-banner {display:block}.scenario-banner p {margin-top:8px}}
         </style>
-        """,
+        """ + forced_theme,
         unsafe_allow_html=True,
     )
 

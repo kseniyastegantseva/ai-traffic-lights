@@ -6,3 +6,7 @@ gatherUsageStats = false
 
 [server]
 headless = true
+
+[client]
+# Hides the Community Cloud developer controls (Fork and repository buttons).
+toolbarMode = "minimal"

@@ -34,7 +34,8 @@ def test_animation_embeds_vehicle_sprite_and_two_dynamic_traffic_lights():
     assert 'id="status-north_south"' in html
     assert 'id="status-east_west"' in html
     assert "КРАСНЫЙ" in html and "ЖЁЛТЫЙ" in html and "ЗЕЛЁНЫЙ" in html
-    assert '<option value="0.5">0.5x</option>' in html
+    assert '<option value="0.5" selected>0.5x</option>' in html
+    assert '<option value="8">8x</option>' not in html
     assert html.count('class="bulb green active"') == 1
     assert html.count('class="bulb red active"') == 1
     assert "background-color:#20d866" in html
@@ -158,7 +159,7 @@ def test_research_charts_use_expected_metrics():
 
     assert DASHBOARD._research_wait_chart(summary).layout.title.text == "Среднее время ожидания автомобиля"
     assert DASHBOARD._research_peak_queue_chart(summary).layout.title.text == "Максимальная длина очереди"
-    assert DASHBOARD._research_improvement_chart(summary).layout.title.text == "Сокращение ожидания относительно fixed"
+    assert DASHBOARD._research_improvement_chart(summary).layout.title.text == "Сокращение времени ожидания"
     assert DASHBOARD._research_queue_chart(summary).layout.title.text == "Средняя длина очереди"
 
 
@@ -176,6 +177,34 @@ def test_dynamic_queue_chart_aggregates_seed_series():
 
     assert figure.layout.title.text == "Динамика очереди во времени"
     assert len(figure.data) == 1
+
+
+def test_default_speed_increases_with_detected_traffic():
+    assert DASHBOARD._default_simulation_speed(
+        {"north": 2, "west": 3, "south": 1, "east": 2}
+    ) == 0.5
+    assert DASHBOARD._default_simulation_speed(
+        {"north": 8, "west": 9, "south": 8, "east": 8}
+    ) == 1.0
+    assert DASHBOARD._default_simulation_speed(
+        {"north": 25, "west": 25, "south": 20, "east": 20}
+    ) == 2.0
+
+
+def test_processing_indicator_uses_traffic_light_animation():
+    markup = DASHBOARD._processing_indicator()
+
+    assert "processing-light" in markup
+    assert "processing-bulb red" in markup
+    assert "Анализируем фотографию" in markup
+
+
+def test_test_photo_assets_are_available():
+    assets = DASHBOARD_PATH.parent / "assets" / "test_images"
+
+    assert (assets / "low_load.png").is_file()
+    assert (assets / "uniform_load.png").is_file()
+    assert (assets / "oversaturated.png").is_file()
 
 
 def test_research_graphs_are_not_a_navigation_control():
@@ -207,3 +236,5 @@ def test_research_graphs_compare_only_standard_and_ai():
     source = DASHBOARD_PATH.read_text(encoding="utf-8")
     assert '"scrollZoom": False' in source
     assert '"displayModeBar": False' in source
+    assert "_research_distribution_chart" not in source
+    assert 'st.dataframe(selected_summary' not in source

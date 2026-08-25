@@ -37,8 +37,8 @@ scenarios:
       yellow_seconds: 3
 
   - name: morning_peak_ns
-    title: Утренний пик north/south
-    description: Основная нагрузка идёт по направлению north/south, поперечный поток ниже.
+    title: Утренний пик Север–Юг
+    description: Основная нагрузка идёт по направлению Север–Юг, поперечный поток ниже.
     intersection:
       lanes:
         north: {arrival_rate_per_minute: 10}
@@ -49,8 +49,8 @@ scenarios:
       yellow_seconds: 3
 
   - name: evening_peak_ew
-    title: Вечерний пик east/west
-    description: Основная нагрузка идёт по направлению east/west, поток north/south ниже.
+    title: Вечерний пик Восток–Запад
+    description: Основная нагрузка идёт по направлению Восток–Запад, поток Север–Юг ниже.
     intersection:
       lanes:
         north: {arrival_rate_per_minute: 4}
