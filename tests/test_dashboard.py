@@ -238,3 +238,14 @@ def test_research_graphs_compare_only_standard_and_ai():
     assert '"displayModeBar": False' in source
     assert "_research_distribution_chart" not in source
     assert 'st.dataframe(selected_summary' not in source
+
+
+def test_mobile_metric_groups_use_two_column_layout_rules():
+    source = DASHBOARD_PATH.read_text(encoding="utf-8")
+
+    assert 'st.container(key="detected-queues")' in source
+    assert 'st.container(key="simulation-metrics")' in source
+    assert ".st-key-detected-queues" in source
+    assert ".st-key-simulation-metrics" in source
+    assert "flex-direction:row !important" in source
+    assert "flex-wrap:wrap !important" in source

@@ -182,9 +182,10 @@ def _simulation_screen(result: InteractiveSimulationResult) -> None:
         st.rerun()
 
     detected = result.initial_queues
-    columns = st.columns(4)
-    for column, lane in zip(columns, LANE_LABELS, strict=True):
-        column.metric(f"{LANE_LABELS[lane]}", detected[lane])
+    with st.container(key="detected-queues"):
+        columns = st.columns(4)
+        for column, lane in zip(columns, LANE_LABELS, strict=True):
+            column.metric(f"{LANE_LABELS[lane]}", detected[lane])
 
     _scenario_banner(result)
     _metrics(result)
@@ -509,11 +510,12 @@ def _scenario_banner(result: InteractiveSimulationResult) -> None:
 
 def _metrics(result: InteractiveSimulationResult) -> None:
     total = sum(result.initial_queues.values())
-    columns = st.columns(4)
-    columns[0].metric("Автомобилей", total)
-    columns[1].metric("Время работы", _format_seconds(result.total_time_seconds))
-    columns[2].metric("Переключений фаз", result.switches)
-    columns[3].metric("Проехало", result.departed)
+    with st.container(key="simulation-metrics"):
+        columns = st.columns(4)
+        columns[0].metric("Автомобилей", total)
+        columns[1].metric("Время работы", _format_seconds(result.total_time_seconds))
+        columns[2].metric("Переключений фаз", result.switches)
+        columns[3].metric("Проехало", result.departed)
 
 
 def _queue_chart(result: InteractiveSimulationResult):
@@ -1049,6 +1051,26 @@ def _apply_styles() -> None:
           div[data-testid="stForm"] {border-color:#3e5145;}
           .processing-card {background:#17251d;border-color:#3e5145;color:#f1f5f9;}
           .processing-card span {color:#c7d5cb;}
+        }
+        @media(max-width:700px) {
+          .st-key-detected-queues [data-testid="stHorizontalBlock"],
+          .st-key-simulation-metrics [data-testid="stHorizontalBlock"] {
+            flex-direction:row !important;
+            flex-wrap:wrap !important;
+            gap:1rem .75rem !important;
+          }
+          .st-key-detected-queues [data-testid="stColumn"],
+          .st-key-simulation-metrics [data-testid="stColumn"] {
+            flex:0 0 calc(50% - .4rem) !important;
+            width:calc(50% - .4rem) !important;
+            min-width:0 !important;
+          }
+          .st-key-detected-queues [data-testid="stMetric"],
+          .st-key-simulation-metrics [data-testid="stMetric"] {padding-top:8px;}
+          .st-key-detected-queues [data-testid="stMetricLabel"],
+          .st-key-simulation-metrics [data-testid="stMetricLabel"] {font-size:.95rem;}
+          .st-key-detected-queues [data-testid="stMetricValue"],
+          .st-key-simulation-metrics [data-testid="stMetricValue"] {font-size:2.1rem;}
         }
         @media(max-width:700px) {.scenario-banner {display:block}.scenario-banner p {margin-top:8px}}
         </style>
