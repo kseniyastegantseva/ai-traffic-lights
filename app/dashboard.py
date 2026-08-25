@@ -11,7 +11,8 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from traffic_light.config import LaneName
+from traffic_light.config import LaneName, load_experiment_config
+from traffic_light.experiments import run_experiment, save_results
 from traffic_light.interactive import InteractiveSimulationResult, simulate_interactive_traffic
 
 LANE_LABELS = {
@@ -165,11 +166,35 @@ def _research_charts() -> None:
 
 
 def _load_research_payload(path: Path) -> dict | None:
-    if not path.exists():
-        return None
+    payload = None
+    if path.exists():
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            payload = None
+
+    runs = payload.get("runs", []) if isinstance(payload, dict) else []
+    if payload and payload.get("summary") and runs and "queue_series" in runs[0]:
+        return payload
+
+    config_path = Path("configs/experiment_suite.yaml")
     try:
+        with st.spinner("Проводим исследовательский эксперимент и строим результаты..."):
+            config = load_experiment_config(config_path)
+            results, summary = run_experiment(config)
+            save_results(
+                results,
+                summary,
+                path=str(path),
+                csv_path=config.output.get("summary_csv", "outputs/experiment_suite_summary.csv"),
+                report_path=config.output.get(
+                    "report_markdown", "outputs/experiment_suite_report.md"
+                ),
+                config=config,
+            )
         return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    except Exception as error:  # noqa: BLE001 - dashboard показывает понятную причину
+        st.error(f"Не удалось автоматически провести эксперимент: {error}")
         return None
 
 
