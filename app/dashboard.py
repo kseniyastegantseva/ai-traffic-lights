@@ -40,15 +40,12 @@ STRATEGY_DESCRIPTIONS = {
         "Фиксированный светофор: переключает фазы через одинаковые интервалы, "
         "не учитывая текущие очереди. Это базовый вариант для сравнения."
     ),
-    "actuated": (
-        "Адаптивный светофор: после минимальной зелёной фазы переключается, "
-        "если очередь на другой оси заметно больше."
-    ),
     "ai": (
         "AI-baseline: на каждом шаге сравнивает давление очередей на двух осях "
         "и выбирает фазу с большей очередью."
     ),
 }
+DISPLAYED_STRATEGIES = ("fixed", "ai")
 SIGNAL_COLORS = {
     "red": ("КРАСНЫЙ", "#ef2b2d"),
     "yellow": ("ЖЁЛТЫЙ", "#ffd21f"),
@@ -191,13 +188,27 @@ def _research_charts(interactive_scenario_code: str) -> None:
             st.session_state.research_scenario = scenario["scenario"]
             st.rerun()
 
-    selected_summary = summary[summary["scenario"] == selected].copy()
-    selected_runs = runs[runs["scenario"] == selected].copy() if not runs.empty else runs
+    selected_summary = summary[
+        (summary["scenario"] == selected) & summary["controller"].isin(DISPLAYED_STRATEGIES)
+    ].copy()
+    selected_runs = (
+        runs[
+            (runs["scenario"] == selected)
+            & runs["controller"].isin(DISPLAYED_STRATEGIES)
+        ].copy()
+        if not runs.empty
+        else runs
+    )
     scenario_title = selected_summary.iloc[0]["scenario_title"]
     st.markdown(f"### Сценарий: {scenario_title}")
     _strategy_explanation()
 
-    chart_config = {"displayModeBar": True, "scrollZoom": True, "responsive": True}
+    chart_config = {
+        "displayModeBar": False,
+        "scrollZoom": False,
+        "doubleClick": False,
+        "responsive": True,
+    }
     st.plotly_chart(_research_wait_chart(selected_summary), width="stretch", config=chart_config)
     left, right = st.columns(2)
     with left:
@@ -217,8 +228,8 @@ def _research_charts(interactive_scenario_code: str) -> None:
 
 
 def _strategy_explanation() -> None:
-    columns = st.columns(3)
-    for column, strategy in zip(columns, ("fixed", "actuated", "ai"), strict=True):
+    columns = st.columns(2)
+    for column, strategy in zip(columns, DISPLAYED_STRATEGIES, strict=True):
         column.markdown(f"**{strategy}**")
         column.caption(STRATEGY_DESCRIPTIONS[strategy])
 
@@ -264,6 +275,7 @@ def _research_base_layout(figure, title: str):
         paper_bgcolor="#ffffff",
         plot_bgcolor="#ffffff",
         legend_title_text="Стратегия",
+        dragmode=False,
     )
     figure.update_yaxes(gridcolor="#e5e7eb", rangemode="tozero")
     figure.update_xaxes(gridcolor="#f3f4f6")
@@ -354,7 +366,12 @@ def _research_distribution_chart(runs: pd.DataFrame):
         },
         color_discrete_map={"fixed": "#64748b", "actuated": "#f59e0b", "ai": "#16a34a"},
     )
-    figure.update_layout(height=520, margin={"l": 10, "r": 10, "t": 55, "b": 10}, showlegend=False)
+    figure.update_layout(
+        height=520,
+        margin={"l": 10, "r": 10, "t": 55, "b": 10},
+        showlegend=False,
+        dragmode=False,
+    )
     figure.update_yaxes(gridcolor="#e5e7eb", rangemode="tozero")
     return figure
 
@@ -389,6 +406,7 @@ def _research_dynamic_queue_chart(runs: pd.DataFrame):
         title="Динамика очереди во времени",
         height=560,
         margin={"l": 10, "r": 10, "t": 75, "b": 10},
+        dragmode=False,
     )
     figure.update_yaxes(gridcolor="#e5e7eb", rangemode="tozero")
     return figure

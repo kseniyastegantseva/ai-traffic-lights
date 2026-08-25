@@ -196,3 +196,11 @@ def test_research_scenario_mapping_follows_detected_load():
             }]
         )
     ).layout.height == 560
+
+
+def test_research_graphs_compare_only_standard_and_ai():
+    assert DASHBOARD.DISPLAYED_STRATEGIES == ("fixed", "ai")
+    assert "actuated" not in DASHBOARD.STRATEGY_DESCRIPTIONS
+    source = DASHBOARD_PATH.read_text(encoding="utf-8")
+    assert '"scrollZoom": False' in source
+    assert '"displayModeBar": False' in source
