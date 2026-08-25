@@ -62,7 +62,7 @@ SIGNAL_COLORS = {
 
 def main() -> None:
     st.set_page_config(page_title=APP_TITLE, layout="wide")
-    _apply_styles(st.session_state.get("theme_preference", "Системная"))
+    _apply_styles()
     _site_header()
 
     page = st.session_state.get("dashboard_page", "upload")
@@ -639,20 +639,11 @@ def _phase_rows(phases: list[object]) -> list[dict[str, str]]:
 
 
 def _site_header() -> None:
-    title, theme = st.columns([4, 1], vertical_alignment="center")
-    with title:
-        st.markdown(
-            f'<h1 class="app-title">{APP_TITLE}</h1>'
-            f'<p class="app-subtitle">{APP_SUBTITLE}</p>',
-            unsafe_allow_html=True,
-        )
-    with theme:
-        st.selectbox(
-            "Тема оформления",
-            ("Системная", "Светлая", "Тёмная"),
-            key="theme_preference",
-            help="Системная тема автоматически повторяет настройки устройства.",
-        )
+    st.markdown(
+        f'<h1 class="app-title">{APP_TITLE}</h1>'
+        f'<p class="app-subtitle">{APP_SUBTITLE}</p>',
+        unsafe_allow_html=True,
+    )
 
 
 def _processing_indicator() -> str:
@@ -1017,20 +1008,7 @@ def _format_seconds(seconds: int) -> str:
     return f"{minutes} мин {remainder} с" if minutes else f"{remainder} с"
 
 
-def _apply_styles(theme_preference: str) -> None:
-    forced_theme = ""
-    if theme_preference == "Светлая":
-        forced_theme = """
-        :root { color-scheme: light; }
-        [data-testid="stAppViewContainer"], .stApp {background:#ffffff !important;color:#17211b;}
-        """
-    elif theme_preference == "Тёмная":
-        forced_theme = """
-        :root { color-scheme: dark; }
-        [data-testid="stAppViewContainer"], .stApp {background:#0e1117 !important;color:#f1f5f9;}
-        [data-testid="stHeader"] {background:#0e1117 !important;}
-        [data-testid="stFileUploaderDropzone"] {background:#1f2937 !important;border-color:#465569 !important;}
-        """
+def _apply_styles() -> None:
     st.markdown(
         """
         <style>
@@ -1047,8 +1025,11 @@ def _apply_styles(theme_preference: str) -> None:
         div[data-testid="stForm"] {border-radius:8px;border-color:#d7e2da;}
         [data-testid="stFileUploaderDropzoneInstructions"] > div {display:none;}
         [data-testid="stFileUploaderDropzoneInstructions"]::after {content:"PNG, JPG или WEBP · не более 200 МБ";font-size:.9rem;opacity:.75;}
-        [data-testid="stFileUploader"] button {font-size:0 !important;}
-        [data-testid="stFileUploader"] button::after {content:"Выбрать файл";font-size:1rem;}
+        [data-testid="stFileUploaderDropzone"] button > * {display:none !important;}
+        [data-testid="stFileUploaderDropzone"] button {font-size:0 !important;}
+        [data-testid="stFileUploaderDropzone"] button::after {content:"Выбрать файл";font-size:1rem;}
+        [data-testid="stFileUploader"]:has([data-testid="stFileUploaderFile"])
+          [data-testid="stFileUploaderDropzone"] > button {display:none !important;}
         .processing-card {display:flex;justify-content:center;align-items:center;gap:16px;min-height:150px;
           margin:14px 0;border:1px solid #d7e2da;border-radius:12px;background:#f2f7f3;color:#17211b;}
         .processing-card strong {font-size:1.05rem;}.processing-card span {color:#55635b;font-size:.9rem;}
@@ -1070,7 +1051,6 @@ def _apply_styles(theme_preference: str) -> None:
           .processing-card span {color:#c7d5cb;}
         }
         @media(max-width:700px) {.scenario-banner {display:block}.scenario-banner p {margin-top:8px}}
-        """ + forced_theme + """
         </style>
         """,
         unsafe_allow_html=True,
