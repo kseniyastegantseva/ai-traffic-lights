@@ -1070,8 +1070,9 @@ def _apply_styles(theme_preference: str) -> None:
           .processing-card span {color:#c7d5cb;}
         }
         @media(max-width:700px) {.scenario-banner {display:block}.scenario-banner p {margin-top:8px}}
+        """ + forced_theme + """
         </style>
-        """ + forced_theme,
+        """,
         unsafe_allow_html=True,
     )
 
