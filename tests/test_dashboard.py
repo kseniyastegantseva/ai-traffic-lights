@@ -45,6 +45,7 @@ def test_animation_embeds_vehicle_sprite_and_two_dynamic_traffic_lights():
     assert "waitingIndex=Math.max(0,i-completed)" in html
     assert "clearVehicleAfterExit(lane,i,car)" in html
     assert "event.propertyName!=='transform'" in html
+    assert "window.setTimeout(()=>finish({propertyName:'transform'})" in html
     assert "movingNorth+progress*(112-movingNorth)" in html
     assert "movingEast-progress*(movingEast+12)" in html
     assert "left:50%; top:8px; transform:translateX(-50%)" in html

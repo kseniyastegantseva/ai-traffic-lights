@@ -706,8 +706,13 @@ function clearVehicleAfterExit(lane,vehicleIndex,car){{
   if(vehicleIndex!==clearedByLane[lane] || car.dataset.clearScheduled==='true') return;
   car.dataset.clearScheduled='true';
   const version=queueRenderVersion;
+  const duration=Math.max(120,Math.round(parseFloat(getComputedStyle(car).getPropertyValue('--move-duration'))*1000));
+  let settled=false,timeoutId;
   const finish=event=>{{
     if(event.propertyName!=='transform') return;
+    if(settled) return;
+    settled=true;
+    window.clearTimeout(timeoutId);
     car.removeEventListener('transitionend',finish);
     if(version!==queueRenderVersion || vehicleIndex!==clearedByLane[lane]) return;
     clearedByLane[lane]++;
@@ -715,6 +720,7 @@ function clearVehicleAfterExit(lane,vehicleIndex,car){{
     paint();
   }};
   car.addEventListener('transitionend',finish);
+  timeoutId=window.setTimeout(()=>finish({{propertyName:'transform'}}),duration+60);
 }}
 function resetQueue(){{
   queueRenderVersion++;
