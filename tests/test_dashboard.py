@@ -170,6 +170,14 @@ def test_research_charts_use_expected_metrics():
     assert DASHBOARD._research_peak_queue_chart(summary).layout.title.text == "Максимальная длина очереди"
     assert DASHBOARD._research_improvement_chart(summary).layout.title.text == "Сокращение времени ожидания"
     assert DASHBOARD._research_queue_chart(summary).layout.title.text == "Средняя длина очереди"
+    assert DASHBOARD._research_wait_chart(summary).layout.font.family == "Times New Roman, Times, serif"
+
+
+def test_site_uses_times_new_roman_for_interface_and_simulation():
+    source = DASHBOARD_PATH.read_text(encoding="utf-8")
+
+    assert 'font-family:"Times New Roman",Times,serif' in source
+    assert 'font={"family": "Times New Roman, Times, serif"}' in source
 
 
 def test_dynamic_queue_chart_aggregates_seed_series():
