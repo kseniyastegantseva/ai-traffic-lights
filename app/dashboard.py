@@ -372,7 +372,6 @@ def _research_base_layout(figure, title: str):
         height=560,
         margin={"l": 10, "r": 10, "t": 55, "b": 10},
         legend_title_text="Стратегия",
-        font={"family": "Times New Roman, Times, serif"},
         dragmode=False,
     )
     figure.update_yaxes(rangemode="tozero")
@@ -482,7 +481,6 @@ def _research_dynamic_queue_chart(runs: pd.DataFrame):
         title="Динамика очереди во времени",
         height=560,
         margin={"l": 10, "r": 10, "t": 75, "b": 10},
-        font={"family": "Times New Roman, Times, serif"},
         dragmode=False,
     )
     figure.update_yaxes(rangemode="tozero")
@@ -539,7 +537,6 @@ def _queue_chart(result: InteractiveSimulationResult):
     figure.update_layout(
         height=320,
         margin={"l": 10, "r": 10, "t": 16, "b": 10},
-        font={"family": "Times New Roman, Times, serif"},
         hovermode="x unified",
     )
     figure.update_yaxes(rangemode="tozero")
@@ -725,7 +722,7 @@ def _animation_html(result: InteractiveSimulationResult, default_speed: float = 
 <html lang="ru">
 <head><meta charset="utf-8"><style>
 * {{ box-sizing: border-box; }}
-body {{ margin:0; font-family:"Times New Roman",Times,serif; color:#17211b; background:#fff; }}
+body {{ margin:0; font-family:Inter,Arial,sans-serif; color:#17211b; background:#fff; }}
 .sim {{ border:1px solid #d9e1dc; border-radius:8px; overflow:hidden; background:#f5f7f5; }}
 .toolbar {{ height:58px; display:flex; align-items:center; gap:10px; padding:10px 14px; background:#fff; border-bottom:1px solid #d9e1dc; }}
 button,select {{ height:36px; border:1px solid #c9d3cc; background:#fff; border-radius:6px; padding:0 12px; font-weight:650; color:#17211b; cursor:pointer; }}
@@ -1024,9 +1021,6 @@ def _apply_styles() -> None:
     st.markdown(
         """
         <style>
-        [data-testid="stAppViewContainer"] *:not(.material-symbols-rounded):not(.material-icons) {
-          font-family:"Times New Roman",Times,serif !important;
-        }
         .block-container {max-width:1280px;padding-top:2rem;padding-bottom:3rem;}
         h1,h2,h3 {letter-spacing:0 !important;}
         .app-title {margin:0 !important;font-size:clamp(2rem,4vw,3.5rem) !important;line-height:1.08;}
