@@ -3,7 +3,8 @@
 
 Модуль реализует полный цикл анализа транспортной обстановки:
 1. автоматически формирует зоны подходов NORTH, SOUTH, WEST и EAST;
-2. выполняет детекцию транспортных средств на полном изображении с помощью YOLO11m;
+2. выполняет детекцию транспортных средств на полном изображении с помощью
+   дообученной на VisDrone YOLO11s;
 3. выполняет многомасштабную детекцию отдельных зон;
 4. применяет геометрическое восстановление части ошибочно классифицированных объектов;
 5. удаляет повторные детекции с использованием коэффициента IoU;
@@ -32,12 +33,12 @@ import cv2
 import json
 
 
-# Путь к предобученной модели детекции объектов.
-MODEL_PATH = Path(__file__).resolve().parents[2] / "models" / "yolo11m.pt"
+# Путь к дообученной на VisDrone четырёхклассовой модели из computer-vision.
+MODEL_PATH = Path(__file__).resolve().parents[2] / "models" / "visdrone_vehicles.pt"
 
-# Идентификаторы транспортных классов COCO:
-# 2 — car, 3 — motorcycle, 5 — bus, 7 — truck.
-VEHICLE_CLASSES = {2, 3, 5, 7}
+# Идентификаторы классов дообученной модели VisDrone:
+# 0 — car, 1 — motorcycle, 2 — bus, 3 — truck.
+VEHICLE_CLASSES = (0, 1, 2, 3)
 
 # Класс cell phone используется в механизме geometry recovery,
 # поскольку на некоторых аэроснимках YOLO ошибочно относит
@@ -318,8 +319,8 @@ def detect_full_image(image, zones, detections):
     """
     Выполняет первичную детекцию объектов на полном изображении.
 
-    Предобученная модель YOLO11m анализирует весь кадр. В итоговый
-    список включаются классы car, motorcycle, bus и truck.
+    Дообученная на VisDrone YOLO11s анализирует весь кадр. В итоговый
+    список включаются только классы car, motorcycle, bus и truck.
 
     Дополнительно применяется geometry recovery для объектов класса
     cell phone, если их геометрия соответствует транспортному средству.
@@ -338,10 +339,9 @@ def detect_full_image(image, zones, detections):
         None:
             Результаты добавляются непосредственно в detections.
     """
-    # Здесь специально не ограничиваем classes,
-    # поскольку необходим fallback для класса cell phone.
     result = _get_model()(
         image,
+        classes=VEHICLE_CLASSES,
         conf=FULL_CONF,
         imgsz=1280,
         verbose=False

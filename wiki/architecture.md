@@ -7,7 +7,8 @@
 - Dashboard: `app/dashboard.py`
 - API: `app/api.py`
 - Детектор изображения: `src/traffic_light/vision_detector.py`
-- Веса YOLO: `models/yolo11m.pt`
+- Веса YOLO: `models/visdrone_vehicles.pt`
+- Исходный клон CV-модуля: `computer-vision/`
 - Конфиги: YAML-файлы в `configs/`
 
 ## Интеграция фотографии и симуляции
@@ -17,6 +18,12 @@ Dashboard работает в два экрана. На первом польз�
 `north`, `south`, `west`, `east`, `total` в памяти. Эти четыре значения передаются в
 `simulate_interactive_traffic()`, после чего dashboard переключается на экран симуляции.
 Диагностические изображения и JSON не отображаются пользователю.
+
+Для распознавания используется модель `computer-vision/models/visdrone_vehicles.pt`,
+дообученная на VisDrone и содержащая классы `car`, `motorcycle`, `bus`, `truck` с
+идентификаторами `0..3`. В проект она скопирована в `models/visdrone_vehicles.pt`,
+а `vision_detector.py` сохраняет многошаговый алгоритм исходного репозитория:
+автоматические зоны, детекцию полного кадра, масштабы x2/x3 и IoU-фильтрацию дублей.
 
 Ручной ввод количества автомобилей удалён. Чтобы начать новый сценарий, пользователь
 нажимает «Загрузить другую фотографию».
