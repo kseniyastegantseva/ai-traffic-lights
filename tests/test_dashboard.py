@@ -167,9 +167,24 @@ def test_research_charts_use_expected_metrics():
     )
 
     assert DASHBOARD._research_wait_chart(summary).layout.title.text == "Среднее время ожидания автомобиля"
-    assert DASHBOARD._research_peak_queue_chart(summary).layout.title.text == "Максимальная длина очереди"
-    assert DASHBOARD._research_improvement_chart(summary).layout.title.text == "Сокращение времени ожидания"
     assert DASHBOARD._research_queue_chart(summary).layout.title.text == "Средняя длина очереди"
+
+
+def test_wait_improvement_is_presented_as_a_text_summary():
+    import pandas as pd
+
+    summary = pd.DataFrame(
+        [
+            {"controller": "fixed", "average_wait_seconds": 16.4},
+            {"controller": "ai", "average_wait_seconds": 9.5},
+        ]
+    )
+
+    message = DASHBOARD._wait_improvement_summary(summary)
+
+    assert "с 16.4 с до 9.5 с" in message
+    assert "на 6.9 с" in message
+    assert "42.1%" in message
 
 
 def test_dynamic_queue_chart_aggregates_seed_series():
@@ -254,6 +269,8 @@ def test_research_graphs_compare_only_standard_and_ai():
     assert '"scrollZoom": False' in source
     assert '"displayModeBar": False' in source
     assert "_research_distribution_chart" not in source
+    assert "_research_peak_queue_chart" not in source
+    assert "_research_improvement_chart" not in source
     assert 'st.dataframe(selected_summary' not in source
 
 

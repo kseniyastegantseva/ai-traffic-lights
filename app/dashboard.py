@@ -280,25 +280,8 @@ def _research_charts(interactive_scenario_code: str) -> None:
         "Основной критерий эффективности: чем ниже среднее время ожидания, тем быстрее "
         "автомобили проходят перекрёсток. Усы показывают 95%-й доверительный интервал."
     )
-    left, right = st.columns(2)
-    with left:
-        st.plotly_chart(
-            _research_peak_queue_chart(selected_summary),
-            width="stretch",
-            theme="streamlit",
-            config=chart_config,
-        )
-        st.caption(
-            "Пик очереди — наибольшее число машин, одновременно ожидавших проезда. "
-            "Меньшее значение означает меньший риск затора."
-        )
-    with right:
-        st.plotly_chart(
-            _research_improvement_chart(selected_summary),
-            width="stretch",
-            theme="streamlit",
-            config=chart_config,
-        )
+    st.subheader("Результат адаптивного режима")
+    st.success(_wait_improvement_summary(selected_summary))
     st.plotly_chart(
         _research_queue_chart(selected_summary),
         width="stretch",
@@ -398,40 +381,21 @@ def _research_wait_chart(summary: pd.DataFrame):
     return _research_base_layout(figure, "Среднее время ожидания автомобиля")
 
 
-def _research_peak_queue_chart(summary: pd.DataFrame):
-    summary = _with_strategy_labels(summary)
-    figure = px.bar(
-        summary,
-        x="scenario_title",
-        y="max_queue_length",
-        color="Стратегия",
-        barmode="group",
-        labels={
-            "scenario_title": "Сценарий",
-            "max_queue_length": "Автомобилей",
-            "Стратегия": "Режим работы",
-        },
-        color_discrete_map=STRATEGY_COLORS,
-    )
-    return _research_base_layout(figure, "Максимальная длина очереди")
+def _wait_improvement_summary(summary: pd.DataFrame) -> str:
+    fixed = summary.loc[summary["controller"] == "fixed", "average_wait_seconds"]
+    adaptive = summary.loc[summary["controller"] == "ai", "average_wait_seconds"]
+    if fixed.empty or adaptive.empty:
+        return "Для сравнения времени ожидания пока недостаточно данных."
 
-
-def _research_improvement_chart(summary: pd.DataFrame):
-    summary = _with_strategy_labels(summary)
-    figure = px.bar(
-        summary,
-        x="scenario_title",
-        y="wait_improvement_vs_fixed_pct",
-        color="Стратегия",
-        barmode="group",
-        labels={
-            "scenario_title": "Сценарий",
-            "wait_improvement_vs_fixed_pct": "Улучшение к стандартному режиму, %",
-            "Стратегия": "Режим работы",
-        },
-        color_discrete_map=STRATEGY_COLORS,
+    fixed_wait = float(fixed.iloc[0])
+    adaptive_wait = float(adaptive.iloc[0])
+    saved_seconds = fixed_wait - adaptive_wait
+    improvement = saved_seconds / fixed_wait * 100 if fixed_wait else 0.0
+    return (
+        f"Адаптивный режим сокращает среднее ожидание с {fixed_wait:.1f} с "
+        f"до {adaptive_wait:.1f} с. Это на {saved_seconds:.1f} с, "
+        f"или на {improvement:.1f}%, быстрее для каждого автомобиля."
     )
-    return _research_base_layout(figure, "Сокращение времени ожидания")
 
 
 def _research_queue_chart(summary: pd.DataFrame):
