@@ -216,6 +216,14 @@ def test_test_photo_assets_are_available():
     assert (assets / "oversaturated.png").is_file()
 
 
+def test_test_photo_titles_reserve_equal_space_above_images():
+    source = DASHBOARD_PATH.read_text(encoding="utf-8")
+
+    assert 'st.container(key="test-photo-grid")' in source
+    assert ".st-key-test-photo-grid" in source
+    assert "height:4.3rem" in source
+
+
 def test_research_graphs_are_not_a_navigation_control():
     source = DASHBOARD_PATH.read_text(encoding="utf-8")
 

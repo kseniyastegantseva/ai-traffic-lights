@@ -157,20 +157,21 @@ def _test_photos_screen() -> None:
             "Перегруженный перекрёсток.png",
         ),
     )
-    columns = st.columns(3)
-    for column, (title, asset_name, download_name) in zip(columns, samples, strict=True):
-        image_path = Path(__file__).parent / "assets" / "test_images" / asset_name
-        with column:
-            st.markdown(f"#### {title}")
-            st.image(image_path, use_container_width=True)
-            st.download_button(
-                "Скачать фотографию",
-                data=image_path.read_bytes(),
-                file_name=download_name,
-                mime="image/png",
-                key=f"download-{asset_name}",
-                width="stretch",
-            )
+    with st.container(key="test-photo-grid"):
+        columns = st.columns(3)
+        for column, (title, asset_name, download_name) in zip(columns, samples, strict=True):
+            image_path = Path(__file__).parent / "assets" / "test_images" / asset_name
+            with column:
+                st.markdown(f"#### {title}")
+                st.image(image_path, use_container_width=True)
+                st.download_button(
+                    "Скачать фотографию",
+                    data=image_path.read_bytes(),
+                    file_name=download_name,
+                    mime="image/png",
+                    key=f"download-{asset_name}",
+                    width="stretch",
+                )
 
 
 def _simulation_screen(result: InteractiveSimulationResult) -> None:
@@ -1080,6 +1081,12 @@ def _apply_styles() -> None:
           .st-key-simulation-metrics [data-testid="stMetricValue"] {font-size:2.1rem;}
         }
         @media(max-width:700px) {.scenario-banner {display:block}.scenario-banner p {margin-top:8px}}
+        @media(min-width:701px) {
+          .st-key-test-photo-grid [data-testid="stColumn"] h4 {
+            height:4.3rem;
+            margin-bottom:.75rem;
+          }
+        }
         </style>
         """,
         unsafe_allow_html=True,
