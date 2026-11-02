@@ -10,7 +10,7 @@ This study examines queue-aware phase selection at an isolated four-approach sig
 
 ## I. Introduction
 
-Fixed-cycle control allocates green time without responding to the current queue state. A queue-aware controller may reallocate service when demand changes, but its apparent advantage must be assessed under identical arrivals, explicit signal transition rules, and metrics that distinguish served vehicles from vehicles remaining at the end of observation. This revision tests the hypothesis that direct queue feedback changes mean waiting time relative to fixed-time baselines. It does not assume that the adaptive method wins.
+Fixed-cycle control allocates green time without responding to the current queue state. Reviews of road traffic control describe the broader range of fixed and traffic-responsive strategies [1]. Adaptive signal control has been studied through hierarchical real-time systems and reinforcement learning [3], [4], [6]; a recent systematic review maps the wider RL literature [5]. A queue-aware controller may reallocate service when demand changes, but its apparent advantage must be assessed under identical arrivals, explicit signal transition rules, and metrics that distinguish served vehicles from vehicles remaining at the end of observation. This revision tests the hypothesis that direct queue feedback changes mean waiting time relative to fixed-time baselines. It does not assume that the adaptive method wins.
 
 The system is a research prototype for a single isolated intersection. Image detection supplies a four-approach initial state. SimPy then represents arrivals and service under a selected controller. The detector is not a continuous video tracker, and an image count is treated as a queue count only under the explicit assumption that vehicles visible in each approach zone are waiting vehicles.
 
@@ -36,7 +36,7 @@ Controller decisions occur once per second. At an integer-time tie, the controll
 
 `fixed_15` and `fixed_35` hold each green for 15 s and 35 s, respectively, followed by yellow. These baselines do not use queues for timing.
 
-The fixed Webster baseline estimates critical lane-group flow ratios as `y_NS = max(v_N,v_S)/s` and `y_EW = max(v_E,v_W)/s`, with saturation flow `s = 30 veh/min/lane` implied by the 2 s discharge headway. For `Y = y_NS + y_EW < 0.90`, it uses Webster's optimum cycle estimate
+The fixed Webster baseline uses the classical Webster signal-timing method [2]. It estimates critical lane-group flow ratios as `y_NS = max(v_N,v_S)/s` and `y_EW = max(v_E,v_W)/s`, with saturation flow `s = 30 veh/min/lane` implied by the 2 s discharge headway. For `Y = y_NS + y_EW < 0.90`, it uses Webster's optimum cycle estimate
 
 **(4)** `C_0 = (1.5 L + 5)/(1 - Y)`,
 
@@ -60,7 +60,7 @@ The available repository evaluation reports 16 images, 643 manually counted vehi
 
 The 85.23% score cannot be converted directly into a 14.77% independent per-vehicle error probability. The synthetic sensitivity experiment uses a different, explicit perturbation: for each true queued vehicle and decision time, a seeded draw either removes that count, duplicates it by one, or leaves it unchanged, with total perturbation probability equal to the requested rate and equal miss/duplicate probability. This isolates controller sensitivity; it is not calibrated to the detector.
 
-The dashboard passes the four detector counts to the revised SimPy model as initial queues, starts with the axis having the larger initial queue, applies queue-based control, and converts its one-second trace to the existing animation format. This UI simulation has no further arrivals and uses an 8 s minimum and 30 s maximum green. The research experiments use the same physical model with generated arrivals and a 45 s controller maximum. The detector-to-SimPy code path is covered by simulation and dashboard contract tests, but a live YOLO inference was not repeated in this environment; the complete image-to-result path has therefore not been revalidated with the checkpoint.
+The dashboard passes the four detector counts to the revised SimPy discrete-event model [9] as initial queues, starts with the axis having the larger initial queue, applies queue-based control, and converts its one-second trace to the existing animation format. This UI simulation has no further arrivals and uses an 8 s minimum and 30 s maximum green. The research experiments use the same physical model with generated arrivals and a 45 s controller maximum. The detector-to-SimPy code path is covered by simulation and dashboard contract tests, but a live YOLO inference was not repeated in this environment; the complete image-to-result path has therefore not been revalidated with the checkpoint. YOLO11 is cited as software because its maintainers state that no formal YOLO11 paper has been published [7]. The VisDrone dataset has its own challenge paper [8].
 
 ## VI. Results and limitations
 
@@ -76,4 +76,22 @@ Limitations include an isolated two-phase intersection, Poisson arrivals in the 
 
 ## References
 
-Bibliographic entries from the original manuscript are not reproduced as verified references in this working draft. DOI, title, venue, and access dates must be independently checked before submission.
+[1] M. Papageorgiou, C. Diakaki, V. Dinopoulou, A. Kotsialos, and Y. Wang, “Review of road traffic control strategies,” *Proceedings of the IEEE*, vol. 91, no. 12, pp. 2043–2067, 2003, doi: [10.1109/JPROC.2003.819610](https://doi.org/10.1109/JPROC.2003.819610).
+
+[2] F. V. Webster, *Traffic Signal Settings*, Road Research Technical Paper No. 39. London, U.K.: Her Majesty’s Stationery Office, 1958.
+
+[3] P. Mirchandani and L. Head, “A real-time traffic signal control system: Architecture, algorithms, and analysis,” *Transportation Research Part C: Emerging Technologies*, vol. 9, no. 6, pp. 415–432, 2001, doi: [10.1016/S0968-090X(00)00047-4](https://doi.org/10.1016/S0968-090X(00)00047-4).
+
+[4] B. Abdulhai, R. Pringle, and G. J. Karakoulas, “Reinforcement learning for true adaptive traffic signal control,” *Journal of Transportation Engineering*, vol. 129, no. 3, pp. 278–285, 2003, doi: [10.1061/(ASCE)0733-947X(2003)129:3(278)](https://doi.org/10.1061/%28ASCE%290733-947X%282003%29129%3A3%28278%29).
+
+[5] M. Noaeen et al., “Reinforcement learning in urban network traffic signal control: A systematic literature review,” *Expert Systems with Applications*, vol. 199, art. 116830, 2022, doi: [10.1016/j.eswa.2022.116830](https://doi.org/10.1016/j.eswa.2022.116830).
+
+[6] H. Wei, G. Zheng, H. Yao, and Z. Li, “IntelliLight: A reinforcement learning approach for intelligent traffic light control,” in *Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining*, 2018, pp. 2496–2505, doi: [10.1145/3219819.3220096](https://doi.org/10.1145/3219819.3220096).
+
+[7] G. Jocher and J. Qiu, *Ultralytics YOLO11*, version 11.0.0, 2024. [Online]. Available: [https://docs.ultralytics.com/models/yolo11/](https://docs.ultralytics.com/models/yolo11/).
+
+[8] P. Zhu et al., “VisDrone-DET2018: The vision meets drone object detection in image challenge results,” in *Computer Vision – ECCV 2018 Workshops*, Lecture Notes in Computer Science, vol. 11133, pp. 437–468, 2019, doi: [10.1007/978-3-030-11021-5_27](https://doi.org/10.1007/978-3-030-11021-5_27).
+
+[9] SimPy Developers, *SimPy*, version 4.1.2, 2026. [Online]. Available: [https://pypi.org/project/simpy/4.1.2/](https://pypi.org/project/simpy/4.1.2/). Documentation: [https://simpy.readthedocs.io/](https://simpy.readthedocs.io/).
+
+The revised list retains sources tied to the methods and software used here. The remaining entries from the previous article were not carried forward where they were unrelated to the implemented model; the two 2025–2026 traffic papers in the old list do not describe this study’s method or data.

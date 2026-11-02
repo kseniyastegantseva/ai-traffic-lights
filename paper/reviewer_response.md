@@ -70,4 +70,4 @@
 
 **Response:** The manuscript does not repeat the old reference list as independently verified. The original reviewer report was not available, so actual comment wording and mapping cannot be confirmed.
 
-**Location/evidence:** this response file and `paper/revised_manuscript.md`. **Status: unresolved pending original review and reference verification.**
+**Location/evidence:** this response file, `paper/revised_manuscript.md`, and `paper/references_audit.md`. **Status: selected citations in the revised manuscript were checked against publisher, conference, software-maintainer, and catalog records. The old list was curated rather than copied wholesale. Exact comment wording remains unresolved because the original reviewer report was not available.**
