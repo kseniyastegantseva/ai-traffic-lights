@@ -211,9 +211,19 @@ traffic-sim compare --config configs/piere_revision_quick.yaml
 traffic-sim compare --config configs/piere_revision_1800.yaml
 traffic-sim compare --config configs/piere_revision_3600.yaml
 traffic-sim compare --config configs/piere_perception_sensitivity.yaml
+traffic-sim compare --config configs/piere_perception_sensitivity_expanded.yaml
+traffic-sim compare --config configs/piere_perception_empirical_errors.yaml
 ```
 
 Это полные исследовательские прогоны. Они могут занимать значительное время. До фактического завершения запусков не используйте отчёты как научные результаты; итоговые JSON, CSV и Markdown пишутся в `outputs/`.
+
+Для оценки YOLO на сохранённом наборе установите `ultralytics==8.4.129`, PyTorch и OpenCV, затем запустите из корня проекта:
+
+```bash
+python scripts/evaluate_perception_models.py --device cpu --threads 2
+```
+
+Результаты сравнения приведены в `paper/perception_results.md`; per-image JSON сохраняется в игнорируемой папке `outputs/`.
 
 Команда копирует лучшую policy в `outputs/q_learning_policy.json`.
 
