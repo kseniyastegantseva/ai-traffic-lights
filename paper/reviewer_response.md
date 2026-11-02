@@ -42,9 +42,9 @@
 
 ### Major 7 — Perception validity and control integration
 
-**Response:** The manuscript now distinguishes aggregate Vehicle Count Accuracy from object-detection precision, recall, and mAP. A reproducible synthetic observation-error mechanism perturbs only the controller's view; physical queues remain unchanged.
+**Response:** The manuscript distinguishes aggregate Vehicle Count Accuracy from object-detection precision, recall, and mAP. A reproducible synthetic observation-error mechanism perturbs only the controller's view; physical queues and shared arrivals remain unchanged. We found and fixed a runner bug that had dropped the configured observation-error rate, added a regression test, and reran the 1,200-case, five-regime sensitivity experiment.
 
-**Location/evidence:** `src/traffic_light/simulation.py`, `src/traffic_light/interactive.py`, `app/dashboard.py`, `configs/piere_perception_sensitivity.yaml`, `paper/simulation_results.md`, and `paper/perception_results.md`. Live inference exactly reproduced the existing 16-image result (VCA 85.23%, MAE 1.484); COCO, x2/x3, and duplicate-suppression comparisons are documented. The dashboard feeds four image counts to SimPy as initial queues. **Status: inference and count-level ablations reproduced on the existing diagnostic set; no independent holdout or bounding-box labels are available; training lineage and redistribution rights remain unverified.**
+**Location/evidence:** `src/traffic_light/simulation.py`, `src/traffic_light/experiments.py`, `tests/test_experiments.py`, `src/traffic_light/interactive.py`, `app/dashboard.py`, `configs/piere_perception_sensitivity_expanded.yaml`, `paper/simulation_results.md`, and `paper/perception_results.md`. Corrected sensitivity included 1,200 runs and 30 paired seeds per scenario/error level; queue-based mean wait increased by +0.02 to +1.66 s at 20% vs 0%, with the high-load paired interval including zero. Live inference exactly reproduced the existing 16-image result (VCA 85.23%, MAE 1.484); COCO, x2/x3, and duplicate-suppression comparisons are documented. **Status: sensitivity contract and detector inference are verified on existing diagnostic data; no independent holdout or bounding-box labels are available; training lineage and redistribution rights remain unverified.**
 
 ## Minor comments (provisional topics)
 

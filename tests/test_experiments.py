@@ -1,7 +1,15 @@
 import json
 from pathlib import Path
 
-from traffic_light.config import load_experiment_config
+from traffic_light.config import (
+    ControllerConfig,
+    ExperimentConfig,
+    ExperimentSimulationConfig,
+    IntersectionConfig,
+    ScenarioConfig,
+    TrafficDemandConfig,
+    load_experiment_config,
+)
 from traffic_light.experiments import (
     build_experiment_analytics,
     build_markdown_report,
@@ -16,6 +24,32 @@ def test_experiment_compares_configured_controllers():
     results, summary = run_experiment(config)
     assert len(results) == len(config.controllers) * len(config.simulation.seeds)
     assert set(summary["controller"]) == {"fixed", "actuated", "ai"}
+
+
+def test_scenario_observation_error_rate_reaches_simulation_result():
+    config = ExperimentConfig(
+        simulation=ExperimentSimulationConfig(duration_seconds=30, seeds=[11]),
+        scenarios=[
+            ScenarioConfig(
+                name="noisy",
+                title="Noisy observation",
+                observation_error_rate=0.2,
+                intersection=IntersectionConfig(
+                    lanes={
+                        lane: TrafficDemandConfig(arrival_rate_per_minute=6)
+                        for lane in ("north", "south", "east", "west")
+                    },
+                    min_green_seconds=2,
+                    yellow_seconds=1,
+                ),
+            )
+        ],
+        controllers=[ControllerConfig(type="queue_based", min_green_seconds=2)],
+    )
+
+    results, _ = run_experiment(config)
+
+    assert results[0]["observation_error_rate"] == 0.2
 
 
 def test_demo_uniform_experiment_builds_unified_report(tmp_path: Path):

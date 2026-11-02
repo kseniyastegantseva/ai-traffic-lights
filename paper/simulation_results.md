@@ -53,9 +53,21 @@ For high load, the estimated equal-split per-approach capacity is approximately 
 
 ## Synthetic perception sensitivity
 
-The sensitivity configuration has 30 paired seeds, one symmetric 6 vehicles/minute/approach demand, and two controllers (`fixed_35`, `queue_based`). It tests 0%, 5%, 10%, and 20% synthetic observation error, applied only to the controller's observed queues. Arrival-stream hashes match for all 30 seeds across error levels. For queue-based control, the performance outputs were identical at each error level: mean wait was 6.040 s at all four levels, and paired waiting-time changes relative to 0% were 0.000 s (95% paired t intervals [0.000, 0.000]).
+The original sensitivity run was invalid: `_iter_scenarios()` dropped each scenario's `observation_error_rate`, so every simulation received 0% even when the YAML title indicated a higher level. Its previously reported identical outcomes are withdrawn. The runner now propagates the rate and the result record stores it; a regression test checks this contract.
 
-The result indicates that the perturbations did not change selected control actions or aggregate outcomes in this particular symmetric scenario. It does not demonstrate robustness to empirically observed detector errors or changing demand. The perturbation is independently seeded count misses/duplicates and is not calibrated from the 16-image detector evaluation.
+The corrected original symmetric configuration was rerun for 240 runs. The broader configuration `configs/piere_perception_sensitivity_expanded.yaml` contains five demand regimes, four error rates, 30 seeds, and two controllers (1,200 runs total). For each regime/seed, all error levels share the same arrival-stream hash. All records contain the configured error rate, and all 30 paired queue-based phase histories differed between 0% and each nonzero rate in every regime. The perturbation remains an artificial count miss/duplicate process, not calibrated from the detector evaluation.
+
+Queue-based mean completed wait by regime and error rate (seconds):
+
+| Demand regime | 0% | 5% | 10% | 20% | Paired change at 20% vs 0% (95% CI) |
+|---|---:|---:|---:|---:|---:|
+| Symmetric | 6.040 | 6.074 | 6.064 | 6.074 | +0.034 [−0.064, +0.131] |
+| Asymmetric N/S | 6.364 | 6.425 | 6.546 | 6.771 | +0.406 [+0.295, +0.518] |
+| Variable demand | 6.174 | 6.301 | 6.312 | 6.446 | +0.271 [+0.145, +0.398] |
+| Dominant-axis switch | 6.394 | 6.455 | 6.543 | 6.704 | +0.309 [+0.211, +0.408] |
+| High load | 314.957 | 317.381 | 315.376 | 316.621 | +1.664 [−0.384, +3.712] |
+
+The confidence intervals use paired seed differences (n=30) with a two-sided 95% Student-t interval; they are descriptive across tested scenarios and are not corrected for the multiple error-level contrasts. The small absolute changes in high load are noisy relative to its large baseline delay. Higher rates generally increase mean wait in asymmetric and changing demand, while high-load means are not monotonic. The experiment supports scenario-specific sensitivity, not general robustness or empirical YOLO calibration.
 
 ## Reproduction and limitations
 
@@ -69,6 +81,7 @@ Run from the repository root:
 traffic-sim compare --config configs/piere_revision_1800.yaml
 traffic-sim compare --config configs/piere_revision_3600.yaml
 traffic-sim compare --config configs/piere_perception_sensitivity.yaml
+traffic-sim compare --config configs/piere_perception_sensitivity_expanded.yaml
 ```
 
 The generated JSON contains every run, full configuration, environment metadata, stream hashes, phase history, and paired statistics. Output files are ignored by Git due to their size. The experiment-generating revision passed 52 tests; after the dashboard trace integration, 53 tests passed and Ruff reported no issues. The detector evaluation script also passes Ruff and `py_compile`; the full test suite remains at 53 passing tests. A Streamlit AppTest rendered the simulation screen with no exceptions and one animation iframe. Docker Desktop was unavailable, so image builds were not verified. Independent detector validation, model-training provenance, and the exact wording of the source reviewer comments remain unresolved.

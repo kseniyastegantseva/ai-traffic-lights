@@ -457,6 +457,7 @@ def _iter_scenarios(config: ExperimentConfig) -> list[dict[str, str | Intersecti
                 "intersection": scenario.intersection,
                 "demand_schedule": scenario.demand_schedule,
                 "initial_queues": scenario.initial_queues,
+                "observation_error_rate": scenario.observation_error_rate,
             }
             for scenario in config.scenarios
         ]
