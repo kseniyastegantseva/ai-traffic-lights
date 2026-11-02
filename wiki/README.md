@@ -16,6 +16,7 @@
 - `experiments.md` — дизайн экспериментов и метрики.
 - `../paper/perception_results.md` — проверка воспроизводимости и абляция YOLO.
 - Конфигурации экспериментов находятся в `../configs/`; расширенная чувствительность к ошибке детекции — `../configs/piere_perception_sensitivity_expanded.yaml`.
+- Эмпирический bootstrap ошибок направленного подсчёта — `../configs/piere_perception_empirical_errors.yaml`.
 - `task-log.md` — хронологический журнал выполненных задач и ограничений среды.
 
 ## Правило документации

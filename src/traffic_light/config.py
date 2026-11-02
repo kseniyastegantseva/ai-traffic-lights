@@ -35,6 +35,7 @@ class SimulationConfig(BaseModel):
     seed: int = 42
     service_time_seconds: float = Field(default=2.0, gt=0)
     observation_error_rate: float = Field(default=0.0, ge=0.0, le=0.2)
+    empirical_observation_errors_by_lane: dict[LaneName, list[int]] = Field(default_factory=dict)
 
 
 class ControllerConfig(BaseModel):
@@ -65,6 +66,7 @@ class ExperimentSimulationConfig(BaseModel):
     duration_seconds: int = Field(default=900, ge=1)
     seeds: list[int] = Field(default_factory=lambda: [1, 2, 3, 4, 5])
     service_time_seconds: float = Field(default=2.0, gt=0)
+    empirical_observation_errors_by_lane: dict[LaneName, list[int]] = Field(default_factory=dict)
 
 
 class DemandPeriodConfig(BaseModel):

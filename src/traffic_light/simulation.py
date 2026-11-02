@@ -300,14 +300,18 @@ class IntersectionSimulation:
         error_rate = self.config.observation_error_rate
         observed: dict[str, int] = {}
         for lane_index, lane in enumerate(LANES):
-            rng = random.Random(self.config.seed + int(now * 10) * 1009 + lane_index * 9176)
+            seed = self.config.seed + int(now * 10) * 1009 + lane_index * 9176
+            profile = self.config.empirical_observation_errors_by_lane.get(lane, [])
+            empirical_rng = random.Random(seed + 65537)
+            empirical_error = empirical_rng.choice(profile) if profile else 0
+            rng = random.Random(seed)
             count = 0
             for _ in self.queues[lane]:
                 draw = rng.random()
                 if draw < error_rate / 2:
                     continue
                 count += 2 if draw < error_rate else 1
-            observed[lane] = count
+            observed[lane] = max(0, count + empirical_error)
         return observed
 
     def _integrate_queue_area(self):

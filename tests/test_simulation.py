@@ -165,6 +165,34 @@ def test_observation_errors_do_not_mutate_physical_queues():
     assert observed["north"] != 100
 
 
+def test_empirical_observation_profile_is_seeded_and_clamped():
+    config = SimulationConfig(
+        duration_seconds=10,
+        seed=5,
+        empirical_observation_errors_by_lane={"north": [-3, -1, 2, 4]},
+    )
+    first = IntersectionSimulation(
+        intersection(), config, AIPhaseController(), initial_queues={"north": 10}, arrivals=[]
+    )
+    second = IntersectionSimulation(
+        intersection(), config, AIPhaseController(), initial_queues={"north": 10}, arrivals=[]
+    )
+
+    assert first._observed_queues(1.0) == second._observed_queues(1.0)
+    assert len(first.queues["north"]) == 10
+
+    empty = IntersectionSimulation(
+        intersection(),
+        SimulationConfig(
+            duration_seconds=10,
+            empirical_observation_errors_by_lane={"north": [-3]},
+        ),
+        AIPhaseController(),
+        arrivals=[],
+    )
+    assert empty._observed_queues(0.0)["north"] == 0
+
+
 def test_trace_callback_exposes_simpy_queue_phase_and_departure_state():
     from traffic_light.controllers import QueueBasedController
 

@@ -69,6 +69,22 @@ Queue-based mean completed wait by regime and error rate (seconds):
 
 The confidence intervals use paired seed differences (n=30) with a two-sided 95% Student-t interval; they are descriptive across tested scenarios and are not corrected for the multiple error-level contrasts. The small absolute changes in high load are noisy relative to its large baseline delay. Higher rates generally increase mean wait in asymmetric and changing demand, while high-load means are not monotonic. The experiment supports scenario-specific sensitivity, not general robustness or empirical YOLO calibration.
 
+### Bootstrap of observed YOLO count residuals
+
+The count annotations provide signed per-image residuals `predicted − actual` for each approach. The empirical profile in `configs/piere_perception_empirical_errors.yaml` resamples, with replacement, the 16 recorded residuals for each lane at each one-second observation; the sampled residual is added to the true lane queue and clipped at zero. This is separate from the synthetic 0–20% miss/duplicate model. It is an additive, independent-over-time bootstrap: it does not model temporal correlation, scene dependence, object identity, or errors outside this reused 16-image set. It is therefore a diagnostic sensitivity analysis, not an estimate of deployment performance.
+
+The 300-run series uses five demand regimes, 30 seeds, and two responsive controllers. Compared with the corresponding 0%-synthetic-error runs, arrival-stream hashes match for every paired seed. Queue-based controller results were:
+
+| Demand regime | Mean wait, error-profile bootstrap (s) | Mean wait, 0% synthetic baseline (s) | Paired change (95% CI), s |
+|---|---:|---:|---:|
+| Symmetric | 6.582 | 6.040 | +0.541 [+0.404, +0.678] |
+| Asymmetric N/S | 9.076 | 6.364 | +2.711 [+2.500, +2.922] |
+| Variable demand | 8.202 | 6.174 | +2.028 [+1.840, +2.216] |
+| Dominant-axis switch | 8.553 | 6.394 | +2.159 [+1.957, +2.361] |
+| High load | 315.384 | 314.957 | +0.427 [−1.289, +2.144] |
+
+The intervals use paired seed differences (n=30), two-sided 95% Student-t intervals, and are not adjusted for five scenario comparisons. The profile changes the `queue_based` phase history for all 30 seeds in every regime. The much smaller high-load change is uncertain relative to its baseline delay. The input residual vectors and full run configuration are preserved in the YAML; generated JSON remains ignored under `outputs/`.
+
 ## Reproduction and limitations
 
 ### Detector evaluation addendum
@@ -84,4 +100,4 @@ traffic-sim compare --config configs/piere_perception_sensitivity.yaml
 traffic-sim compare --config configs/piere_perception_sensitivity_expanded.yaml
 ```
 
-The generated JSON contains every run, full configuration, environment metadata, stream hashes, phase history, and paired statistics. Output files are ignored by Git due to their size. The experiment-generating revision passed 52 tests; after the dashboard trace integration, 53 tests passed and Ruff reported no issues. The detector evaluation script also passes Ruff and `py_compile`; the full test suite remains at 53 passing tests. A Streamlit AppTest rendered the simulation screen with no exceptions and one animation iframe. Docker Desktop was unavailable, so image builds were not verified. Independent detector validation, model-training provenance, and the exact wording of the source reviewer comments remain unresolved.
+The generated JSON contains every run, full configuration, environment metadata, stream hashes, phase history, and paired statistics. Output files are ignored by Git due to their size. The experiment-generating revision passed 52 tests; after the dashboard trace integration, 53 tests passed and Ruff reported no issues. After the sensitivity-rate fix and empirical profile support, Ruff and the full test suite passed (55 tests); the detector evaluation script also passes `py_compile`. A Streamlit AppTest rendered the simulation screen with no exceptions and one animation iframe. Docker Desktop was unavailable, so image builds were not verified. Independent detector validation, model-training provenance, and the exact wording of the source reviewer comments remain unresolved.

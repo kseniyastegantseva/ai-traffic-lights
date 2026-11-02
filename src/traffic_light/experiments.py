@@ -98,6 +98,9 @@ def run_experiment(config: ExperimentConfig) -> tuple[list[dict], pd.DataFrame]:
                 seed=seed,
                 service_time_seconds=config.simulation.service_time_seconds,
                 observation_error_rate=scenario.get("observation_error_rate", 0.0),
+                empirical_observation_errors_by_lane=(
+                    config.simulation.empirical_observation_errors_by_lane
+                ),
             )
             arrivals = generate_arrivals(
                 scenario["intersection"], simulation, scenario.get("demand_schedule")
