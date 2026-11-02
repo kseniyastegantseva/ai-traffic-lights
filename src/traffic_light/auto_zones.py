@@ -20,10 +20,11 @@ NORTH, SOUTH, WEST и EAST.
     близки к вертикальной и горизонтальной осям кадра.
 """
 
-import cv2
 import json
-import numpy as np
 from pathlib import Path
+
+import cv2
+import numpy as np
 
 
 def create_auto_zones(image_path, output_json=None, output_image=None):

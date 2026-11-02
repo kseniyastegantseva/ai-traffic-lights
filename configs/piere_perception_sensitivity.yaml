@@ -1,0 +1,43 @@
+name: piere_perception_sensitivity
+title: Sensitivity to reproducible queue-count errors
+description: Ошибка наблюдения влияет только на ControllerState; физические очереди и общий поток остаются истинными.
+simulation:
+  duration_seconds: 1800
+  seeds: [201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230]
+  service_time_seconds: 2.0
+scenarios:
+  - name: error_0pct
+    title: Ошибка наблюдения 0%
+    observation_error_rate: 0.0
+    intersection:
+      lanes: {north: {arrival_rate_per_minute: 6}, south: {arrival_rate_per_minute: 6}, east: {arrival_rate_per_minute: 6}, west: {arrival_rate_per_minute: 6}}
+      min_green_seconds: 8
+      yellow_seconds: 3
+  - name: error_5pct
+    title: Ошибка наблюдения 5%
+    observation_error_rate: 0.05
+    intersection:
+      lanes: {north: {arrival_rate_per_minute: 6}, south: {arrival_rate_per_minute: 6}, east: {arrival_rate_per_minute: 6}, west: {arrival_rate_per_minute: 6}}
+      min_green_seconds: 8
+      yellow_seconds: 3
+  - name: error_10pct
+    title: Ошибка наблюдения 10%
+    observation_error_rate: 0.1
+    intersection:
+      lanes: {north: {arrival_rate_per_minute: 6}, south: {arrival_rate_per_minute: 6}, east: {arrival_rate_per_minute: 6}, west: {arrival_rate_per_minute: 6}}
+      min_green_seconds: 8
+      yellow_seconds: 3
+  - name: error_20pct
+    title: Ошибка наблюдения 20%
+    observation_error_rate: 0.2
+    intersection:
+      lanes: {north: {arrival_rate_per_minute: 6}, south: {arrival_rate_per_minute: 6}, east: {arrival_rate_per_minute: 6}, west: {arrival_rate_per_minute: 6}}
+      min_green_seconds: 8
+      yellow_seconds: 3
+controllers:
+  - type: fixed_35
+  - type: queue_based
+output:
+  path: outputs/piere_perception_sensitivity.json
+  summary_csv: outputs/piere_perception_sensitivity_summary.csv
+  report_markdown: outputs/piere_perception_sensitivity_report.md

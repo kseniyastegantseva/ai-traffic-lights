@@ -24,6 +24,7 @@ def run(config: str = typer.Option(..., "--config", "-c")) -> None:
     controller = build_controller(
         run_config.controller,
         min_green_seconds=run_config.intersection.min_green_seconds,
+        intersection=run_config.intersection,
     )
     result = run_simulation(run_config.intersection, run_config.simulation, controller)
     output_path = run_config.output.get("path", "outputs/run_result.json")

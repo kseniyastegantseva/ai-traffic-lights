@@ -11,6 +11,16 @@ DASHBOARD = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(DASHBOARD)
 
 
+def test_dashboard_rejects_old_experiment_results_schema():
+    old_payload = {
+        "runs": [{"queue_series": [1]}],
+        "summary": [{"max_queue_length": 1}],
+    }
+    current_payload = {"result_schema_version": 2, **old_payload}
+    assert not DASHBOARD._is_current_research_payload(old_payload)
+    assert DASHBOARD._is_current_research_payload(current_payload)
+
+
 def test_vehicle_markup_contains_one_model_per_input_vehicle():
     queues = {"north": 4, "west": 3, "south": 2, "east": 1}
 

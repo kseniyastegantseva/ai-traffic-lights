@@ -22,16 +22,13 @@
     python main.py --image data/test/test_16.png
 """
 
+import argparse
+import json
 from pathlib import Path
 
-from ultralytics import YOLO
+import cv2
 
 from .auto_zones import create_auto_zones
-
-import argparse
-import cv2
-import json
-
 
 # Путь к дообученной на VisDrone четырёхклассовой модели из computer-vision.
 MODEL_PATH = Path(__file__).resolve().parents[2] / "models" / "visdrone_vehicles.pt"
@@ -72,6 +69,8 @@ def _get_model():
     """Загружает YOLO только при первом обращении к детектору."""
     global model
     if model is None:
+        from ultralytics import YOLO
+
         model = YOLO(str(MODEL_PATH))
     return model
 
@@ -386,13 +385,11 @@ def detect_full_image(image, zones, detections):
                 normal_count += 1
 
         # Геометрическое восстановление.
-        elif cls_id == CELL_PHONE_CLASS:
-            if looks_like_vehicle(
-                (x1, y1, x2, y2),
-                zone
-            ):
-                source = "geometry"
-                geometry_count += 1
+        elif cls_id == CELL_PHONE_CLASS and looks_like_vehicle(
+            (x1, y1, x2, y2), zone
+        ):
+            source = "geometry"
+            geometry_count += 1
 
         if source is None:
             continue
@@ -784,11 +781,6 @@ def main():
     auto_zones_json = (
         output_dir /
         f"{image_name}_auto_zones.json"
-    )
-
-    auto_zones_preview = (
-        output_dir /
-        f"{image_name}_auto_zones.jpg"
     )
 
     counts = analyze_image(image_path, output_dir)

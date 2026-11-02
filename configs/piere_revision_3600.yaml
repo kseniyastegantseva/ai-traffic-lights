@@ -1,0 +1,70 @@
+name: piere_revision_3600
+title: "PIERE revision: 3600 s paired experiment"
+description: Основная серия; парные контроллеры используют общий поток на каждый scenario и seed.
+simulation:
+  duration_seconds: 3600
+  seeds: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130]
+  service_time_seconds: 2.0
+scenarios:
+  - name: symmetric
+    title: Симметричный спрос
+    description: 6 автомобилей в минуту на каждом подходе.
+    intersection:
+      lanes: {north: {arrival_rate_per_minute: 6}, south: {arrival_rate_per_minute: 6}, east: {arrival_rate_per_minute: 6}, west: {arrival_rate_per_minute: 6}}
+      min_green_seconds: 8
+      yellow_seconds: 3
+  - name: asymmetric_ns
+    title: Асимметричный спрос Север–Юг
+    description: 10 автомобилей в минуту на N/S и 4 на E/W.
+    intersection:
+      lanes: {north: {arrival_rate_per_minute: 10}, south: {arrival_rate_per_minute: 10}, east: {arrival_rate_per_minute: 4}, west: {arrival_rate_per_minute: 4}}
+      min_green_seconds: 8
+      yellow_seconds: 3
+  - name: variable_demand
+    title: Переменный спрос
+    description: В 900 s нагрузки меняются с равномерной на восточно-западную.
+    intersection:
+      lanes: {north: {arrival_rate_per_minute: 6}, south: {arrival_rate_per_minute: 6}, east: {arrival_rate_per_minute: 6}, west: {arrival_rate_per_minute: 6}}
+      min_green_seconds: 8
+      yellow_seconds: 3
+    demand_schedule:
+      - start_seconds: 0
+        end_seconds: 900
+        lanes: {north: {arrival_rate_per_minute: 6}, south: {arrival_rate_per_minute: 6}, east: {arrival_rate_per_minute: 6}, west: {arrival_rate_per_minute: 6}}
+      - start_seconds: 900
+        end_seconds: 3600
+        lanes: {north: {arrival_rate_per_minute: 3}, south: {arrival_rate_per_minute: 3}, east: {arrival_rate_per_minute: 12}, west: {arrival_rate_per_minute: 12}}
+  - name: sudden_dominance_switch
+    title: Внезапная смена доминирующей оси
+    description: В 900 s максимум спроса переходит с N/S на E/W.
+    intersection:
+      lanes: {north: {arrival_rate_per_minute: 10}, south: {arrival_rate_per_minute: 10}, east: {arrival_rate_per_minute: 4}, west: {arrival_rate_per_minute: 4}}
+      min_green_seconds: 8
+      yellow_seconds: 3
+    demand_schedule:
+      - start_seconds: 0
+        end_seconds: 900
+        lanes: {north: {arrival_rate_per_minute: 10}, south: {arrival_rate_per_minute: 10}, east: {arrival_rate_per_minute: 4}, west: {arrival_rate_per_minute: 4}}
+      - start_seconds: 900
+        end_seconds: 3600
+        lanes: {north: {arrival_rate_per_minute: 4}, south: {arrival_rate_per_minute: 4}, east: {arrival_rate_per_minute: 10}, west: {arrival_rate_per_minute: 10}}
+  - name: high_load
+    title: Высокая нагрузка
+    description: 18 автомобилей в минуту на каждом подходе; v/c оценивается относительно расчетной мощности модели и должна быть подтверждена результатами очередей.
+    intersection:
+      lanes: {north: {arrival_rate_per_minute: 18}, south: {arrival_rate_per_minute: 18}, east: {arrival_rate_per_minute: 18}, west: {arrival_rate_per_minute: 18}}
+      min_green_seconds: 8
+      yellow_seconds: 3
+controllers:
+  - type: fixed_15
+  - type: fixed_35
+  - type: fixed_webster
+  - type: vehicle_actuated
+  - type: queue_based
+  - type: queue_based
+    legacy_rule: true
+    max_green_seconds: 45
+output:
+  path: outputs/piere_revision_3600.json
+  summary_csv: outputs/piere_revision_3600_summary.csv
+  report_markdown: outputs/piere_revision_3600_report.md

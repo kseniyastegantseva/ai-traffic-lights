@@ -1,7 +1,7 @@
 from traffic_light.interactive import classify_load, simulate_interactive_traffic
 
 
-def test_classify_load_recognizes_directional_and_overloaded_scenarios():
+def test_classify_load_recognizes_directional_and_high_initial_queue_scenarios():
     assert (
         classify_load({"north": 10, "west": 1, "south": 8, "east": 1}).code
         == "north_south_peak"
@@ -11,7 +11,7 @@ def test_classify_load_recognizes_directional_and_overloaded_scenarios():
         == "east_west_peak"
     )
     assert classify_load({"north": 20, "west": 20, "south": 20, "east": 20}).code == (
-        "oversaturated"
+        "high_load"
     )
 
 

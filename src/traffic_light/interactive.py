@@ -67,9 +67,9 @@ def classify_load(queues: dict[LaneName, int]) -> LoadScenario:
         return LoadScenario("empty", "Движение отсутствует", "Все подходы свободны.")
     if total >= 60:
         return LoadScenario(
-            "oversaturated",
-            "Перегруженный перекрёсток",
-            "Высокая суммарная очередь: алгоритм ограничивает длительность фаз.",
+            "high_load",
+            "Большая начальная очередь",
+            "На снимке много автомобилей; один снимок не определяет насыщение потока.",
         )
     if north_south >= east_west * 1.5 and north_south - east_west >= 4:
         return LoadScenario(

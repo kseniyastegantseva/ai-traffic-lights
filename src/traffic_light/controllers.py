@@ -22,6 +22,7 @@ class ControllerState:
     current_phase: PhaseName
     phase_started_at: float
     queues: dict[str, int]
+    current_gap_seconds: float = 0.0
 
 
 class BaseController:
@@ -44,19 +45,113 @@ class FixedTimeController(BaseController):
 
 
 @dataclass
+class FixedWebsterController(BaseController):
+    """Fixed-cycle Webster split using the configured design flow ratios."""
+
+    green_seconds: dict[PhaseName, float]
+    min_green_seconds: float = 8.0
+    name: str = "fixed_webster"
+
+    @staticmethod
+    def green_split(
+        critical_flow_ratios: dict[PhaseName, float],
+        lost_time_seconds: float,
+        min_green_seconds: float = 8.0,
+        max_green_seconds: float = 90.0,
+    ) -> dict[PhaseName, float]:
+        ratios = {phase: max(0.0, float(critical_flow_ratios.get(phase, 0.0))) for phase in PHASE_LANES}
+        total = sum(ratios.values())
+        if total <= 0 or total >= 0.90 or lost_time_seconds >= 60.0:
+            # Webster's optimum cycle is undefined/non-operational here; use
+            # an explicit equal-split fallback bounded by configured limits.
+            split = max(min_green_seconds, min(max_green_seconds, (120.0 - lost_time_seconds) / 2))
+            return {phase: split for phase in PHASE_LANES}
+        cycle = (1.5 * lost_time_seconds + 5.0) / (1.0 - total)
+        effective_green = max(2 * min_green_seconds, cycle - lost_time_seconds)
+        return {
+            phase: max(min_green_seconds, min(max_green_seconds, effective_green * ratios[phase] / total))
+            for phase in PHASE_LANES
+        }
+
+    def choose_phase(self, state: ControllerState) -> PhaseName:
+        if state.now - state.phase_started_at >= self.green_seconds[state.current_phase]:
+            return other_phase(state.current_phase)
+        return state.current_phase
+
+
+@dataclass
+class VehicleActuatedController(BaseController):
+    min_green_seconds: int = 8
+    max_green_seconds: int = 45
+    gap_seconds: float = 3.0
+    name: str = "vehicle_actuated"
+
+    def choose_phase(self, state: ControllerState) -> PhaseName:
+        elapsed = state.now - state.phase_started_at
+        other = other_phase(state.current_phase)
+        current_q = sum(state.queues[lane] for lane in PHASE_LANES[state.current_phase])
+        other_q = sum(state.queues[lane] for lane in PHASE_LANES[other])
+        if other_q == 0:
+            return state.current_phase
+        if elapsed >= self.max_green_seconds:
+            return other
+        if elapsed < self.min_green_seconds:
+            return state.current_phase
+        # With aggregate queue observations, an empty current approach and a
+        # competing request is the available gap-out proxy; it is not detector
+        # headway logic and is documented as such.
+        if current_q == 0 and other_q > 0 and state.current_gap_seconds >= self.gap_seconds:
+            return other
+        return state.current_phase
+
+
+@dataclass
+class QueueBasedController(BaseController):
+    min_green_seconds: int = 8
+    max_green_seconds: int = 45
+    switching_margin: int = 1
+    legacy_rule: bool = False
+    name: str = "queue_based"
+
+    def choose_phase(self, state: ControllerState) -> PhaseName:
+        elapsed = state.now - state.phase_started_at
+        other = other_phase(state.current_phase)
+        current_q = sum(state.queues[lane] for lane in PHASE_LANES[state.current_phase])
+        other_q = sum(state.queues[lane] for lane in PHASE_LANES[other])
+        if self.legacy_rule:
+            if other_q == 0:
+                return state.current_phase
+            if elapsed < self.min_green_seconds:
+                return state.current_phase
+            if elapsed >= self.max_green_seconds or current_q == 0:
+                return other
+            return other if other_q > current_q + self.switching_margin else state.current_phase
+        if other_q == 0:
+            return state.current_phase
+        if elapsed >= self.max_green_seconds:
+            return other
+        if elapsed < self.min_green_seconds:
+            return state.current_phase
+        return other if other_q > current_q + self.switching_margin else state.current_phase
+
+
+@dataclass
 class ActuatedController(BaseController):
     min_green_seconds: int = 15
     decision_interval_seconds: int = 10
+    max_green_seconds: int = 45
     name: str = "actuated"
 
     def choose_phase(self, state: ControllerState) -> PhaseName:
         elapsed = state.now - state.phase_started_at
-        if elapsed < self.min_green_seconds or int(state.now) % self.decision_interval_seconds:
+        other = other_phase(state.current_phase)
+        other_pressure = sum(state.queues[lane] for lane in PHASE_LANES[other])
+        if elapsed >= self.max_green_seconds and other_pressure > 0:
+            return other
+        if elapsed < self.min_green_seconds or int(elapsed) % self.decision_interval_seconds:
             return state.current_phase
 
         current_pressure = sum(state.queues[lane] for lane in PHASE_LANES[state.current_phase])
-        other = other_phase(state.current_phase)
-        other_pressure = sum(state.queues[lane] for lane in PHASE_LANES[other])
         return other if other_pressure > current_pressure + 1 else state.current_phase
 
 
@@ -64,11 +159,16 @@ class ActuatedController(BaseController):
 class AIPhaseController(BaseController):
     min_green_seconds: int = 15
     decision_interval_seconds: int = 10
+    max_green_seconds: int = 45
     name: str = "ai"
 
     def choose_phase(self, state: ControllerState) -> PhaseName:
         elapsed = state.now - state.phase_started_at
-        if elapsed < self.min_green_seconds or int(state.now) % self.decision_interval_seconds:
+        other = other_phase(state.current_phase)
+        other_pressure = sum(state.queues[lane] for lane in PHASE_LANES[other])
+        if elapsed >= self.max_green_seconds and other_pressure > 0:
+            return other
+        if elapsed < self.min_green_seconds or int(elapsed) % self.decision_interval_seconds:
             return state.current_phase
 
         scores = {
@@ -83,6 +183,7 @@ class QLearningPolicyController(BaseController):
     policy_path: str = "outputs/q_learning_policy.json"
     min_green_seconds: int = 15
     decision_interval_seconds: int = 10
+    max_green_seconds: int = 45
     name: str = "q_learning"
 
     def __post_init__(self) -> None:
@@ -97,7 +198,11 @@ class QLearningPolicyController(BaseController):
 
     def choose_phase(self, state: ControllerState) -> PhaseName:
         elapsed = state.now - state.phase_started_at
-        if elapsed < self.min_green_seconds or int(state.now) % self.decision_interval_seconds:
+        other = other_phase(state.current_phase)
+        other_pressure = sum(state.queues[lane] for lane in PHASE_LANES[other])
+        if elapsed >= self.max_green_seconds and other_pressure > 0:
+            return other
+        if elapsed < self.min_green_seconds or int(elapsed) % self.decision_interval_seconds:
             return state.current_phase
 
         key = _state_key(state)

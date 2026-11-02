@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 import json
+import math
+import platform
+import subprocess
+import sys
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
-from statistics import stdev
+from statistics import mean, stdev
 
 import pandas as pd
 
@@ -17,20 +22,60 @@ from traffic_light.controllers import (
     AIPhaseController,
     BaseController,
     FixedTimeController,
+    FixedWebsterController,
     QLearningPolicyController,
+    QueueBasedController,
+    VehicleActuatedController,
 )
-from traffic_light.simulation import run_simulation
+from traffic_light.simulation import generate_arrivals, run_simulation
 
-BASELINE_CONTROLLER = "fixed"
+BASELINE_CONTROLLERS = ("fixed_35", "fixed")
 
 
-def build_controller(config: ControllerConfig, min_green_seconds: int) -> BaseController:
-    if config.type == "fixed":
-        return FixedTimeController(phase_duration_seconds=config.phase_duration_seconds)
+def build_controller(
+    config: ControllerConfig,
+    min_green_seconds: int,
+    intersection: IntersectionConfig | None = None,
+) -> BaseController:
+    if config.type in {"fixed", "fixed_15", "fixed_35"}:
+        duration = config.phase_duration_seconds
+        if config.type == "fixed_15":
+            duration = 15
+        elif config.type == "fixed_35":
+            duration = 35
+        return FixedTimeController(
+            phase_duration_seconds=duration,
+            name=config.type if config.type != "fixed" else "fixed",
+        )
     if config.type == "actuated":
         return ActuatedController(
             min_green_seconds=min_green_seconds,
             decision_interval_seconds=config.decision_interval_seconds,
+        )
+    if config.type == "fixed_webster":
+        if intersection is None:
+            raise ValueError("fixed_webster requires intersection demand rates")
+        rates = intersection.lanes
+        ratios = {
+            "north_south": max(rates["north"].arrival_rate_per_minute, rates["south"].arrival_rate_per_minute) / 30.0,
+            "east_west": max(rates["east"].arrival_rate_per_minute, rates["west"].arrival_rate_per_minute) / 30.0,
+        }
+        green = FixedWebsterController.green_split(
+            ratios, 2 * intersection.yellow_seconds, max(8, min_green_seconds), config.max_green_seconds
+        )
+        return FixedWebsterController(green_seconds=green, min_green_seconds=min_green_seconds)
+    if config.type == "vehicle_actuated":
+        return VehicleActuatedController(
+            min_green_seconds=config.min_green_seconds,
+            max_green_seconds=config.max_green_seconds,
+        )
+    if config.type == "queue_based":
+        return QueueBasedController(
+            min_green_seconds=config.min_green_seconds,
+            max_green_seconds=config.max_green_seconds,
+            switching_margin=config.switching_margin,
+            legacy_rule=config.legacy_rule,
+            name="queue_based_legacy" if config.legacy_rule else "queue_based",
         )
     if config.type == "ai":
         return AIPhaseController(
@@ -47,18 +92,29 @@ def build_controller(config: ControllerConfig, min_green_seconds: int) -> BaseCo
 def run_experiment(config: ExperimentConfig) -> tuple[list[dict], pd.DataFrame]:
     rows: list[dict] = []
     for scenario in _iter_scenarios(config):
-        for controller_config in config.controllers:
-            for seed in config.simulation.seeds:
-                simulation = SimulationConfig(
-                    duration_seconds=config.simulation.duration_seconds,
-                    seed=seed,
-                    service_time_seconds=config.simulation.service_time_seconds,
-                )
+        for seed in config.simulation.seeds:
+            simulation = SimulationConfig(
+                duration_seconds=config.simulation.duration_seconds,
+                seed=seed,
+                service_time_seconds=config.simulation.service_time_seconds,
+                observation_error_rate=scenario.get("observation_error_rate", 0.0),
+            )
+            arrivals = generate_arrivals(
+                scenario["intersection"], simulation, scenario.get("demand_schedule")
+            )
+            for controller_config in config.controllers:
                 controller = build_controller(
                     controller_config,
                     min_green_seconds=scenario["intersection"].min_green_seconds,
+                    intersection=scenario["intersection"],
                 )
-                result = run_simulation(scenario["intersection"], simulation, controller)
+                result = run_simulation(
+                    scenario["intersection"],
+                    simulation,
+                    controller,
+                    initial_queues=scenario.get("initial_queues"),
+                    arrivals=arrivals,
+                )
                 rows.append(
                     {
                         "scenario": scenario["name"],
@@ -92,6 +148,94 @@ def run_experiment(config: ExperimentConfig) -> tuple[list[dict], pd.DataFrame]:
     return rows, summary
 
 
+def build_paired_statistics(results: list[dict]) -> list[dict]:
+    """Pair queue_based against each controller by scenario, horizon and seed."""
+    grouped: dict[tuple[str, int], dict[str, dict[int, float]]] = {}
+    for row in results:
+        key = (row["scenario"], int(row["duration_seconds"]))
+        grouped.setdefault(key, {}).setdefault(row["controller"], {})[int(row["seed"])] = float(
+            row["average_wait_seconds"]
+        )
+    output: list[dict] = []
+    for (scenario, duration), controllers in sorted(grouped.items()):
+        queue_values = controllers.get("queue_based")
+        if not queue_values:
+            continue
+        for controller, values in sorted(controllers.items()):
+            if controller == "queue_based":
+                continue
+            seeds = sorted(set(queue_values) & set(values))
+            differences = [queue_values[seed] - values[seed] for seed in seeds]
+            n = len(differences)
+            average = mean(differences) if n else 0.0
+            deviation = stdev(differences) if n > 1 else 0.0
+            half_width = _t_critical_975(n - 1) * deviation / math.sqrt(n) if n > 1 else None
+            nonzero = [difference for difference in differences if difference != 0]
+            negative = sum(difference < 0 for difference in nonzero)
+            positive = len(nonzero) - negative
+            smaller = min(negative, positive)
+            p_value = (
+                min(1.0, 2 * sum(math.comb(len(nonzero), k) for k in range(smaller + 1)) / 2 ** len(nonzero))
+                if nonzero
+                else 1.0
+            )
+            output.append(
+                {
+                    "scenario": scenario,
+                    "duration_seconds": duration,
+                    "comparator": controller,
+                    "pairs": n,
+                    "queue_based_minus_comparator_mean_seconds": average,
+                    "paired_sd_seconds": deviation,
+                    "ci95_low_seconds": average - half_width if half_width is not None else None,
+                    "ci95_high_seconds": average + half_width if half_width is not None else None,
+                    "sign_test_p": p_value,
+                    "holm_p": p_value,
+                }
+            )
+    scenario_keys = sorted({(row["scenario"], row["duration_seconds"]) for row in output})
+    for scenario_key in scenario_keys:
+        indexes = [
+            index
+            for index, row in enumerate(output)
+            if (row["scenario"], row["duration_seconds"]) == scenario_key
+        ]
+        ordered = sorted(indexes, key=lambda index: output[index]["sign_test_p"])
+        m = len(ordered)
+        running_max = 0.0
+        for rank, index in enumerate(ordered):
+            adjusted = min(1.0, (m - rank) * output[index]["sign_test_p"])
+            running_max = max(running_max, adjusted)
+            output[index]["holm_p"] = running_max
+    return output
+
+
+def _t_critical_975(degrees_of_freedom: int) -> float:
+    """Cornish-Fisher approximation of the two-sided 95% Student t quantile."""
+    z = 1.959963984540054
+    df = max(1, degrees_of_freedom)
+    return (
+        z
+        + (z**3 + z) / (4 * df)
+        + (5 * z**5 + 16 * z**3 + 3 * z) / (96 * df**2)
+        + (3 * z**7 + 19 * z**5 + 17 * z**3 - 15 * z) / (384 * df**3)
+    )
+
+
+def _paired_markdown_table(rows: list[dict]) -> str:
+    headers = ["scenario", "duration_seconds", "comparator", "pairs", "mean Δ, s", "95% CI, s", "sign p", "Holm p"]
+    table = ["| " + " | ".join(headers) + " |", "| " + " | ".join(["---"] * len(headers)) + " |"]
+    for row in rows:
+        ci = "NA" if row["ci95_low_seconds"] is None else f"[{row['ci95_low_seconds']:.2f}, {row['ci95_high_seconds']:.2f}]"
+        values = [
+            row["scenario"], str(row["duration_seconds"]), row["comparator"], str(row["pairs"]),
+            f"{row['queue_based_minus_comparator_mean_seconds']:.2f}", ci,
+            f"{row['sign_test_p']:.4f}", f"{row['holm_p']:.4f}",
+        ]
+        table.append("| " + " | ".join(values) + " |")
+    return "\n".join(table)
+
+
 def save_results(
     results: list[dict],
     summary: pd.DataFrame,
@@ -104,11 +248,14 @@ def save_results(
     Path(csv_path).parent.mkdir(parents=True, exist_ok=True)
     analytics = build_experiment_analytics(summary)
     payload = {
+        "result_schema_version": 2,
         "experiment": {
             "name": config.name if config else "experiment",
             "title": config.title if config else "Эксперимент",
             "description": config.description if config else "",
         },
+        "configuration": config.model_dump(mode="json") if config else None,
+        "environment": _environment_metadata(),
         "runs": results,
         "summary": summary.to_dict(orient="records"),
         "analytics": {
@@ -116,12 +263,13 @@ def save_results(
             "strategy_overview": analytics["strategy_overview"].to_dict(orient="records"),
             "ai_vs_actuated": analytics["ai_vs_actuated"].to_dict(orient="records"),
         },
+        "paired_statistics": build_paired_statistics(results),
     }
     Path(path).write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     summary.to_csv(csv_path, index=False)
     Path(report_path).parent.mkdir(parents=True, exist_ok=True)
     Path(report_path).write_text(
-        build_markdown_report(summary, config, analytics),
+        build_markdown_report(summary, config, analytics, results),
         encoding="utf-8",
     )
 
@@ -172,6 +320,7 @@ def build_markdown_report(
     summary: pd.DataFrame,
     config: ExperimentConfig | None = None,
     analytics: dict[str, pd.DataFrame] | None = None,
+    results: list[dict] | None = None,
 ) -> str:
     analytics = analytics or build_experiment_analytics(summary)
     title = config.title if config else "Экспериментальный отчёт"
@@ -266,6 +415,17 @@ def build_markdown_report(
             "",
         ]
     )
+    if results:
+        lines.extend(["## Парные различия queue_based", ""])
+        paired = build_paired_statistics(results)
+        lines.extend(
+            [
+                "Разность определена как ожидание `queue_based` минус ожидание сравниваемого алгоритма; отрицательное значение означает меньшее ожидание у queue_based. Интервалы — 95% нормальная аппроксимация для среднего парного различия. P-value получено двусторонним точным знаковым тестом; внутри сценария применена поправка Holm.",
+                "",
+                _paired_markdown_table(paired),
+                "",
+            ]
+        )
     for scenario, scenario_frame in summary.groupby("scenario_title", sort=False):
         best = scenario_frame.sort_values("average_wait_seconds").iloc[0]
         lines.append(
@@ -295,6 +455,8 @@ def _iter_scenarios(config: ExperimentConfig) -> list[dict[str, str | Intersecti
                 "title": scenario.title,
                 "description": scenario.description,
                 "intersection": scenario.intersection,
+                "demand_schedule": scenario.demand_schedule,
+                "initial_queues": scenario.initial_queues,
             }
             for scenario in config.scenarios
         ]
@@ -315,7 +477,14 @@ def _add_baseline_improvement(summary: pd.DataFrame) -> pd.DataFrame:
     summary["wait_improvement_vs_fixed_pct"] = 0.0
     for scenario in summary["scenario"].unique():
         mask = summary["scenario"] == scenario
-        baseline = summary.loc[mask & (summary["controller"] == BASELINE_CONTROLLER)]
+        available_controllers = set(summary.loc[mask, "controller"])
+        baseline_name = next(
+            (name for name in BASELINE_CONTROLLERS if name in available_controllers),
+            None,
+        )
+        if baseline_name is None:
+            continue
+        baseline = summary.loc[mask & (summary["controller"] == baseline_name)]
         if baseline.empty:
             continue
         baseline_wait = float(baseline.iloc[0]["average_wait_seconds"])
@@ -325,6 +494,39 @@ def _add_baseline_improvement(summary: pd.DataFrame) -> pd.DataFrame:
             (baseline_wait - summary.loc[mask, "average_wait_seconds"]) / baseline_wait * 100
         )
     return summary
+
+
+def _environment_metadata() -> dict:
+    packages = {}
+    for package in (
+        "traffic-light-ai",
+        "simpy",
+        "pandas",
+        "pydantic",
+        "PyYAML",
+        "numpy",
+        "gymnasium",
+        "ultralytics",
+    ):
+        try:
+            packages[package] = version(package)
+        except PackageNotFoundError:
+            packages[package] = None
+    try:
+        revision = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        revision = None
+    return {
+        "python": sys.version,
+        "platform": platform.platform(),
+        "git_commit": revision,
+        "dependencies": packages,
+    }
 
 
 def _build_ai_vs_actuated(summary: pd.DataFrame) -> pd.DataFrame:

@@ -4,11 +4,14 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 LaneName = Literal["north", "south", "east", "west"]
 PhaseName = Literal["north_south", "east_west"]
-ControllerType = Literal["fixed", "actuated", "ai", "q_learning"]
+ControllerType = Literal[
+    "fixed", "fixed_15", "fixed_35", "fixed_webster", "vehicle_actuated", "queue_based",
+    "actuated", "ai", "q_learning",
+]
 
 
 class TrafficDemandConfig(BaseModel):
@@ -20,18 +23,35 @@ class IntersectionConfig(BaseModel):
     min_green_seconds: int = Field(default=15, ge=1)
     yellow_seconds: int = Field(default=3, ge=0)
 
+    @model_validator(mode="after")
+    def require_four_approaches(self):
+        if set(self.lanes) != {"north", "south", "east", "west"}:
+            raise ValueError("IntersectionConfig must define north, south, east, and west lanes")
+        return self
+
 
 class SimulationConfig(BaseModel):
     duration_seconds: int = Field(default=900, ge=1)
     seed: int = 42
     service_time_seconds: float = Field(default=2.0, gt=0)
+    observation_error_rate: float = Field(default=0.0, ge=0.0, le=0.2)
 
 
 class ControllerConfig(BaseModel):
     type: ControllerType
     phase_duration_seconds: int = Field(default=35, ge=1)
     decision_interval_seconds: int = Field(default=10, ge=1)
+    min_green_seconds: int = Field(default=8, ge=1)
+    max_green_seconds: int = Field(default=45, ge=1)
+    switching_margin: int = Field(default=1, ge=0)
+    legacy_rule: bool = False
     policy_path: str = "outputs/q_learning_policy.json"
+
+    @model_validator(mode="after")
+    def validate_green_bounds(self):
+        if self.max_green_seconds < self.min_green_seconds:
+            raise ValueError("max_green_seconds must be greater than or equal to min_green_seconds")
+        return self
 
 
 class RunConfig(BaseModel):
@@ -47,11 +67,20 @@ class ExperimentSimulationConfig(BaseModel):
     service_time_seconds: float = Field(default=2.0, gt=0)
 
 
+class DemandPeriodConfig(BaseModel):
+    start_seconds: int = Field(ge=0)
+    end_seconds: int = Field(ge=1)
+    lanes: dict[LaneName, TrafficDemandConfig]
+
+
 class ScenarioConfig(BaseModel):
     name: str
     title: str
     description: str = ""
     intersection: IntersectionConfig
+    demand_schedule: list[DemandPeriodConfig] | None = None
+    initial_queues: dict[LaneName, int] = Field(default_factory=dict)
+    observation_error_rate: float = Field(default=0.0, ge=0.0, le=0.2)
 
 
 class ExperimentConfig(BaseModel):
@@ -63,6 +92,17 @@ class ExperimentConfig(BaseModel):
     scenarios: list[ScenarioConfig] | None = None
     controllers: list[ControllerConfig]
     output: dict[str, str] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def validate_demand_schedules(self):
+        for scenario in self.scenarios or []:
+            periods = sorted(scenario.demand_schedule or [], key=lambda period: period.start_seconds)
+            for index, period in enumerate(periods):
+                if period.end_seconds <= period.start_seconds:
+                    raise ValueError(f"Invalid demand period in scenario {scenario.name}")
+                if index and period.start_seconds < periods[index - 1].end_seconds:
+                    raise ValueError(f"Overlapping demand periods in scenario {scenario.name}")
+        return self
 
 
 def load_yaml(path: str | Path) -> dict:

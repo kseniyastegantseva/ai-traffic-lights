@@ -1,0 +1,41 @@
+name: piere_revision_quick
+title: Быстрая проверка пересмотренной модели
+description: Небольшой smoke-сценарий для проверки физики и формата результатов; не предназначен для научных выводов.
+simulation:
+  duration_seconds: 180
+  seeds: [11, 29]
+  service_time_seconds: 2.0
+scenarios:
+  - name: symmetric
+    title: Симметричный спрос
+    intersection:
+      lanes:
+        north: {arrival_rate_per_minute: 6}
+        south: {arrival_rate_per_minute: 6}
+        east: {arrival_rate_per_minute: 6}
+        west: {arrival_rate_per_minute: 6}
+      min_green_seconds: 8
+      yellow_seconds: 3
+  - name: asymmetric
+    title: Асимметричный спрос
+    intersection:
+      lanes:
+        north: {arrival_rate_per_minute: 10}
+        south: {arrival_rate_per_minute: 10}
+        east: {arrival_rate_per_minute: 4}
+        west: {arrival_rate_per_minute: 4}
+      min_green_seconds: 8
+      yellow_seconds: 3
+controllers:
+  - type: fixed_15
+  - type: fixed_35
+  - type: fixed_webster
+  - type: vehicle_actuated
+  - type: queue_based
+  - type: queue_based
+    legacy_rule: true
+    max_green_seconds: 45
+output:
+  path: outputs/piere_revision_quick.json
+  summary_csv: outputs/piere_revision_quick_summary.csv
+  report_markdown: outputs/piere_revision_quick_report.md

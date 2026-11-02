@@ -34,7 +34,7 @@ INTERACTIVE_TO_RESEARCH_SCENARIO = {
     "uniform": "uniform_demo",
     "north_south_peak": "morning_peak_ns",
     "east_west_peak": "evening_peak_ew",
-    "oversaturated": "oversaturated",
+    "high_load": "high_load",
     "empty": "low_load",
 }
 STRATEGY_DESCRIPTIONS = {
@@ -152,9 +152,9 @@ def _test_photos_screen() -> None:
         ("Низкая нагрузка.png", "uniform_load.png", "Низкая нагрузка.png"),
         ("Равномерная нагрузка.png", "low_load.png", "Равномерная нагрузка.png"),
         (
-            "Перегруженный перекрёсток.png",
+            "Большая очередь на снимке.png",
             "oversaturated.png",
-            "Перегруженный перекрёсток.png",
+            "Большая очередь на снимке.png",
         ),
     )
     with st.container(key="test-photo-grid"):
@@ -318,15 +318,7 @@ def _load_research_payload(path: Path) -> dict | None:
         except (OSError, json.JSONDecodeError):
             payload = None
 
-    runs = payload.get("runs", []) if isinstance(payload, dict) else []
-    summary = payload.get("summary", []) if isinstance(payload, dict) else []
-    if (
-        payload
-        and summary
-        and runs
-        and "queue_series" in runs[0]
-        and "max_queue_length" in summary[0]
-    ):
+    if _is_current_research_payload(payload):
         return payload
 
     config_path = Path("configs/experiment_suite.yaml")
@@ -348,6 +340,21 @@ def _load_research_payload(path: Path) -> dict | None:
     except Exception as error:  # noqa: BLE001 - dashboard показывает понятную причину
         st.error(f"Не удалось автоматически провести эксперимент: {error}")
         return None
+
+
+def _is_current_research_payload(payload: object) -> bool:
+    if not isinstance(payload, dict) or payload.get("result_schema_version") != 2:
+        return False
+    runs = payload.get("runs", [])
+    summary = payload.get("summary", [])
+    return bool(
+        summary
+        and runs
+        and isinstance(runs[0], dict)
+        and isinstance(summary[0], dict)
+        and "queue_series" in runs[0]
+        and "max_queue_length" in summary[0]
+    )
 
 
 def _research_base_layout(figure, title: str):

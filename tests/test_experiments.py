@@ -5,6 +5,7 @@ from traffic_light.config import load_experiment_config
 from traffic_light.experiments import (
     build_experiment_analytics,
     build_markdown_report,
+    build_paired_statistics,
     run_experiment,
     save_results,
 )
@@ -46,7 +47,7 @@ def test_experiment_suite_contains_multiple_research_scenarios():
         "low_load",
         "morning_peak_ns",
         "evening_peak_ew",
-        "oversaturated",
+        "high_load",
     }
     assert set(summary["controller"]) == {"fixed", "actuated", "ai"}
 
@@ -72,3 +73,24 @@ def test_experiment_suite_report_contains_strategy_analytics(tmp_path: Path):
     payload = json.loads(json_path.read_text(encoding="utf-8"))
     assert "analytics" in payload
     assert "strategy_overview" in payload["analytics"]
+
+
+def test_paired_statistics_match_seed_and_apply_holm_adjustment():
+    rows = []
+    for seed, adaptive_wait in [(1, 8.0), (2, 9.0), (3, 10.0)]:
+        for controller, wait in [("queue_based", 7.0), ("fixed_15", adaptive_wait), ("fixed_35", 11.0)]:
+            rows.append(
+                {
+                    "scenario": "symmetric",
+                    "duration_seconds": 1800,
+                    "seed": seed,
+                    "controller": controller,
+                    "average_wait_seconds": wait,
+                }
+            )
+    results = build_paired_statistics(rows)
+    assert len(results) == 2
+    fixed15 = next(row for row in results if row["comparator"] == "fixed_15")
+    assert fixed15["pairs"] == 3
+    assert fixed15["queue_based_minus_comparator_mean_seconds"] == -2.0
+    assert 0 <= fixed15["holm_p"] <= 1

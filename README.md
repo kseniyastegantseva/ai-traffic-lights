@@ -197,6 +197,24 @@ Sweep сохраняет:
 traffic-sim select-policy --config configs/ai.yaml
 ```
 
+## Эксперименты для PIERE revision
+
+Перейдите на ветку `revision/piere-review` и после установки зависимостей проекта запустите короткую проверку:
+
+```bash
+traffic-sim compare --config configs/piere_revision_quick.yaml
+```
+
+Полные конфигурации задают 30 парных seed и горизонты 1800 и 3600 секунд:
+
+```bash
+traffic-sim compare --config configs/piere_revision_1800.yaml
+traffic-sim compare --config configs/piere_revision_3600.yaml
+traffic-sim compare --config configs/piere_perception_sensitivity.yaml
+```
+
+Это полные исследовательские прогоны. Они могут занимать значительное время. До фактического завершения запусков не используйте отчёты как научные результаты; итоговые JSON, CSV и Markdown пишутся в `outputs/`.
+
 Команда копирует лучшую policy в `outputs/q_learning_policy.json`.
 
 После этого policy можно включить в общий эксперимент:
