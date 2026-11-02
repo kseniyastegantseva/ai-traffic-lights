@@ -1,73 +1,49 @@
-# Draft response to reviewers — verification required
+# Provisional response map for author review
 
-**Important:** the original reviewer report was not present among the accessible files. The attached task mentioned seven major and four minor comments but did not include their wording. The eleven items below are therefore a provisional response map synthesized from the old article and the task specification; they are not represented as the reviewer's actual comments. Reconcile every item with the original report before submission.
+The original reviewer letter was not available in the repository or supplied attachments. The topics below summarize the requested revision themes; they are not quotations or a verified reconstruction of the reviewers' comments. Before resubmission, map each response to the original comment and update section/page references from the final conference template.
 
-## Major comments (provisional topics)
+## Major topics
 
-### Major 1 — Signal safety and yellow clearance
+### 1. Phase safety and service completion
 
-**Response:** We revised the SimPy service and phase logic so a phase change enters a yellow interval, the conflicting axis remains red during that interval, and new service starts require green. An already-started service may finish during yellow.
+The revised SimPy model has mutually exclusive north–south and east–west phases. Yellow clearance lasts 3 s; service already in progress may finish, but no new service starts during yellow. Vehicles move through waiting, in-service, and departed states. A vehicle is counted as a departure only when its 2-s service completes before the half-open run horizon. Each run satisfies the vehicle-conservation identity. Phase histories and simulation tests support these changes.
 
-**Location/evidence:** `src/traffic_light/simulation.py` records phase transitions in `phase_history`; `tests/test_simulation.py` checks that a yellow transition precedes the next green. **Status: implemented and verified; 52 tests passed, and all 1800 saved full-series phase histories were audited.**
+### 2. Matched arrivals and reproducibility
 
-### Major 2 — Service timing and vehicle conservation
+Each scenario specifies its demand rates and 30 seeds. Controllers in a scenario/seed pair receive the same generated arrival list; the stored SHA-256 event digest verifies that pairing. Both 1,800-s and 3,600-s horizons are reported. Runs are transient experiments from an initially empty system or stated image-derived initial queues; no warm-up interval is removed.
 
-**Response:** Vehicles now move through waiting, in-service, and departed states. Departure is recorded after the service interval; an unfinished service at the horizon remains in-service. Every run asserts `initial + arrived = departed + waiting + in_service`.
+### 3. Baseline controllers and bounded green
 
-**Location/evidence:** `src/traffic_light/simulation.py`, result fields `waiting_at_end`, `in_service_at_end`, and `vehicles_departed`; regression test in `tests/test_simulation.py`. **Status: implemented and verified; all full-series runs satisfy vehicle conservation.**
+The comparison includes fixed 15-s and 35-s green plans, fixed Webster timing, a queue-actuated gap proxy, and a deterministic queue-based heuristic. The two responsive policies use an 8-s minimum and 45-s maximum green, subject to a competing-phase request. The actuation policy uses aggregate queue emptiness because passage-headway observations are not modeled. Queue-based is not a trained AI policy.
 
-### Major 3 — Queue initialization and experiment reproducibility
+### 4. Demand levels and overload definition
 
-**Response:** Initial queues are accepted by the model and YAML scenario. Seeded Poisson arrival events are explicitly generated and their SHA-256 digest is stored in every result. Initial vehicles are present at time zero; unobserved prior delay is excluded.
+The nine scenarios cover symmetric 3/6/9 vehicles per minute per approach, N/S and mirrored E/W asymmetry, variable demand, a dominant-axis switch, the retained 18/min high-load case, and a separate 24/min oversaturated case. The equal-split capacity estimate is about 13.82 vehicles/min per approach under the specified 2-s discharge and 35-s green/3-s yellow plan. Thus 9/min is below that estimate. Overload conclusions use queue growth, throughput, and residual vehicles as well as completed-vehicle waiting.
 
-**Location/evidence:** `src/traffic_light/simulation.py`, `src/traffic_light/config.py`, `configs/piere_revision_1800.yaml`. **Status: implemented and verified; all scenario/seed groups share the same stream hash across controllers.**
+### 5. Paired statistical analysis
 
-### Major 4 — Controller baselines and bounded waiting
+For each matched seed, the primary contrast is queue-based minus comparator mean waiting. The manuscript reports a 95% Student-t interval for the mean paired difference, a two-sided exact paired sign test, and Holm adjustment across the five comparator tests in each scenario/horizon family. The sign test assesses direction, not effect magnitude. P-values below 0.0001 are reported as ; absent baseline comparisons are not applicable.
 
-**Response:** Added separate `fixed_15`, `fixed_35`, fixed-Webster, vehicle-actuated, revised queue-based, and legacy queue-based configurations. Adaptive policies have a maximum green when the competing phase has a request. Webster's formula, bounds, and fallback are described in the revised manuscript.
+### 6. Mixed controller results and censoring
 
-**Location/evidence:** `src/traffic_light/controllers.py`, `src/traffic_light/experiments.py`, revision YAML configurations, and results in `paper/simulation_results.md`. **Status: implemented and compared in both full horizons.** The vehicle-actuated gap is an aggregate-queue proxy, not detector passage-headway logic.
+The 3,600-s queue-based mean waits range from 5.41 s at 3/min to 913.02 s at 24/min. Queue-based is competitive in several asymmetric and changing-demand cases, but vehicle-actuated is lower at 3 and 9/min. At 18/min queue-based exceeds vehicle-actuated by 258.86 s; at 24/min by 191.49 s. Residual queues are also larger under queue-based at both overload levels. The manuscript warns that completed-vehicle mean wait excludes vehicles still waiting at the horizon.
 
-### Major 5 — Demand scenarios and overload validity
+### 7. Detector evaluation and scope
 
-**Response:** The earlier 9 veh/min/approach scenario is renamed `high_load`. A rough capacity estimate using the configured 2 s discharge time gives about 13.82 veh/min/approach under equal fixed_35 allocation, so 9 veh/min is not an overload. Added an 18 veh/min candidate overload and piecewise demand/sudden-dominance scenarios.
+The production VisDrone YOLO11s path was reproduced on the same 16 diagnostic images: 643 reference vehicles, 684 predictions, VCA 85.23%, and directional MAE 1.484 across 64 image/approach counts. The manuscript reports aggregate count results rather than precision, recall, or mAP because bounding-box labels are unavailable. The set is small and previously used; it is not an independent holdout. Checkpoint training provenance, unseen-scene performance, and redistribution rights remain unverified.
 
-**Location/evidence:** `docs/INITIAL_AUDIT.md`, revision configurations, and `paper/simulation_results.md`. **Status: confirmed for this model configuration:** queue-based residual queues increase from a mean 758 to 1505 over the two horizons; fixed and actuated baselines also accumulate queues. This does not establish field capacity.
+### 8. Error propagation into control
 
-### Major 6 — Statistical evidence and revised numerical claims
+A corrected 1,200-run experiment perturbs only controller observations at 0%, 5%, 10%, and 20%; physical arrivals and queue states remain unchanged. The paired 20%-versus-0% queue-based mean-wait changes range from +0.02 to +1.66 s, with demand-dependent intervals. A separate 300-run bootstrap resamples observed signed directional count residuals from the same 16 images. It is explicitly diagnostic and does not estimate field performance.
 
-**Response:** Added a paired comparison by scenario, horizon, and seed; 95% t intervals for mean paired differences; exact two-sided sign tests; and Holm correction. The old reported improvements are explicitly excluded from the revised draft.
+### 9. Contribution and terminology
 
-**Location/evidence:** `src/traffic_light/experiments.py`, `paper/revised_manuscript.md`, and `paper/simulation_results.md`. **Status: complete for the configured runs; results show mixed performance, including a clear queue-based loss under high load.**
+The revised claim is a reproducible, matched-seed assessment of an image-initialized signal-control prototype. The queue-based policy is described as a deterministic heuristic, not a learned AI controller. Conclusions state that performance depends on demand and that fixed-Webster can respond poorly to a demand shift because its split is fixed.
 
-### Major 7 — Perception validity and control integration
+### 10. Equations, tables, and figures
 
-**Response:** The manuscript distinguishes aggregate Vehicle Count Accuracy from object-detection precision, recall, and mAP. Synthetic and empirical-bootstrap observation errors perturb only the controller's view; physical queues and shared arrivals remain unchanged. We found and fixed a runner bug that had dropped the configured observation-error rate, added a regression test, and reran the 1,200-case, five-regime sensitivity experiment plus a 300-run bootstrap using observed directional count residuals.
+The manuscript defines vehicle conservation, completed-vehicle waiting, mean queue, capacity ratio, Webster timing, and the paired confidence interval. The compact article retains a system diagram, detector example, perception-sensitivity plot, controller comparison, and overload/censoring plot, along with directional detector counts, controller means for all nine scenarios, and paired queue-based/vehicle-actuated contrasts. The complete set of additional figures and detailed outputs remains in the repository.
 
-**Location/evidence:** `src/traffic_light/simulation.py`, `src/traffic_light/experiments.py`, `tests/test_experiments.py`, `tests/test_simulation.py`, `src/traffic_light/interactive.py`, `app/dashboard.py`, `configs/piere_perception_sensitivity_expanded.yaml`, `configs/piere_perception_empirical_errors.yaml`, `paper/simulation_results.md`, and `paper/perception_results.md`. Corrected synthetic sensitivity included 1,200 runs; the empirical-residual bootstrap included 300 runs. Live inference exactly reproduced the existing 16-image result (VCA 85.23%, MAE 1.484); COCO, x2/x3, and duplicate-suppression comparisons are documented. **Status: sensitivity contract and detector inference are verified on existing diagnostic data; no independent holdout or bounding-box labels are available; training lineage and redistribution rights remain unverified.**
+### 11. References and final reconciliation
 
-## Minor comments (provisional topics)
-
-### Minor 1 — Metric definitions and right-censoring
-
-**Response:** The draft now defines waiting time, queue area, horizon semantics, and treatment of incomplete service. Completed-vehicle wait is separated from observed delay for vehicles still in the system.
-
-**Location/evidence:** `src/traffic_light/simulation.py`, `docs/INITIAL_AUDIT.md`, `paper/revised_manuscript.md`. **Status: definitions and tests verified; 52 tests passed.**
-
-### Minor 2 — Reproducible configurations and outputs
-
-**Response:** Added quick, 1800 s, 3600 s, and perception-sensitivity YAML configurations with explicit seeds and output locations.
-
-**Location/evidence:** revision configurations and ignored `outputs/` JSON. **Status: quick, both full horizons, and sensitivity CLI runs completed. Outputs are not committed due to size; compact tabulations and reproduction commands are in `paper/simulation_results.md`.**
-
-### Minor 3 — Scope of the camera-based claim
-
-**Response:** The revised draft states that one image provides an initial count under an explicit queue-zone assumption; it does not imply continuous video tracking or field deployment.
-
-**Location/evidence:** `paper/revised_manuscript.md`, `wiki/architecture.md`, `src/traffic_light/interactive.py`, and dashboard tests. **Status: four detector counts now initialize the revised SimPy model; no continuous video or live inference validation is claimed.**
-
-### Minor 4 — Bibliography and review traceability
-
-**Response:** The manuscript does not repeat the old reference list as independently verified. The original reviewer report was not available, so actual comment wording and mapping cannot be confirmed.
-
-**Location/evidence:** this response file, `paper/revised_manuscript.md`, and `paper/references_audit.md`. **Status: selected citations in the revised manuscript were checked against publisher, conference, software-maintainer, and catalog records. The old list was curated rather than copied wholesale. Exact comment wording remains unresolved because the original reviewer report was not available.**
+The selected references support signal-control background, Webster timing, YOLO11 software, the VisDrone benchmark, and SimPy. Bibliographic metadata for these entries is recorded in the bibliography audit. The exact original comments and their requested response format still need author reconciliation because the reviewer letter was not supplied.

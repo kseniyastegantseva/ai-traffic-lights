@@ -16,7 +16,10 @@
 - `experiments.md` — дизайн экспериментов и метрики.
 - `../docs/REVISION_COMPLETION_AUDIT.md` — итоговый проверяемый аудит рукописи PIERE revision.
 - `../docs/STREAMLIT_DEPLOYMENT.md` — инструкция развёртывания дашборда на целевой ветке.
-- `../paper/REVIEWER_CHECKLIST.md` — ответы по 11 темам ревизии с ограничениями.
+- `../paper/reviewer_response.md` — ответы по 11 темам ревизии с ограничениями.
+- `../paper/revised_manuscript.md` и `../paper/revised_manuscript_ru.md` — английская статья и полный русский перевод.
+- `../paper/RUSSIAN_EXPLANATION.md` — пояснение авторам по результатам и правкам.
+- `../scripts/build_piere_manuscript.py` и `../scripts/export_piere_pdfs.ps1` — сборка DOCX и экспорт PDF обеих языковых версий.
 - `../scripts/generate_piere_figures.py` — воспроизводимая генерация комплектов PNG/SVG/PDF.
 - `../paper/perception_results.md` — проверка воспроизводимости и абляция YOLO.
 - Конфигурации экспериментов находятся в `../configs/`; расширенная чувствительность к ошибке детекции — `../configs/piere_perception_sensitivity_expanded.yaml`.

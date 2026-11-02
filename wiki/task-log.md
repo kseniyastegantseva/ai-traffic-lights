@@ -1,5 +1,13 @@
 # Журнал задач
 
+## 2026-11-03 — Финальная доработка PIERE article package
+
+- Переписана и отредактирована английская рукопись; подготовлен полный согласованный перевод на русский язык. Обновлены таблицы, формулы, подписи, выводы и осторожные формулировки ограничений без изменения экспериментальных чисел.
+- Собраны `paper/PIERE_Revised_Article.docx` и `paper/PIERE_Revised_Article_RU.docx`; через Microsoft Word экспортированы соответствующие PDF. Word/PDFium рендерингом проверены все страницы; каждая версия содержит ровно 6 страниц.
+- Подготовлены `paper/RUSSIAN_EXPLANATION.md`, тематический `paper/reviewer_response.md` и воспроизводимые команды сборки `scripts/build_piere_manuscript.py` / `scripts/export_piere_pdfs.ps1`. Исходного письма рецензента в доступных материалах нет, поэтому ответ не заявляется как дословный.
+- Актуализированы указатели Wiki и `docs/REVISION_COMPLETION_AUDIT.md`. Проверено: `ruff check .` — без замечаний; `pytest -q` — 60 passed; `git diff --check` — без ошибок. Для проверок использовано временное окружение Python 3.12; Docker daemon недоступен.
+- Работа остаётся в `revision/piere-review`; `main`, опубликованное приложение и `outputs/` не менялись. Коммит и push выполняются после финального Git review.
+
 ## 2026-11-02 — Завершение PIERE revision
 
 - Исправлена научная статистика: точные 95% Student-t интервалы, paired exact sign test, Holm adjustment, формат `<0.0001` и N/A для отсутствующего baseline; убран пустой AI-vs-adaptive блок. Отчёты и CSV пересобраны из сохранённых runs.
