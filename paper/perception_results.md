@@ -44,4 +44,4 @@ python scripts/evaluate_perception_models.py \
   --output outputs/perception_comparison.json
 ```
 
-The script downloads `yolo11s.pt` when absent, caching it in the system temporary directory. It writes the complete per-image result only under `outputs/`, which is ignored by Git. The verified run used `/tmp/ai-traffic-lights-venv` and produced `outputs/perception_comparison_verified.json`.
+The script downloads `yolo11s.pt` when absent, caching it in the system temporary directory. By default it writes under `outputs/`; the verified per-image result is included in the revision branch as `outputs/perception_comparison_verified.json`. Other ad hoc outputs remain local.

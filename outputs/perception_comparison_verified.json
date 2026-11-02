@@ -1,0 +1,1323 @@
+{
+  "created_at_utc": "2026-11-02T18:58:20.667730+00:00",
+  "environment": {
+    "ultralytics": "8.4.129",
+    "torch": "2.7.1+cpu",
+    "device": "cpu",
+    "torch_threads": 7
+  },
+  "ground_truth": "/home/kseniyastegantseva/ai-traffic-lights/computer-vision/data/test/ground_truth.json",
+  "weights": {
+    "coco_yolo11s": {
+      "path": "/tmp/ai-traffic-lights-models/yolo11s.pt",
+      "sha256": "85a76fe86dd8afe384648546b56a7a78580c7cb7b404fc595f97969322d502d5",
+      "checkpoint": {
+        "date": "2024-09-25T21:10:26.744899",
+        "version": "8.2.100",
+        "license": "AGPL-3.0 License (https://ultralytics.com/license)",
+        "epoch": -1,
+        "train_args": {
+          "data": "/usr/src/ultralytics/ultralytics/cfg/datasets/coco.yaml",
+          "epochs": 600,
+          "imgsz": 640,
+          "batch": 128,
+          "seed": 0,
+          "model": "yolo11s.yaml",
+          "pretrained": true
+        }
+      }
+    },
+    "visdrone_finetuned": {
+      "path": "/home/kseniyastegantseva/ai-traffic-lights/models/visdrone_vehicles.pt",
+      "sha256": "1081e2ccd9a632079238033a65ecd71a4ed413b8ee7a68762b3df418bcf1de10",
+      "checkpoint": {
+        "date": "2026-08-27T15:51:49.888282+03:00",
+        "version": "8.4.129",
+        "license": "AGPL-3.0 (https://ultralytics.com/license)",
+        "epoch": -1,
+        "train_args": {
+          "data": "/home/korneev/computer-vision/visdrone_four_class.yaml",
+          "epochs": 20,
+          "imgsz": 960,
+          "batch": 2,
+          "seed": 0,
+          "model": "runs/visdrone_vehicles_continue_25/weights/best.pt",
+          "pretrained": true
+        }
+      }
+    }
+  },
+  "inference": {
+    "imgsz": 1280,
+    "single_scale_confidence": 0.03,
+    "coco_vehicle_classes": [
+      2,
+      3,
+      5,
+      7
+    ],
+    "visdrone_vehicle_classes": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "multiscale": {
+      "crop_scales": [
+        2,
+        3
+      ],
+      "crop_confidence": 0.05,
+      "iou_deduplication_threshold": 0.3,
+      "zone_padding_pixels": 60
+    }
+  },
+  "summary": [
+    {
+      "variant": "coco_yolo11s_single",
+      "images": 16,
+      "directional_pairs": 64,
+      "total_actual": 643,
+      "total_predicted": 480,
+      "sum_abs_directional_error": 393,
+      "vehicle_count_accuracy_percent": 38.88024883359253,
+      "directional_mae": 6.140625,
+      "per_lane": {
+        "north": {
+          "actual": 189,
+          "predicted": 105
+        },
+        "south": {
+          "actual": 155,
+          "predicted": 86
+        },
+        "west": {
+          "actual": 180,
+          "predicted": 163
+        },
+        "east": {
+          "actual": 119,
+          "predicted": 126
+        }
+      }
+    },
+    {
+      "variant": "visdrone_single",
+      "images": 16,
+      "directional_pairs": 64,
+      "total_actual": 643,
+      "total_predicted": 699,
+      "sum_abs_directional_error": 94,
+      "vehicle_count_accuracy_percent": 85.38102643856921,
+      "directional_mae": 1.46875,
+      "per_lane": {
+        "north": {
+          "actual": 189,
+          "predicted": 213
+        },
+        "south": {
+          "actual": 155,
+          "predicted": 155
+        },
+        "west": {
+          "actual": 180,
+          "predicted": 198
+        },
+        "east": {
+          "actual": 119,
+          "predicted": 133
+        }
+      }
+    },
+    {
+      "variant": "visdrone_full_only",
+      "images": 16,
+      "directional_pairs": 64,
+      "total_actual": 643,
+      "total_predicted": 676,
+      "sum_abs_directional_error": 89,
+      "vehicle_count_accuracy_percent": 86.15863141524106,
+      "directional_mae": 1.390625,
+      "per_lane": {
+        "north": {
+          "actual": 189,
+          "predicted": 204
+        },
+        "south": {
+          "actual": 155,
+          "predicted": 147
+        },
+        "west": {
+          "actual": 180,
+          "predicted": 194
+        },
+        "east": {
+          "actual": 119,
+          "predicted": 131
+        }
+      }
+    },
+    {
+      "variant": "visdrone_plus_x2_nms",
+      "images": 16,
+      "directional_pairs": 64,
+      "total_actual": 643,
+      "total_predicted": 683,
+      "sum_abs_directional_error": 94,
+      "vehicle_count_accuracy_percent": 85.38102643856921,
+      "directional_mae": 1.46875,
+      "per_lane": {
+        "north": {
+          "actual": 189,
+          "predicted": 206
+        },
+        "south": {
+          "actual": 155,
+          "predicted": 147
+        },
+        "west": {
+          "actual": 180,
+          "predicted": 197
+        },
+        "east": {
+          "actual": 119,
+          "predicted": 133
+        }
+      }
+    },
+    {
+      "variant": "visdrone_plus_x2_no_nms",
+      "images": 16,
+      "directional_pairs": 64,
+      "total_actual": 643,
+      "total_predicted": 1425,
+      "sum_abs_directional_error": 782,
+      "vehicle_count_accuracy_percent": 0.0,
+      "directional_mae": 12.21875,
+      "per_lane": {
+        "north": {
+          "actual": 189,
+          "predicted": 429
+        },
+        "south": {
+          "actual": 155,
+          "predicted": 327
+        },
+        "west": {
+          "actual": 180,
+          "predicted": 399
+        },
+        "east": {
+          "actual": 119,
+          "predicted": 270
+        }
+      }
+    },
+    {
+      "variant": "visdrone_plus_x3_nms",
+      "images": 16,
+      "directional_pairs": 64,
+      "total_actual": 643,
+      "total_predicted": 683,
+      "sum_abs_directional_error": 94,
+      "vehicle_count_accuracy_percent": 85.38102643856921,
+      "directional_mae": 1.46875,
+      "per_lane": {
+        "north": {
+          "actual": 189,
+          "predicted": 206
+        },
+        "south": {
+          "actual": 155,
+          "predicted": 147
+        },
+        "west": {
+          "actual": 180,
+          "predicted": 197
+        },
+        "east": {
+          "actual": 119,
+          "predicted": 133
+        }
+      }
+    },
+    {
+      "variant": "visdrone_plus_x3_no_nms",
+      "images": 16,
+      "directional_pairs": 64,
+      "total_actual": 643,
+      "total_predicted": 1424,
+      "sum_abs_directional_error": 781,
+      "vehicle_count_accuracy_percent": 0.0,
+      "directional_mae": 12.203125,
+      "per_lane": {
+        "north": {
+          "actual": 189,
+          "predicted": 428
+        },
+        "south": {
+          "actual": 155,
+          "predicted": 328
+        },
+        "west": {
+          "actual": 180,
+          "predicted": 399
+        },
+        "east": {
+          "actual": 119,
+          "predicted": 269
+        }
+      }
+    },
+    {
+      "variant": "visdrone_plus_x2_x3_nms",
+      "images": 16,
+      "directional_pairs": 64,
+      "total_actual": 643,
+      "total_predicted": 684,
+      "sum_abs_directional_error": 95,
+      "vehicle_count_accuracy_percent": 85.22550544323484,
+      "directional_mae": 1.484375,
+      "per_lane": {
+        "north": {
+          "actual": 189,
+          "predicted": 206
+        },
+        "south": {
+          "actual": 155,
+          "predicted": 147
+        },
+        "west": {
+          "actual": 180,
+          "predicted": 197
+        },
+        "east": {
+          "actual": 119,
+          "predicted": 134
+        }
+      }
+    },
+    {
+      "variant": "visdrone_plus_x2_x3_no_nms",
+      "images": 16,
+      "directional_pairs": 64,
+      "total_actual": 643,
+      "total_predicted": 2150,
+      "sum_abs_directional_error": 1507,
+      "vehicle_count_accuracy_percent": 0.0,
+      "directional_mae": 23.546875,
+      "per_lane": {
+        "north": {
+          "actual": 189,
+          "predicted": 644
+        },
+        "south": {
+          "actual": 155,
+          "predicted": 500
+        },
+        "west": {
+          "actual": 180,
+          "predicted": 600
+        },
+        "east": {
+          "actual": 119,
+          "predicted": 406
+        }
+      }
+    }
+  ],
+  "per_image": {
+    "test_01.png": {
+      "actual": {
+        "north": 4,
+        "south": 0,
+        "west": 12,
+        "east": 11
+      },
+      "coco_yolo11s_single": {
+        "north": 2,
+        "south": 0,
+        "west": 13,
+        "east": 13
+      },
+      "visdrone_single": {
+        "north": 4,
+        "south": 0,
+        "west": 12,
+        "east": 12
+      },
+      "visdrone_full_only": {
+        "north": 4,
+        "south": 0,
+        "west": 12,
+        "east": 12
+      },
+      "visdrone_plus_x2_no_nms": {
+        "north": 8,
+        "south": 0,
+        "west": 25,
+        "east": 24
+      },
+      "visdrone_plus_x2_nms": {
+        "north": 4,
+        "south": 0,
+        "west": 13,
+        "east": 12
+      },
+      "visdrone_plus_x3_no_nms": {
+        "north": 8,
+        "south": 0,
+        "west": 25,
+        "east": 24
+      },
+      "visdrone_plus_x3_nms": {
+        "north": 4,
+        "south": 0,
+        "west": 13,
+        "east": 12
+      },
+      "visdrone_plus_x2_x3_no_nms": {
+        "north": 12,
+        "south": 0,
+        "west": 38,
+        "east": 36
+      },
+      "visdrone_plus_x2_x3_nms": {
+        "north": 4,
+        "south": 0,
+        "west": 13,
+        "east": 12
+      }
+    },
+    "test_02.png": {
+      "actual": {
+        "north": 2,
+        "south": 3,
+        "west": 6,
+        "east": 1
+      },
+      "coco_yolo11s_single": {
+        "north": 0,
+        "south": 0,
+        "west": 9,
+        "east": 1
+      },
+      "visdrone_single": {
+        "north": 2,
+        "south": 3,
+        "west": 6,
+        "east": 1
+      },
+      "visdrone_full_only": {
+        "north": 2,
+        "south": 3,
+        "west": 6,
+        "east": 1
+      },
+      "visdrone_plus_x2_no_nms": {
+        "north": 4,
+        "south": 6,
+        "west": 12,
+        "east": 2
+      },
+      "visdrone_plus_x2_nms": {
+        "north": 2,
+        "south": 3,
+        "west": 6,
+        "east": 1
+      },
+      "visdrone_plus_x3_no_nms": {
+        "north": 4,
+        "south": 6,
+        "west": 12,
+        "east": 2
+      },
+      "visdrone_plus_x3_nms": {
+        "north": 2,
+        "south": 3,
+        "west": 6,
+        "east": 1
+      },
+      "visdrone_plus_x2_x3_no_nms": {
+        "north": 6,
+        "south": 9,
+        "west": 18,
+        "east": 3
+      },
+      "visdrone_plus_x2_x3_nms": {
+        "north": 2,
+        "south": 3,
+        "west": 6,
+        "east": 1
+      }
+    },
+    "test_03.png": {
+      "actual": {
+        "north": 10,
+        "south": 8,
+        "west": 2,
+        "east": 5
+      },
+      "coco_yolo11s_single": {
+        "north": 13,
+        "south": 2,
+        "west": 2,
+        "east": 5
+      },
+      "visdrone_single": {
+        "north": 14,
+        "south": 7,
+        "west": 2,
+        "east": 5
+      },
+      "visdrone_full_only": {
+        "north": 14,
+        "south": 7,
+        "west": 2,
+        "east": 5
+      },
+      "visdrone_plus_x2_no_nms": {
+        "north": 28,
+        "south": 14,
+        "west": 4,
+        "east": 10
+      },
+      "visdrone_plus_x2_nms": {
+        "north": 14,
+        "south": 7,
+        "west": 2,
+        "east": 5
+      },
+      "visdrone_plus_x3_no_nms": {
+        "north": 28,
+        "south": 14,
+        "west": 4,
+        "east": 10
+      },
+      "visdrone_plus_x3_nms": {
+        "north": 14,
+        "south": 7,
+        "west": 2,
+        "east": 5
+      },
+      "visdrone_plus_x2_x3_no_nms": {
+        "north": 42,
+        "south": 21,
+        "west": 6,
+        "east": 15
+      },
+      "visdrone_plus_x2_x3_nms": {
+        "north": 14,
+        "south": 7,
+        "west": 2,
+        "east": 5
+      }
+    },
+    "test_04.png": {
+      "actual": {
+        "north": 0,
+        "south": 6,
+        "west": 12,
+        "east": 10
+      },
+      "coco_yolo11s_single": {
+        "north": 0,
+        "south": 6,
+        "west": 12,
+        "east": 12
+      },
+      "visdrone_single": {
+        "north": 0,
+        "south": 6,
+        "west": 12,
+        "east": 10
+      },
+      "visdrone_full_only": {
+        "north": 0,
+        "south": 6,
+        "west": 12,
+        "east": 10
+      },
+      "visdrone_plus_x2_no_nms": {
+        "north": 0,
+        "south": 12,
+        "west": 24,
+        "east": 20
+      },
+      "visdrone_plus_x2_nms": {
+        "north": 0,
+        "south": 6,
+        "west": 12,
+        "east": 10
+      },
+      "visdrone_plus_x3_no_nms": {
+        "north": 0,
+        "south": 12,
+        "west": 24,
+        "east": 21
+      },
+      "visdrone_plus_x3_nms": {
+        "north": 0,
+        "south": 6,
+        "west": 12,
+        "east": 11
+      },
+      "visdrone_plus_x2_x3_no_nms": {
+        "north": 0,
+        "south": 18,
+        "west": 36,
+        "east": 31
+      },
+      "visdrone_plus_x2_x3_nms": {
+        "north": 0,
+        "south": 6,
+        "west": 12,
+        "east": 11
+      }
+    },
+    "test_05.png": {
+      "actual": {
+        "north": 4,
+        "south": 4,
+        "west": 4,
+        "east": 4
+      },
+      "coco_yolo11s_single": {
+        "north": 0,
+        "south": 1,
+        "west": 4,
+        "east": 4
+      },
+      "visdrone_single": {
+        "north": 4,
+        "south": 4,
+        "west": 4,
+        "east": 4
+      },
+      "visdrone_full_only": {
+        "north": 4,
+        "south": 4,
+        "west": 4,
+        "east": 4
+      },
+      "visdrone_plus_x2_no_nms": {
+        "north": 8,
+        "south": 8,
+        "west": 8,
+        "east": 8
+      },
+      "visdrone_plus_x2_nms": {
+        "north": 4,
+        "south": 4,
+        "west": 4,
+        "east": 4
+      },
+      "visdrone_plus_x3_no_nms": {
+        "north": 8,
+        "south": 8,
+        "west": 8,
+        "east": 8
+      },
+      "visdrone_plus_x3_nms": {
+        "north": 4,
+        "south": 4,
+        "west": 4,
+        "east": 4
+      },
+      "visdrone_plus_x2_x3_no_nms": {
+        "north": 12,
+        "south": 12,
+        "west": 12,
+        "east": 12
+      },
+      "visdrone_plus_x2_x3_nms": {
+        "north": 4,
+        "south": 4,
+        "west": 4,
+        "east": 4
+      }
+    },
+    "test_06.png": {
+      "actual": {
+        "north": 15,
+        "south": 10,
+        "west": 10,
+        "east": 7
+      },
+      "coco_yolo11s_single": {
+        "north": 0,
+        "south": 0,
+        "west": 9,
+        "east": 2
+      },
+      "visdrone_single": {
+        "north": 10,
+        "south": 9,
+        "west": 11,
+        "east": 8
+      },
+      "visdrone_full_only": {
+        "north": 10,
+        "south": 9,
+        "west": 11,
+        "east": 8
+      },
+      "visdrone_plus_x2_no_nms": {
+        "north": 20,
+        "south": 19,
+        "west": 21,
+        "east": 15
+      },
+      "visdrone_plus_x2_nms": {
+        "north": 10,
+        "south": 9,
+        "west": 11,
+        "east": 8
+      },
+      "visdrone_plus_x3_no_nms": {
+        "north": 20,
+        "south": 19,
+        "west": 21,
+        "east": 15
+      },
+      "visdrone_plus_x3_nms": {
+        "north": 10,
+        "south": 9,
+        "west": 11,
+        "east": 8
+      },
+      "visdrone_plus_x2_x3_no_nms": {
+        "north": 30,
+        "south": 29,
+        "west": 31,
+        "east": 22
+      },
+      "visdrone_plus_x2_x3_nms": {
+        "north": 10,
+        "south": 9,
+        "west": 11,
+        "east": 8
+      }
+    },
+    "test_07.png": {
+      "actual": {
+        "north": 16,
+        "south": 13,
+        "west": 3,
+        "east": 7
+      },
+      "coco_yolo11s_single": {
+        "north": 2,
+        "south": 7,
+        "west": 1,
+        "east": 8
+      },
+      "visdrone_single": {
+        "north": 15,
+        "south": 14,
+        "west": 3,
+        "east": 8
+      },
+      "visdrone_full_only": {
+        "north": 15,
+        "south": 14,
+        "west": 3,
+        "east": 8
+      },
+      "visdrone_plus_x2_no_nms": {
+        "north": 30,
+        "south": 28,
+        "west": 6,
+        "east": 16
+      },
+      "visdrone_plus_x2_nms": {
+        "north": 15,
+        "south": 14,
+        "west": 3,
+        "east": 8
+      },
+      "visdrone_plus_x3_no_nms": {
+        "north": 30,
+        "south": 28,
+        "west": 6,
+        "east": 16
+      },
+      "visdrone_plus_x3_nms": {
+        "north": 15,
+        "south": 14,
+        "west": 3,
+        "east": 8
+      },
+      "visdrone_plus_x2_x3_no_nms": {
+        "north": 45,
+        "south": 42,
+        "west": 9,
+        "east": 24
+      },
+      "visdrone_plus_x2_x3_nms": {
+        "north": 15,
+        "south": 14,
+        "west": 3,
+        "east": 8
+      }
+    },
+    "test_08.png": {
+      "actual": {
+        "north": 15,
+        "south": 12,
+        "west": 4,
+        "east": 9
+      },
+      "coco_yolo11s_single": {
+        "north": 1,
+        "south": 1,
+        "west": 1,
+        "east": 1
+      },
+      "visdrone_single": {
+        "north": 13,
+        "south": 12,
+        "west": 4,
+        "east": 9
+      },
+      "visdrone_full_only": {
+        "north": 13,
+        "south": 12,
+        "west": 4,
+        "east": 9
+      },
+      "visdrone_plus_x2_no_nms": {
+        "north": 26,
+        "south": 24,
+        "west": 8,
+        "east": 18
+      },
+      "visdrone_plus_x2_nms": {
+        "north": 13,
+        "south": 12,
+        "west": 4,
+        "east": 9
+      },
+      "visdrone_plus_x3_no_nms": {
+        "north": 26,
+        "south": 24,
+        "west": 8,
+        "east": 18
+      },
+      "visdrone_plus_x3_nms": {
+        "north": 13,
+        "south": 12,
+        "west": 4,
+        "east": 9
+      },
+      "visdrone_plus_x2_x3_no_nms": {
+        "north": 39,
+        "south": 36,
+        "west": 12,
+        "east": 27
+      },
+      "visdrone_plus_x2_x3_nms": {
+        "north": 13,
+        "south": 12,
+        "west": 4,
+        "east": 9
+      }
+    },
+    "test_09.png": {
+      "actual": {
+        "north": 19,
+        "south": 20,
+        "west": 12,
+        "east": 14
+      },
+      "coco_yolo11s_single": {
+        "north": 5,
+        "south": 6,
+        "west": 13,
+        "east": 14
+      },
+      "visdrone_single": {
+        "north": 24,
+        "south": 20,
+        "west": 12,
+        "east": 17
+      },
+      "visdrone_full_only": {
+        "north": 24,
+        "south": 19,
+        "west": 12,
+        "east": 16
+      },
+      "visdrone_plus_x2_no_nms": {
+        "north": 47,
+        "south": 42,
+        "west": 24,
+        "east": 33
+      },
+      "visdrone_plus_x2_nms": {
+        "north": 24,
+        "south": 19,
+        "west": 12,
+        "east": 16
+      },
+      "visdrone_plus_x3_no_nms": {
+        "north": 47,
+        "south": 42,
+        "west": 25,
+        "east": 33
+      },
+      "visdrone_plus_x3_nms": {
+        "north": 24,
+        "south": 19,
+        "west": 12,
+        "east": 16
+      },
+      "visdrone_plus_x2_x3_no_nms": {
+        "north": 70,
+        "south": 64,
+        "west": 37,
+        "east": 49
+      },
+      "visdrone_plus_x2_x3_nms": {
+        "north": 24,
+        "south": 19,
+        "west": 12,
+        "east": 16
+      }
+    },
+    "test_10.png": {
+      "actual": {
+        "north": 11,
+        "south": 10,
+        "west": 9,
+        "east": 8
+      },
+      "coco_yolo11s_single": {
+        "north": 19,
+        "south": 17,
+        "west": 20,
+        "east": 12
+      },
+      "visdrone_single": {
+        "north": 15,
+        "south": 13,
+        "west": 16,
+        "east": 8
+      },
+      "visdrone_full_only": {
+        "north": 14,
+        "south": 12,
+        "west": 15,
+        "east": 8
+      },
+      "visdrone_plus_x2_no_nms": {
+        "north": 30,
+        "south": 26,
+        "west": 32,
+        "east": 16
+      },
+      "visdrone_plus_x2_nms": {
+        "north": 14,
+        "south": 12,
+        "west": 15,
+        "east": 8
+      },
+      "visdrone_plus_x3_no_nms": {
+        "north": 30,
+        "south": 26,
+        "west": 31,
+        "east": 16
+      },
+      "visdrone_plus_x3_nms": {
+        "north": 14,
+        "south": 12,
+        "west": 15,
+        "east": 8
+      },
+      "visdrone_plus_x2_x3_no_nms": {
+        "north": 45,
+        "south": 39,
+        "west": 47,
+        "east": 24
+      },
+      "visdrone_plus_x2_x3_nms": {
+        "north": 14,
+        "south": 12,
+        "west": 15,
+        "east": 8
+      }
+    },
+    "test_11.png": {
+      "actual": {
+        "north": 14,
+        "south": 1,
+        "west": 32,
+        "east": 2
+      },
+      "coco_yolo11s_single": {
+        "north": 1,
+        "south": 0,
+        "west": 17,
+        "east": 0
+      },
+      "visdrone_single": {
+        "north": 19,
+        "south": 1,
+        "west": 44,
+        "east": 3
+      },
+      "visdrone_full_only": {
+        "north": 18,
+        "south": 1,
+        "west": 44,
+        "east": 3
+      },
+      "visdrone_plus_x2_no_nms": {
+        "north": 40,
+        "south": 2,
+        "west": 84,
+        "east": 5
+      },
+      "visdrone_plus_x2_nms": {
+        "north": 19,
+        "south": 1,
+        "west": 44,
+        "east": 3
+      },
+      "visdrone_plus_x3_no_nms": {
+        "north": 40,
+        "south": 2,
+        "west": 84,
+        "east": 5
+      },
+      "visdrone_plus_x3_nms": {
+        "north": 19,
+        "south": 1,
+        "west": 44,
+        "east": 3
+      },
+      "visdrone_plus_x2_x3_no_nms": {
+        "north": 61,
+        "south": 3,
+        "west": 124,
+        "east": 7
+      },
+      "visdrone_plus_x2_x3_nms": {
+        "north": 19,
+        "south": 1,
+        "west": 44,
+        "east": 3
+      }
+    },
+    "test_12.png": {
+      "actual": {
+        "north": 14,
+        "south": 17,
+        "west": 18,
+        "east": 13
+      },
+      "coco_yolo11s_single": {
+        "north": 3,
+        "south": 3,
+        "west": 10,
+        "east": 5
+      },
+      "visdrone_single": {
+        "north": 14,
+        "south": 14,
+        "west": 15,
+        "east": 11
+      },
+      "visdrone_full_only": {
+        "north": 13,
+        "south": 13,
+        "west": 15,
+        "east": 11
+      },
+      "visdrone_plus_x2_no_nms": {
+        "north": 27,
+        "south": 27,
+        "west": 30,
+        "east": 23
+      },
+      "visdrone_plus_x2_nms": {
+        "north": 13,
+        "south": 13,
+        "west": 15,
+        "east": 11
+      },
+      "visdrone_plus_x3_no_nms": {
+        "north": 27,
+        "south": 27,
+        "west": 30,
+        "east": 23
+      },
+      "visdrone_plus_x3_nms": {
+        "north": 13,
+        "south": 13,
+        "west": 15,
+        "east": 11
+      },
+      "visdrone_plus_x2_x3_no_nms": {
+        "north": 40,
+        "south": 40,
+        "west": 45,
+        "east": 35
+      },
+      "visdrone_plus_x2_x3_nms": {
+        "north": 13,
+        "south": 13,
+        "west": 15,
+        "east": 11
+      }
+    },
+    "test_13.png": {
+      "actual": {
+        "north": 9,
+        "south": 7,
+        "west": 10,
+        "east": 9
+      },
+      "coco_yolo11s_single": {
+        "north": 12,
+        "south": 8,
+        "west": 15,
+        "east": 16
+      },
+      "visdrone_single": {
+        "north": 11,
+        "south": 8,
+        "west": 9,
+        "east": 10
+      },
+      "visdrone_full_only": {
+        "north": 9,
+        "south": 6,
+        "west": 8,
+        "east": 9
+      },
+      "visdrone_plus_x2_no_nms": {
+        "north": 33,
+        "south": 26,
+        "west": 24,
+        "east": 24
+      },
+      "visdrone_plus_x2_nms": {
+        "north": 10,
+        "south": 6,
+        "west": 8,
+        "east": 9
+      },
+      "visdrone_plus_x3_no_nms": {
+        "north": 33,
+        "south": 26,
+        "west": 24,
+        "east": 23
+      },
+      "visdrone_plus_x3_nms": {
+        "north": 10,
+        "south": 6,
+        "west": 8,
+        "east": 9
+      },
+      "visdrone_plus_x2_x3_no_nms": {
+        "north": 55,
+        "south": 44,
+        "west": 39,
+        "east": 37
+      },
+      "visdrone_plus_x2_x3_nms": {
+        "north": 10,
+        "south": 6,
+        "west": 8,
+        "east": 9
+      }
+    },
+    "test_14.png": {
+      "actual": {
+        "north": 13,
+        "south": 9,
+        "west": 7,
+        "east": 9
+      },
+      "coco_yolo11s_single": {
+        "north": 23,
+        "south": 13,
+        "west": 13,
+        "east": 19
+      },
+      "visdrone_single": {
+        "north": 13,
+        "south": 9,
+        "west": 8,
+        "east": 12
+      },
+      "visdrone_full_only": {
+        "north": 13,
+        "south": 9,
+        "west": 7,
+        "east": 12
+      },
+      "visdrone_plus_x2_no_nms": {
+        "north": 26,
+        "south": 20,
+        "west": 18,
+        "east": 25
+      },
+      "visdrone_plus_x2_nms": {
+        "north": 13,
+        "south": 9,
+        "west": 8,
+        "east": 13
+      },
+      "visdrone_plus_x3_no_nms": {
+        "north": 26,
+        "south": 20,
+        "west": 18,
+        "east": 25
+      },
+      "visdrone_plus_x3_nms": {
+        "north": 13,
+        "south": 9,
+        "west": 8,
+        "east": 13
+      },
+      "visdrone_plus_x2_x3_no_nms": {
+        "north": 39,
+        "south": 31,
+        "west": 28,
+        "east": 38
+      },
+      "visdrone_plus_x2_x3_nms": {
+        "north": 13,
+        "south": 9,
+        "west": 8,
+        "east": 13
+      }
+    },
+    "test_15.png": {
+      "actual": {
+        "north": 13,
+        "south": 16,
+        "west": 22,
+        "east": 7
+      },
+      "coco_yolo11s_single": {
+        "north": 24,
+        "south": 22,
+        "west": 24,
+        "east": 14
+      },
+      "visdrone_single": {
+        "north": 20,
+        "south": 16,
+        "west": 22,
+        "east": 10
+      },
+      "visdrone_full_only": {
+        "north": 20,
+        "south": 16,
+        "west": 21,
+        "east": 10
+      },
+      "visdrone_plus_x2_no_nms": {
+        "north": 36,
+        "south": 34,
+        "west": 44,
+        "east": 22
+      },
+      "visdrone_plus_x2_nms": {
+        "north": 20,
+        "south": 16,
+        "west": 22,
+        "east": 11
+      },
+      "visdrone_plus_x3_no_nms": {
+        "north": 36,
+        "south": 35,
+        "west": 44,
+        "east": 21
+      },
+      "visdrone_plus_x3_nms": {
+        "north": 20,
+        "south": 16,
+        "west": 22,
+        "east": 10
+      },
+      "visdrone_plus_x2_x3_no_nms": {
+        "north": 52,
+        "south": 53,
+        "west": 66,
+        "east": 33
+      },
+      "visdrone_plus_x2_x3_nms": {
+        "north": 20,
+        "south": 16,
+        "west": 22,
+        "east": 11
+      }
+    },
+    "test_16.png": {
+      "actual": {
+        "north": 30,
+        "south": 19,
+        "west": 17,
+        "east": 3
+      },
+      "coco_yolo11s_single": {
+        "north": 0,
+        "south": 0,
+        "west": 0,
+        "east": 0
+      },
+      "visdrone_single": {
+        "north": 35,
+        "south": 19,
+        "west": 18,
+        "east": 5
+      },
+      "visdrone_full_only": {
+        "north": 31,
+        "south": 16,
+        "west": 18,
+        "east": 5
+      },
+      "visdrone_plus_x2_no_nms": {
+        "north": 66,
+        "south": 39,
+        "west": 35,
+        "east": 9
+      },
+      "visdrone_plus_x2_nms": {
+        "north": 31,
+        "south": 16,
+        "west": 18,
+        "east": 5
+      },
+      "visdrone_plus_x3_no_nms": {
+        "north": 65,
+        "south": 39,
+        "west": 35,
+        "east": 9
+      },
+      "visdrone_plus_x3_nms": {
+        "north": 31,
+        "south": 16,
+        "west": 18,
+        "east": 5
+      },
+      "visdrone_plus_x2_x3_no_nms": {
+        "north": 96,
+        "south": 59,
+        "west": 52,
+        "east": 13
+      },
+      "visdrone_plus_x2_x3_nms": {
+        "north": 31,
+        "south": 16,
+        "west": 18,
+        "east": 5
+      }
+    }
+  }
+}
