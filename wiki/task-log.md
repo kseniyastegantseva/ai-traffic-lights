@@ -6,7 +6,7 @@
 - Собраны `paper/PIERE_Revised_Article.docx` и `paper/PIERE_Revised_Article_RU.docx`; через Microsoft Word экспортированы соответствующие PDF. Word/PDFium рендерингом проверены все страницы; каждая версия содержит ровно 6 страниц.
 - Подготовлены `paper/RUSSIAN_EXPLANATION.md`, тематический `paper/reviewer_response.md` и воспроизводимые команды сборки `scripts/build_piere_manuscript.py` / `scripts/export_piere_pdfs.ps1`. Исходного письма рецензента в доступных материалах нет, поэтому ответ не заявляется как дословный.
 - Актуализированы указатели Wiki и `docs/REVISION_COMPLETION_AUDIT.md`. Проверено: `ruff check .` — без замечаний; `pytest -q` — 60 passed; `git diff --check` — без ошибок. Для проверок использовано временное окружение Python 3.12; Docker daemon недоступен.
-- Работа остаётся в `revision/piere-review`; `main`, опубликованное приложение и `outputs/` не менялись. Коммит и push выполняются после финального Git review.
+- Коммит `b9ad22b` отправлен в `origin/revision/piere-review`; удалённый HEAD совпадает с локальным, рабочее дерево чистое. `main`, опубликованное приложение и `outputs/` не менялись.
 
 ## 2026-11-02 — Завершение PIERE revision
 
