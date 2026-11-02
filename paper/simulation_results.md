@@ -59,6 +59,10 @@ The result indicates that the perturbations did not change selected control acti
 
 ## Reproduction and limitations
 
+### Detector evaluation addendum
+
+After the simulation commit, live detector inference and the x2/x3/NMS ablation were completed on the bundled 16-image set. The production path reproduced the archived VCA 85.23% and MAE 1.484375 exactly. See `paper/perception_results.md` for metrics, checkpoint hashes, method differences, and provenance limitations. This set is diagnostic rather than independent holdout data.
+
 Run from the repository root:
 
 ```bash
@@ -67,4 +71,4 @@ traffic-sim compare --config configs/piere_revision_3600.yaml
 traffic-sim compare --config configs/piere_perception_sensitivity.yaml
 ```
 
-The generated JSON contains every run, full configuration, environment metadata, stream hashes, phase history, and paired statistics. Output files are ignored by Git due to their size. The experiment-generating revision passed 52 tests; after the dashboard trace integration, 53 tests passed and Ruff reported no issues. A Streamlit AppTest rendered the simulation screen with no exceptions and one animation iframe. Docker Desktop was unavailable, so image builds were not verified. Live detector inference, model-training provenance, and the exact wording of the source reviewer comments remain unresolved.
+The generated JSON contains every run, full configuration, environment metadata, stream hashes, phase history, and paired statistics. Output files are ignored by Git due to their size. The experiment-generating revision passed 52 tests; after the dashboard trace integration, 53 tests passed and Ruff reported no issues. The detector evaluation script also passes Ruff and `py_compile`; the full test suite remains at 53 passing tests. A Streamlit AppTest rendered the simulation screen with no exceptions and one animation iframe. Docker Desktop was unavailable, so image builds were not verified. Independent detector validation, model-training provenance, and the exact wording of the source reviewer comments remain unresolved.

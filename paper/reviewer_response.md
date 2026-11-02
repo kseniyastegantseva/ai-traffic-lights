@@ -44,7 +44,7 @@
 
 **Response:** The manuscript now distinguishes aggregate Vehicle Count Accuracy from object-detection precision, recall, and mAP. A reproducible synthetic observation-error mechanism perturbs only the controller's view; physical queues remain unchanged.
 
-**Location/evidence:** `src/traffic_light/simulation.py`, `src/traffic_light/interactive.py`, `app/dashboard.py`, `configs/piere_perception_sensitivity.yaml`, and `paper/simulation_results.md`. Existing repository artifacts report 16 images, 643 actual counts, 95 absolute directional errors, 85.23% Vehicle Count Accuracy, and MAE 1.484 vehicles per approach-image. Synthetic sensitivity metrics were identical over 0–20% error in the tested symmetric case. The dashboard now feeds its four image counts into the SimPy model as initial queues. **Status: model path and UI contract are tested; live YOLO inference, checkpoint provenance, ablations, and annotation remain unverified.**
+**Location/evidence:** `src/traffic_light/simulation.py`, `src/traffic_light/interactive.py`, `app/dashboard.py`, `configs/piere_perception_sensitivity.yaml`, `paper/simulation_results.md`, and `paper/perception_results.md`. Live inference exactly reproduced the existing 16-image result (VCA 85.23%, MAE 1.484); COCO, x2/x3, and duplicate-suppression comparisons are documented. The dashboard feeds four image counts to SimPy as initial queues. **Status: inference and count-level ablations reproduced on the existing diagnostic set; no independent holdout or bounding-box labels are available; training lineage and redistribution rights remain unverified.**
 
 ## Minor comments (provisional topics)
 
