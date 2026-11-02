@@ -10,6 +10,7 @@ from pathlib import Path
 from statistics import mean, stdev
 
 import pandas as pd
+from scipy.stats import t as student_t
 
 from traffic_light.config import (
     ControllerConfig,
@@ -127,7 +128,32 @@ def run_experiment(config: ExperimentConfig) -> tuple[list[dict], pd.DataFrame]:
                     }
                 )
 
+    return rows, summarize_results(rows)
+
+
+def summarize_results(rows: list[dict]) -> pd.DataFrame:
+    """Recompute the seed-level summary and exact 95% confidence intervals."""
     frame = pd.DataFrame(rows)
+    if frame.empty:
+        return pd.DataFrame(
+            columns=[
+                "scenario",
+                "scenario_title",
+                "controller",
+                "runs",
+                "average_wait_seconds",
+                "wait_std",
+                "median_wait_seconds",
+                "average_queue_length",
+                "max_queue_length",
+                "throughput_per_hour",
+                "fairness_index",
+                "stops",
+                "wait_95ci_half_width",
+                "improvement_reference_controller",
+                "wait_improvement_vs_fixed_pct",
+            ]
+        )
     summary = (
         frame.groupby(["scenario", "scenario_title", "controller"])
         .agg(
@@ -144,11 +170,15 @@ def run_experiment(config: ExperimentConfig) -> tuple[list[dict], pd.DataFrame]:
         .reset_index()
     )
     summary["wait_95ci_half_width"] = summary.apply(
-        lambda row: 1.96 * row["wait_std"] / (row["runs"] ** 0.5),
+        lambda row: student_t.ppf(0.975, row["runs"] - 1)
+        * row["wait_std"]
+        / (row["runs"] ** 0.5)
+        if row["runs"] > 1
+        else 0.0,
         axis=1,
     )
     summary = _add_baseline_improvement(summary)
-    return rows, summary
+    return summary
 
 
 def build_paired_statistics(results: list[dict]) -> list[dict]:
@@ -214,15 +244,10 @@ def build_paired_statistics(results: list[dict]) -> list[dict]:
 
 
 def _t_critical_975(degrees_of_freedom: int) -> float:
-    """Cornish-Fisher approximation of the two-sided 95% Student t quantile."""
-    z = 1.959963984540054
-    df = max(1, degrees_of_freedom)
-    return (
-        z
-        + (z**3 + z) / (4 * df)
-        + (5 * z**5 + 16 * z**3 + 3 * z) / (96 * df**2)
-        + (3 * z**7 + 19 * z**5 + 17 * z**3 - 15 * z) / (384 * df**3)
-    )
+    """Exact two-sided 95% Student t quantile."""
+    if degrees_of_freedom < 1:
+        raise ValueError("degrees_of_freedom must be positive")
+    return float(student_t.ppf(0.975, degrees_of_freedom))
 
 
 def _paired_markdown_table(rows: list[dict]) -> str:
@@ -233,10 +258,14 @@ def _paired_markdown_table(rows: list[dict]) -> str:
         values = [
             row["scenario"], str(row["duration_seconds"]), row["comparator"], str(row["pairs"]),
             f"{row['queue_based_minus_comparator_mean_seconds']:.2f}", ci,
-            f"{row['sign_test_p']:.4f}", f"{row['holm_p']:.4f}",
+            _format_p_value(row["sign_test_p"]), _format_p_value(row["holm_p"]),
         ]
         table.append("| " + " | ".join(values) + " |")
     return "\n".join(table)
+
+
+def _format_p_value(value: float) -> str:
+    return "<0.0001" if value < 0.0001 else f"{value:.4f}"
 
 
 def save_results(
@@ -339,9 +368,9 @@ def build_markdown_report(
             "## Методика",
             "",
             (
-                "Для каждого сценария все стратегии запускаются на одинаковом наборе random seed. "
-                "Ключевым baseline считается стратегия `fixed`; улучшение считается как снижение "
-                "среднего времени ожидания относительно неё."
+                "Для каждой пары сценарий/seed стратегии используют общий хэшированный поток. "
+                "Процент изменения среднего ожидания рассчитан относительно указанного в сводной "
+                "таблице baseline (`fixed_35` или `fixed`); если baseline не запускался, показано N/A."
             ),
             "",
             "## Сводная таблица",
@@ -364,7 +393,7 @@ def build_markdown_report(
                     "controller": "Стратегия",
                     "wait_rank": "Ранг",
                     "average_wait_seconds": "Среднее ожидание, с",
-                    "wait_improvement_vs_fixed_pct": "Улучшение к fixed, %",
+                    "wait_improvement_vs_fixed_pct": "Изменение к baseline, %",
                 },
             ),
             "",
@@ -386,44 +415,49 @@ def build_markdown_report(
                     "scenario_wins": "Победы",
                     "mean_rank": "Средний ранг",
                     "mean_wait_seconds": "Среднее ожидание, с",
-                    "mean_improvement_vs_fixed_pct": "Среднее улучшение к fixed, %",
+                    "mean_improvement_vs_fixed_pct": "Среднее изменение к baseline, %",
                     "mean_queue_length": "Средняя очередь",
                     "mean_fairness_index": "Справедливость",
                 },
             ),
             "",
-            "## AI против adaptive",
-            "",
-            _to_markdown_table(
-                analytics["ai_vs_actuated"],
-                [
-                    "scenario_title",
-                    "ai_wait_seconds",
-                    "actuated_wait_seconds",
-                    "ai_delta_seconds",
-                    "ai_advantage_pct",
-                    "better_controller",
-                ],
-                {
-                    "scenario_title": "Сценарий",
-                    "ai_wait_seconds": "AI, с",
-                    "actuated_wait_seconds": "Adaptive, с",
-                    "ai_delta_seconds": "AI - adaptive, с",
-                    "ai_advantage_pct": "Преимущество AI, %",
-                    "better_controller": "Лучше",
-                },
-            ),
-            "",
-            "## Основные выводы",
-            "",
         ]
     )
+    comparison = analytics["ai_vs_actuated"]
+    if not comparison.empty:
+        lines.extend(
+            [
+                "## AI против adaptive",
+                "",
+                _to_markdown_table(
+                    comparison,
+                    [
+                        "scenario_title",
+                        "ai_wait_seconds",
+                        "actuated_wait_seconds",
+                        "ai_delta_seconds",
+                        "ai_advantage_pct",
+                        "better_controller",
+                    ],
+                    {
+                        "scenario_title": "Сценарий",
+                        "ai_wait_seconds": "AI, с",
+                        "actuated_wait_seconds": "Adaptive, с",
+                        "ai_delta_seconds": "AI - adaptive, с",
+                        "ai_advantage_pct": "Преимущество AI, %",
+                        "better_controller": "Лучше",
+                    },
+                ),
+                "",
+            ]
+        )
+    lines.extend(["## Основные выводы", ""])
     if results:
         lines.extend(["## Парные различия queue_based", ""])
         paired = build_paired_statistics(results)
         lines.extend(
             [
-                "Разность определена как ожидание `queue_based` минус ожидание сравниваемого алгоритма; отрицательное значение означает меньшее ожидание у queue_based. Интервалы — 95% нормальная аппроксимация для среднего парного различия. P-value получено двусторонним точным знаковым тестом; внутри сценария применена поправка Holm.",
+                "Разность определена как ожидание `queue_based` минус ожидание сравниваемого алгоритма; отрицательное значение означает меньшее ожидание у queue_based. Интервалы — 95% доверительные t-интервалы среднего парного различия по точному квантилю Стьюдента. P-value получено двусторонним точным знаковым тестом без нулевых разностей; поправка Holm применяется к фактически присутствующим сравнениям внутри каждой пары сценарий/горизонт.",
                 "",
                 _paired_markdown_table(paired),
                 "",
@@ -436,6 +470,9 @@ def build_markdown_report(
             f"{best['average_wait_seconds']:.2f} с."
         )
     overview = analytics["strategy_overview"]
+    if summary.empty or overview.empty:
+        lines.append("Недостаточно данных для расчёта выводов.")
+        return "\n".join(lines) + "\n"
     best_overall = overview.iloc[0]
     lines.append(
         f"- В среднем по всем сценариям лучшая стратегия по рангу — "
@@ -478,7 +515,8 @@ def _iter_scenarios(config: ExperimentConfig) -> list[dict[str, str | Intersecti
 
 def _add_baseline_improvement(summary: pd.DataFrame) -> pd.DataFrame:
     summary = summary.copy()
-    summary["wait_improvement_vs_fixed_pct"] = 0.0
+    summary["wait_improvement_vs_fixed_pct"] = float("nan")
+    summary["improvement_reference_controller"] = None
     for scenario in summary["scenario"].unique():
         mask = summary["scenario"] == scenario
         available_controllers = set(summary.loc[mask, "controller"])
@@ -491,6 +529,7 @@ def _add_baseline_improvement(summary: pd.DataFrame) -> pd.DataFrame:
         baseline = summary.loc[mask & (summary["controller"] == baseline_name)]
         if baseline.empty:
             continue
+        summary.loc[mask, "improvement_reference_controller"] = baseline_name
         baseline_wait = float(baseline.iloc[0]["average_wait_seconds"])
         if baseline_wait <= 0:
             continue
@@ -509,6 +548,7 @@ def _environment_metadata() -> dict:
         "pydantic",
         "PyYAML",
         "numpy",
+        "scipy",
         "gymnasium",
         "ultralytics",
     ):
@@ -592,6 +632,7 @@ def _to_markdown_table(
         "max_queue_length",
         "throughput_per_hour",
         "fairness_index",
+        "improvement_reference_controller",
         "wait_improvement_vs_fixed_pct",
     ]
     display = frame[columns].copy()
@@ -605,14 +646,21 @@ def _to_markdown_table(
         "max_queue_length": "Максимальная очередь",
         "throughput_per_hour": "Пропускная способность/час",
         "fairness_index": "Справедливость",
-        "wait_improvement_vs_fixed_pct": "Улучшение к fixed, %",
+        "improvement_reference_controller": "Baseline",
+        "wait_improvement_vs_fixed_pct": "Изменение к baseline, %",
     }
     display = display.rename(columns=rename)
+    for column in display.select_dtypes(exclude="number").columns:
+        display[column] = display[column].fillna("N/A")
     for column in display.select_dtypes(include="number").columns:
         if column in {"Запуски", "Победы", "Ранг"}:
-            display[column] = display[column].map(lambda value: f"{value:.0f}")
+            display[column] = display[column].map(
+                lambda value: "N/A" if pd.isna(value) else f"{value:.0f}"
+            )
         else:
-            display[column] = display[column].map(lambda value: f"{value:.2f}")
+            display[column] = display[column].map(
+                lambda value: "N/A" if pd.isna(value) else f"{value:.2f}"
+            )
     headers = list(display.columns)
     rows = [[str(value) for value in row] for row in display.to_numpy().tolist()]
     separator = ["---"] * len(headers)

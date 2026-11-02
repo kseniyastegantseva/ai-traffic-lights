@@ -210,12 +210,29 @@ traffic-sim compare --config configs/piere_revision_quick.yaml
 ```bash
 traffic-sim compare --config configs/piere_revision_1800.yaml
 traffic-sim compare --config configs/piere_revision_3600.yaml
+traffic-sim compare --config configs/piere_revision_addendum_1800.yaml
+traffic-sim compare --config configs/piere_revision_addendum_3600.yaml
 traffic-sim compare --config configs/piere_perception_sensitivity.yaml
 traffic-sim compare --config configs/piere_perception_sensitivity_expanded.yaml
 traffic-sim compare --config configs/piere_perception_empirical_errors.yaml
 ```
 
-Это полные исследовательские прогоны. Они могут занимать значительное время. До фактического завершения запусков не используйте отчёты как научные результаты; итоговые JSON, CSV и Markdown пишутся в `outputs/`.
+Полные завершённые JSON, CSV и Markdown-отчёты сохранены в `outputs/`. Пересобрать статистику и компактный файл дашборда из сохранённых запусков без повторного моделирования можно так:
+
+```bash
+python scripts/rebuild_piere_outputs.py
+python scripts/build_piere_dashboard_data.py
+```
+
+Для приложения выполните `streamlit run app/dashboard.py`. Дашборд использует только готовые сводки и не запускает научные эксперименты при открытии. Для десяти рисунков рукописи доступны воспроизводимые PNG/SVG/PDF-комплекты:
+
+```bash
+python scripts/generate_piere_figures.py
+```
+
+Рукопись хранится в `paper/revised_manuscript.md`; `scripts/build_piere_manuscript.py` строит редактируемый DOCX. Инструкция настройки Streamlit Cloud находится в `docs/STREAMLIT_DEPLOYMENT.md`.
+
+Полный повтор экспериментов может занимать значительное время. Он не требуется для пересборки сводок, дашборда и публикационных рисунков.
 
 Для оценки YOLO на сохранённом наборе установите `ultralytics==8.4.129`, PyTorch и OpenCV, затем запустите из корня проекта:
 

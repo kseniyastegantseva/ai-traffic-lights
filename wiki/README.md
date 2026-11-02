@@ -14,6 +14,10 @@
 - `project-strategy.md` — цель исследования и стратегия разработки.
 - `architecture.md` — структура кода и публичные интерфейсы.
 - `experiments.md` — дизайн экспериментов и метрики.
+- `../docs/REVISION_COMPLETION_AUDIT.md` — итоговый проверяемый аудит рукописи PIERE revision.
+- `../docs/STREAMLIT_DEPLOYMENT.md` — инструкция развёртывания дашборда на целевой ветке.
+- `../paper/REVIEWER_CHECKLIST.md` — ответы по 11 темам ревизии с ограничениями.
+- `../scripts/generate_piere_figures.py` — воспроизводимая генерация комплектов PNG/SVG/PDF.
 - `../paper/perception_results.md` — проверка воспроизводимости и абляция YOLO.
 - Конфигурации экспериментов находятся в `../configs/`; расширенная чувствительность к ошибке детекции — `../configs/piere_perception_sensitivity_expanded.yaml`.
 - Эмпирический bootstrap ошибок направленного подсчёта — `../configs/piere_perception_empirical_errors.yaml`.

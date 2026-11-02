@@ -11,8 +11,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from traffic_light.config import LaneName, load_experiment_config
-from traffic_light.experiments import run_experiment, save_results
+from traffic_light.config import LaneName
 from traffic_light.interactive import InteractiveSimulationResult, simulate_interactive_traffic
 
 LANE_LABELS = {
@@ -28,31 +27,36 @@ VEHICLE_SPRITE_PATH = Path(__file__).parent / "assets" / "vehicle_sprites_transp
 SPRITE_X = (0, 33.333, 66.667, 100)
 SPRITE_Y = (0, 50, 100)
 DASHBOARD_STATE_VERSION = 4
-RESEARCH_RESULTS_PATH = Path("outputs/experiment_suite_results.json")
+RESEARCH_RESULTS_PATH = Path("outputs/piere_dashboard_data.json")
 INTERACTIVE_TO_RESEARCH_SCENARIO = {
-    "low_load": "low_load",
-    "uniform": "uniform_demo",
-    "north_south_peak": "morning_peak_ns",
-    "east_west_peak": "evening_peak_ew",
+    "low_load": "symmetric",
+    "uniform": "symmetric",
+    "north_south_peak": "asymmetric_ns",
+    "east_west_peak": "asymmetric_ew",
     "high_load": "high_load",
-    "empty": "low_load",
+    "empty": "symmetric",
 }
 STRATEGY_DESCRIPTIONS = {
-    "fixed": (
-        "Фиксированный светофор: переключает фазы через одинаковые интервалы, "
-        "не учитывая текущие очереди. Это базовый вариант для сравнения."
-    ),
-    "ai": (
-        "Адаптивный режим: на каждом шаге сравнивает очереди на двух осях "
-        "и выбирает направление с большей нагрузкой."
-    ),
+    "fixed_15": "Цикл фиксированной длительностью 15 секунд.",
+    "fixed_35": "Цикл фиксированной длительностью 35 секунд.",
+    "fixed_webster": "Фиксированный план Webster, рассчитанный по спросу сценария.",
+    "vehicle_actuated": "Продлевает зелёную фазу, пока на подходе есть транспорт.",
+    "queue_based": "Выбирает фазу по текущим очередям с ограничением максимального зелёного.",
+    "queue_based_legacy": "Предыдущая версия правила очередей; показана для сравнения.",
 }
-DISPLAYED_STRATEGIES = ("fixed", "ai")
+DISPLAYED_STRATEGIES = ("fixed_15", "fixed_35", "fixed_webster", "vehicle_actuated", "queue_based")
 STRATEGY_LABELS = {
-    "fixed": "Стандартный",
-    "ai": "Адаптивный",
+    "fixed_15": "Fixed 15 s",
+    "fixed_35": "Fixed 35 s",
+    "fixed_webster": "Webster",
+    "vehicle_actuated": "Vehicle actuated",
+    "queue_based": "Queue based",
+    "queue_based_legacy": "Queue based legacy",
 }
-STRATEGY_COLORS = {"Стандартный": "#64748b", "Адаптивный": "#16a34a"}
+STRATEGY_COLORS = {
+    "Fixed 15 s": "#64748b", "Fixed 35 s": "#2563eb", "Webster": "#7c3aed",
+    "Vehicle actuated": "#ea580c", "Queue based": "#16a34a", "Queue based legacy": "#94a3b8",
+}
 SIGNAL_COLORS = {
     "red": ("КРАСНЫЙ", "#ef2b2d"),
     "yellow": ("ЖЁЛТЫЙ", "#ffd21f"),
@@ -212,258 +216,130 @@ def _simulation_screen(result: InteractiveSimulationResult) -> None:
 
 
 def _research_charts(interactive_scenario_code: str) -> None:
-    """Показывает результаты заранее проведённого исследовательского эксперимента."""
+    """Display precomputed PIERE summaries; the dashboard never runs experiments."""
     st.divider()
-    st.subheader("Исследовательские графики")
-    st.caption("Наведите курсор на график, чтобы увидеть точное значение.")
-    payload = _load_research_payload(RESEARCH_RESULTS_PATH)
+    st.subheader("Результаты экспериментов PIERE")
+    payload = _load_research_payload(
+        RESEARCH_RESULTS_PATH,
+        RESEARCH_RESULTS_PATH.stat().st_mtime if RESEARCH_RESULTS_PATH.exists() else None,
+    )
     if payload is None:
-        st.warning("Экспериментальные данные временно недоступны.")
+        st.warning("Сводные данные не найдены. Подготовьте их командой `python scripts/build_piere_dashboard_data.py`.")
         return
 
-    summary = pd.DataFrame(payload.get("summary", []))
-    runs = pd.DataFrame(payload.get("runs", []))
+    horizon = st.radio("Горизонт моделирования", ("1800", "3600"), horizontal=True, format_func=lambda x: f"{x} секунд")
+    summary = pd.DataFrame(payload["summary"].get(horizon, []))
+    summary = summary[summary["controller"].isin(DISPLAYED_STRATEGIES)]
     if summary.empty:
-        st.warning("В файле результатов нет сводных данных.")
+        st.warning("Для выбранного горизонта нет сводных результатов.")
         return
-
-    available = summary[["scenario", "scenario_title"]].drop_duplicates().to_dict("records")
-    scenario_names = [row["scenario"] for row in available]
-    default_scenario = INTERACTIVE_TO_RESEARCH_SCENARIO.get(
-        interactive_scenario_code,
-        scenario_names[0] if scenario_names else "low_load",
-    )
-    selected = st.session_state.get("research_scenario", default_scenario)
-    if selected not in scenario_names:
-        selected = default_scenario if default_scenario in scenario_names else scenario_names[0]
+    scenarios = summary[["scenario", "scenario_title"]].drop_duplicates().to_dict("records")
+    choices = {row["scenario_title"]: row["scenario"] for row in scenarios}
+    preferred = INTERACTIVE_TO_RESEARCH_SCENARIO.get(interactive_scenario_code)
+    default = next((title for title, code in choices.items() if code == preferred), next(iter(choices)))
+    prior = st.session_state.get("research_scenario")
+    selected_title = st.selectbox("Сценарий спроса", list(choices), index=list(choices).index(next((t for t,c in choices.items() if c == prior), default)))
+    selected = choices[selected_title]
     st.session_state.research_scenario = selected
+    selected_summary = summary[summary["scenario"] == selected].copy()
+    st.caption("Все стратегии используют парные потоки прибытий и 30 seed-ов. Усы на графике ожидания показывают 95%-й t-интервал.")
 
-    buttons = st.columns(len(available))
-    for button, scenario in zip(buttons, available, strict=True):
-        if button.button(
-            scenario["scenario_title"],
-            key=f"research-scenario-{scenario['scenario']}",
-            type="primary" if scenario["scenario"] == selected else "secondary",
-            width="stretch",
-        ):
-            st.session_state.research_scenario = scenario["scenario"]
-            st.rerun()
-
-    selected_summary = summary[
-        (summary["scenario"] == selected) & summary["controller"].isin(DISPLAYED_STRATEGIES)
-    ].copy()
-    selected_runs = (
-        runs[
-            (runs["scenario"] == selected)
-            & runs["controller"].isin(DISPLAYED_STRATEGIES)
-        ].copy()
-        if not runs.empty
-        else runs
-    )
-    scenario_title = selected_summary.iloc[0]["scenario_title"]
-    st.markdown(f"### Сценарий: {scenario_title}")
-    _strategy_explanation()
-
-    chart_config = {
-        "displayModeBar": False,
-        "scrollZoom": False,
-        "doubleClick": False,
-        "responsive": True,
-    }
-    st.plotly_chart(
-        _research_wait_chart(selected_summary),
-        width="stretch",
-        theme="streamlit",
-        config=chart_config,
-    )
-    st.caption(
-        "Основной критерий эффективности: чем ниже среднее время ожидания, тем быстрее "
-        "автомобили проходят перекрёсток. Усы показывают 95%-й доверительный интервал."
-    )
-    st.subheader("Результат адаптивного режима")
-    st.success(_wait_improvement_summary(selected_summary))
-    st.plotly_chart(
-        _research_queue_chart(selected_summary),
-        width="stretch",
-        theme="streamlit",
-        config=chart_config,
-    )
-    if not selected_runs.empty and "queue_series" in selected_runs:
-        st.plotly_chart(
-            _research_dynamic_queue_chart(selected_runs),
-            width="stretch",
-            theme="streamlit",
-            config=chart_config,
-        )
-    st.info(
-        "Все стратегии получают одинаковый поток и имеют одинаковую физическую скорость "
-        "проезда. Поэтому число проехавших машин за фиксированные 15 минут может совпадать; "
-        "преимущество адаптивного алгоритма измеряется сокращением ожидания и очередей, а не искусственным "
-        "увеличением ёмкости дороги."
-    )
+    tabs = st.tabs(["Сравнение", "Очереди и фазы", "Ошибки восприятия"])
+    config = {"displayModeBar": False, "responsive": True}
+    with tabs[0]:
+        st.plotly_chart(_research_wait_chart(selected_summary), width="stretch", config=config)
+        metrics = st.columns(3)
+        metrics[0].plotly_chart(_metric_chart(selected_summary, "average_queue_length", "Средняя очередь, авто", "Средняя очередь"), width="stretch", config=config)
+        metrics[1].plotly_chart(_metric_chart(selected_summary, "throughput_per_hour", "Поток, авто/ч", "Пропускная способность"), width="stretch", config=config)
+        metrics[2].plotly_chart(_metric_chart(selected_summary, "mean_waiting_at_end", "Остаток очереди, авто", "Очередь в конце"), width="stretch", config=config)
+        if selected == "high_load":
+            queue_wait = selected_summary.loc[selected_summary.controller == "queue_based", "average_wait_seconds"]
+            best_other = selected_summary.loc[selected_summary.controller != "queue_based", "average_wait_seconds"].min()
+            if not queue_wait.empty and float(queue_wait.iloc[0]) > float(best_other):
+                st.warning("При высокой нагрузке queue-based не является лучшей стратегией по среднему ожиданию. Остаточная очередь и цензурированные задержки также приведены в исследовательском отчёте.")
+    with tabs[1]:
+        traces = payload["queue_traces_3600"].get(selected, {})
+        available = [code for code in DISPLAYED_STRATEGIES if code in traces]
+        if available:
+            controller = st.selectbox("Контроллер для траектории", available, format_func=lambda code: STRATEGY_LABELS[code])
+            trace = traces[controller]
+            st.plotly_chart(_queue_trace_chart(trace, controller), width="stretch", config=config)
+            if trace.get("example_phase_history"):
+                st.plotly_chart(_phase_trace_chart(trace["example_phase_history"], controller), width="stretch", config=config)
+                st.caption(f"Одиночный воспроизводимый прогон: seed={trace['example_seed']}; общий hash потока прибытий для всех контроллеров этого сценария.")
+    with tabs[2]:
+        sensitivity = pd.DataFrame(payload.get("perception_sensitivity", []))
+        if not sensitivity.empty:
+            st.plotly_chart(_sensitivity_chart(sensitivity), width="stretch", config=config)
+        empirical = pd.DataFrame(payload.get("perception_empirical_bootstrap", []))
+        if not empirical.empty:
+            st.plotly_chart(_empirical_error_chart(empirical), width="stretch", config=config)
 
 
-def _strategy_explanation() -> None:
-    columns = st.columns(2)
-    for column, strategy in zip(columns, DISPLAYED_STRATEGIES, strict=True):
-        column.markdown(f"**{STRATEGY_LABELS[strategy]} режим**")
-        column.caption(STRATEGY_DESCRIPTIONS[strategy])
-
-
-def _load_research_payload(path: Path) -> dict | None:
-    payload = None
-    if path.exists():
-        try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            payload = None
-
-    if _is_current_research_payload(payload):
-        return payload
-
-    config_path = Path("configs/experiment_suite.yaml")
+@st.cache_data(show_spinner=False)
+def _load_research_payload(path: Path, modified: float | None = None) -> dict | None:
+    del modified
     try:
-        with st.spinner("Проводим исследовательский эксперимент и строим результаты..."):
-            config = load_experiment_config(config_path)
-            results, summary = run_experiment(config)
-            save_results(
-                results,
-                summary,
-                path=str(path),
-                csv_path=config.output.get("summary_csv", "outputs/experiment_suite_summary.csv"),
-                report_path=config.output.get(
-                    "report_markdown", "outputs/experiment_suite_report.md"
-                ),
-                config=config,
-            )
-        return json.loads(path.read_text(encoding="utf-8"))
-    except Exception as error:  # noqa: BLE001 - dashboard показывает понятную причину
-        st.error(f"Не удалось автоматически провести эксперимент: {error}")
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
         return None
+    return payload if _is_current_research_payload(payload) else None
 
 
 def _is_current_research_payload(payload: object) -> bool:
-    if not isinstance(payload, dict) or payload.get("result_schema_version") != 2:
-        return False
-    runs = payload.get("runs", [])
-    summary = payload.get("summary", [])
-    return bool(
-        summary
-        and runs
-        and isinstance(runs[0], dict)
-        and isinstance(summary[0], dict)
-        and "queue_series" in runs[0]
-        and "max_queue_length" in summary[0]
-    )
+    return bool(isinstance(payload, dict) and payload.get("schema_version") == 1 and isinstance(payload.get("summary"), dict) and payload.get("summary", {}).get("3600"))
 
 
 def _research_base_layout(figure, title: str):
-    figure.update_layout(
-        title=title,
-        height=560,
-        margin={"l": 10, "r": 10, "t": 55, "b": 10},
-        legend_title_text="Стратегия",
-        dragmode=False,
-    )
+    figure.update_layout(title=title, height=430, margin={"l": 20, "r": 15, "t": 55, "b": 35}, legend_title_text="Контроллер", dragmode=False)
     figure.update_yaxes(rangemode="tozero")
     return figure
 
 
 def _research_wait_chart(summary: pd.DataFrame):
-    summary = _with_strategy_labels(summary)
-    figure = px.bar(
-        summary,
-        x="scenario_title",
-        y="average_wait_seconds",
-        color="Стратегия",
-        error_y="wait_95ci_half_width",
-        barmode="group",
-        labels={
-            "scenario_title": "Сценарий",
-            "average_wait_seconds": "Среднее ожидание, с",
-            "Стратегия": "Режим работы",
-        },
-        color_discrete_map=STRATEGY_COLORS,
-    )
-    return _research_base_layout(figure, "Среднее время ожидания автомобиля")
+    data = _with_strategy_labels(summary)
+    figure = px.bar(data, x="Стратегия", y="average_wait_seconds", error_y="wait_95ci_half_width", color="Стратегия", color_discrete_map=STRATEGY_COLORS, labels={"average_wait_seconds": "Среднее ожидание, с", "Стратегия": "Контроллер"})
+    return _research_base_layout(figure, "Среднее ожидание с 95%-м доверительным интервалом")
 
 
-def _wait_improvement_summary(summary: pd.DataFrame) -> str:
-    fixed = summary.loc[summary["controller"] == "fixed", "average_wait_seconds"]
-    adaptive = summary.loc[summary["controller"] == "ai", "average_wait_seconds"]
-    if fixed.empty or adaptive.empty:
-        return "Для сравнения времени ожидания пока недостаточно данных."
-
-    fixed_wait = float(fixed.iloc[0])
-    adaptive_wait = float(adaptive.iloc[0])
-    saved_seconds = fixed_wait - adaptive_wait
-    improvement = saved_seconds / fixed_wait * 100 if fixed_wait else 0.0
-    return (
-        f"Адаптивный режим сокращает среднее ожидание с {fixed_wait:.1f} с "
-        f"до {adaptive_wait:.1f} с. Это на {saved_seconds:.1f} с, "
-        f"или на {improvement:.1f}%, быстрее для каждого автомобиля."
-    )
+def _metric_chart(summary: pd.DataFrame, column: str, label: str, title: str):
+    data = _with_strategy_labels(summary)
+    figure = px.bar(data, x="Стратегия", y=column, color="Стратегия", color_discrete_map=STRATEGY_COLORS, labels={column: label, "Стратегия": "Контроллер"})
+    return _research_base_layout(figure, title)
 
 
-def _research_queue_chart(summary: pd.DataFrame):
-    summary = _with_strategy_labels(summary)
-    figure = px.bar(
-        summary,
-        x="scenario_title",
-        y="average_queue_length",
-        color="Стратегия",
-        barmode="group",
-        labels={
-            "scenario_title": "Сценарий",
-            "average_queue_length": "Средняя длина очереди, авто",
-            "Стратегия": "Режим работы",
-        },
-        color_discrete_map=STRATEGY_COLORS,
-    )
-    return _research_base_layout(figure, "Средняя длина очереди")
+def _queue_trace_chart(trace: dict, controller: str):
+    frame = pd.DataFrame({"Время, с": range(len(trace["mean_queue_series"])), "Средняя очередь, авто": trace["mean_queue_series"]})
+    figure = px.line(frame, x="Время, с", y="Средняя очередь, авто")
+    return _research_base_layout(figure, f"Средняя динамика очереди · {STRATEGY_LABELS[controller]}")
 
 
-def _research_dynamic_queue_chart(runs: pd.DataFrame):
-    rows = []
-    for row in runs.to_dict("records"):
-        for second, queue in enumerate(row.get("queue_series") or []):
-            rows.append(
-                {
-                    "Время, с": second,
-                    "Очередь, авто": queue,
-                    "Сценарий": row["scenario_title"],
-                    "Стратегия": STRATEGY_LABELS.get(row["controller"], row["controller"]),
-                }
-            )
-    frame = pd.DataFrame(rows)
-    if frame.empty:
-        return px.line(title="Динамика очереди во времени")
-    frame = frame.groupby(
-        ["Сценарий", "Стратегия", "Время, с"], as_index=False
-    )["Очередь, авто"].mean()
-    figure = px.line(
-        frame,
-        x="Время, с",
-        y="Очередь, авто",
-        color="Стратегия",
-        facet_col="Сценарий",
-        color_discrete_map=STRATEGY_COLORS,
-    )
-    figure.update_layout(
-        title="Динамика очереди во времени",
-        height=560,
-        margin={"l": 10, "r": 10, "t": 75, "b": 10},
-        dragmode=False,
-    )
-    figure.update_yaxes(rangemode="tozero")
-    return figure
+def _phase_trace_chart(phases: list[dict], controller: str):
+    frame = pd.DataFrame(phases)
+    frame["end"] = frame["at"].shift(-1).fillna(frame["at"].iloc[-1] + 1)
+    frame["phase label"] = frame["phase"].str.replace("_", " ").str.title() + " · " + frame["color"]
+    figure = px.timeline(frame, x_start="at", x_end="end", y="phase label", color="phase label", hover_data=["at"])
+    return _research_base_layout(figure, f"Фазы светофора · {STRATEGY_LABELS[controller]}, seed 101")
+
+
+def _sensitivity_chart(frame: pd.DataFrame):
+    frame = frame.copy()
+    frame["error_pct"] = frame["observation_error_rate"] * 100
+    frame["Стратегия"] = frame["controller"].map(STRATEGY_LABELS)
+    figure = px.line(frame, x="error_pct", y="average_wait_seconds", color="regime", markers=True, error_y="wait_95ci_half_width", labels={"error_pct": "Вероятность ошибки наблюдения, %", "average_wait_seconds": "Среднее ожидание, с", "regime": "Режим спроса"})
+    return _research_base_layout(figure, "Чувствительность к синтетическим ошибкам наблюдения")
+
+
+def _empirical_error_chart(frame: pd.DataFrame):
+    frame = frame.copy()
+    frame["Стратегия"] = frame["controller"].map(STRATEGY_LABELS)
+    figure = px.bar(frame, x="scenario_title", y="average_wait_seconds", color="Стратегия", error_y="wait_95ci_half_width", barmode="group", color_discrete_map=STRATEGY_COLORS, labels={"scenario_title": "Режим ошибок", "average_wait_seconds": "Среднее ожидание, с"})
+    return _research_base_layout(figure, "Эмпирические ошибки детектора: bootstrap сценарии")
 
 
 def _with_strategy_labels(frame: pd.DataFrame) -> pd.DataFrame:
     display = frame.copy()
-    display["Стратегия"] = display["controller"].map(STRATEGY_LABELS).fillna(
-        display["controller"]
-    )
+    display["Стратегия"] = display["controller"].map(STRATEGY_LABELS).fillna(display["controller"])
     return display
 
 

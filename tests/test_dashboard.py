@@ -11,12 +11,9 @@ DASHBOARD = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(DASHBOARD)
 
 
-def test_dashboard_rejects_old_experiment_results_schema():
-    old_payload = {
-        "runs": [{"queue_series": [1]}],
-        "summary": [{"max_queue_length": 1}],
-    }
-    current_payload = {"result_schema_version": 2, **old_payload}
+def test_dashboard_accepts_only_compact_precomputed_payload():
+    old_payload = {"runs": [{"queue_series": [1]}], "summary": [{"max_queue_length": 1}]}
+    current_payload = {"schema_version": 1, "summary": {"1800": [{}], "3600": [{}]}}
     assert not DASHBOARD._is_current_research_payload(old_payload)
     assert DASHBOARD._is_current_research_payload(current_payload)
 
@@ -150,14 +147,14 @@ def test_phase_table_supports_legacy_phase_objects_without_crashing():
     assert rows[1]["Сигнал"] == "Жёлтый"
 
 
-def test_research_charts_use_expected_metrics():
+def test_research_charts_show_pi_re_controller_results_and_ci():
     import pandas as pd
 
     summary = pd.DataFrame(
         [
             {
                 "scenario_title": "Низкая нагрузка",
-                "controller": "fixed",
+                "controller": "fixed_35",
                 "average_wait_seconds": 10.0,
                 "wait_95ci_half_width": 1.0,
                 "max_queue_length": 8.0,
@@ -166,7 +163,7 @@ def test_research_charts_use_expected_metrics():
             },
             {
                 "scenario_title": "Низкая нагрузка",
-                "controller": "ai",
+                "controller": "queue_based",
                 "average_wait_seconds": 7.0,
                 "wait_95ci_half_width": 0.8,
                 "max_queue_length": 5.0,
@@ -176,41 +173,8 @@ def test_research_charts_use_expected_metrics():
         ]
     )
 
-    assert DASHBOARD._research_wait_chart(summary).layout.title.text == "Среднее время ожидания автомобиля"
-    assert DASHBOARD._research_queue_chart(summary).layout.title.text == "Средняя длина очереди"
-
-
-def test_wait_improvement_is_presented_as_a_text_summary():
-    import pandas as pd
-
-    summary = pd.DataFrame(
-        [
-            {"controller": "fixed", "average_wait_seconds": 16.4},
-            {"controller": "ai", "average_wait_seconds": 9.5},
-        ]
-    )
-
-    message = DASHBOARD._wait_improvement_summary(summary)
-
-    assert "с 16.4 с до 9.5 с" in message
-    assert "на 6.9 с" in message
-    assert "42.1%" in message
-
-
-def test_dynamic_queue_chart_aggregates_seed_series():
-    import pandas as pd
-
-    runs = pd.DataFrame(
-        [
-            {"scenario_title": "Низкая нагрузка", "controller": "ai", "queue_series": [4, 2, 0]},
-            {"scenario_title": "Низкая нагрузка", "controller": "ai", "queue_series": [2, 2, 0]},
-        ]
-    )
-
-    figure = DASHBOARD._research_dynamic_queue_chart(runs)
-
-    assert figure.layout.title.text == "Динамика очереди во времени"
-    assert len(figure.data) == 1
+    assert "95%-м доверительным интервалом" in DASHBOARD._research_wait_chart(summary).layout.title.text
+    assert DASHBOARD._metric_chart(summary, "average_queue_length", "Средняя очередь, авто", "Средняя очередь").layout.title.text == "Средняя очередь"
 
 
 def test_default_speed_increases_with_detected_traffic():
@@ -264,31 +228,66 @@ def test_research_graphs_are_not_a_navigation_control():
 
 
 def test_research_scenario_mapping_follows_detected_load():
-    assert DASHBOARD.INTERACTIVE_TO_RESEARCH_SCENARIO["low_load"] == "low_load"
-    assert DASHBOARD.INTERACTIVE_TO_RESEARCH_SCENARIO["north_south_peak"] == "morning_peak_ns"
-    assert DASHBOARD.INTERACTIVE_TO_RESEARCH_SCENARIO["east_west_peak"] == "evening_peak_ew"
+    assert DASHBOARD.INTERACTIVE_TO_RESEARCH_SCENARIO["low_load"] == "symmetric"
+    assert DASHBOARD.INTERACTIVE_TO_RESEARCH_SCENARIO["north_south_peak"] == "asymmetric_ns"
+    assert DASHBOARD.INTERACTIVE_TO_RESEARCH_SCENARIO["east_west_peak"] == "asymmetric_ew"
     assert DASHBOARD._research_wait_chart(
         __import__("pandas").DataFrame(
             [{
                 "scenario_title": "Низкая нагрузка",
-                "controller": "fixed",
+                "controller": "fixed_35",
                 "average_wait_seconds": 1.0,
                 "wait_95ci_half_width": 0.1,
             }]
         )
-    ).layout.height == 560
+    ).layout.height == 430
 
 
-def test_research_graphs_compare_only_standard_and_ai():
-    assert DASHBOARD.DISPLAYED_STRATEGIES == ("fixed", "ai")
-    assert "actuated" not in DASHBOARD.STRATEGY_DESCRIPTIONS
+def test_research_graphs_compare_pi_re_controllers_and_read_compact_files():
+    assert DASHBOARD.DISPLAYED_STRATEGIES == ("fixed_15", "fixed_35", "fixed_webster", "vehicle_actuated", "queue_based")
+    assert "vehicle_actuated" in DASHBOARD.STRATEGY_DESCRIPTIONS
     source = DASHBOARD_PATH.read_text(encoding="utf-8")
-    assert '"scrollZoom": False' in source
     assert '"displayModeBar": False' in source
-    assert "_research_distribution_chart" not in source
-    assert "_research_peak_queue_chart" not in source
-    assert "_research_improvement_chart" not in source
-    assert 'st.dataframe(selected_summary' not in source
+    assert "outputs/piere_dashboard_data.json" in source
+    assert "run_experiment" not in source
+    assert "queue_traces_3600" in source
+
+
+def test_streamlit_apptest_renders_simulation_and_research_sections():
+    from streamlit.testing.v1 import AppTest
+
+    result = simulate_interactive_traffic({"north": 2, "west": 1, "south": 3, "east": 2})
+    app = AppTest.from_file(str(DASHBOARD_PATH), default_timeout=30)
+    app.session_state["dashboard_page"] = "simulation"
+    app.session_state["interactive_result"] = result
+    app.session_state["dashboard_state_version"] = DASHBOARD.DASHBOARD_STATE_VERSION
+
+    app.run()
+
+    assert not app.exception
+    assert any("Результаты экспериментов PIERE" in item.value for item in app.subheader)
+
+    app.button[0].click().run()
+    assert not app.exception
+    assert app.file_uploader
+
+
+def test_streamlit_apptest_supports_empty_queues_and_sample_photos():
+    from streamlit.testing.v1 import AppTest
+
+    empty = simulate_interactive_traffic({"north": 0, "west": 0, "south": 0, "east": 0})
+    app = AppTest.from_file(str(DASHBOARD_PATH), default_timeout=30)
+    app.session_state["dashboard_page"] = "simulation"
+    app.session_state["interactive_result"] = empty
+    app.session_state["dashboard_state_version"] = DASHBOARD.DASHBOARD_STATE_VERSION
+    app.run()
+    assert not app.exception
+
+    gallery = AppTest.from_file(str(DASHBOARD_PATH), default_timeout=30)
+    gallery.session_state["dashboard_page"] = "samples"
+    gallery.run()
+    assert not gallery.exception
+    assert len(gallery.get("download_button")) == 3
 
 
 def test_mobile_metric_groups_use_two_column_layout_rules():

@@ -1,5 +1,9 @@
 import json
+from math import isclose
 from pathlib import Path
+
+import pandas as pd
+from scipy.stats import t as student_t
 
 from traffic_light.config import (
     ControllerConfig,
@@ -11,11 +15,16 @@ from traffic_light.config import (
     load_experiment_config,
 )
 from traffic_light.experiments import (
+    _add_baseline_improvement,
+    _format_p_value,
+    _paired_markdown_table,
+    _t_critical_975,
     build_experiment_analytics,
     build_markdown_report,
     build_paired_statistics,
     run_experiment,
     save_results,
+    summarize_results,
 )
 
 
@@ -128,3 +137,100 @@ def test_paired_statistics_match_seed_and_apply_holm_adjustment():
     assert fixed15["pairs"] == 3
     assert fixed15["queue_based_minus_comparator_mean_seconds"] == -2.0
     assert 0 <= fixed15["holm_p"] <= 1
+
+
+def test_student_t_interval_uses_exact_quantile():
+    assert isclose(_t_critical_975(29), student_t.ppf(0.975, 29), rel_tol=0, abs_tol=1e-14)
+
+
+def test_summary_confidence_interval_uses_t_quantile():
+    rows = [
+        {
+            "scenario": "s",
+            "scenario_title": "Scenario",
+            "controller": "fixed_35",
+            "seed": seed,
+            "average_wait_seconds": value,
+            "median_wait_seconds": value,
+            "average_queue_length": 1.0,
+            "max_queue_length": 2,
+            "throughput_per_hour": 10.0,
+            "fairness_index": 1.0,
+            "stops": 1,
+        }
+        for seed, value in enumerate((1.0, 2.0, 3.0, 4.0), start=1)
+    ]
+
+    summary = summarize_results(rows).iloc[0]
+
+    expected = student_t.ppf(0.975, 3) * summary["wait_std"] / 2
+    assert isclose(summary["wait_95ci_half_width"], expected, rel_tol=0, abs_tol=1e-14)
+    assert summary["improvement_reference_controller"] == "fixed_35"
+
+
+def test_missing_fixed_baseline_is_na_instead_of_zero_improvement():
+    summary = pd.DataFrame(
+        [
+            {"scenario": "no_fixed", "controller": "queue_based", "average_wait_seconds": 8.0},
+            {
+                "scenario": "no_fixed",
+                "controller": "vehicle_actuated",
+                "average_wait_seconds": 9.0,
+            },
+        ]
+    )
+
+    result = _add_baseline_improvement(summary)
+
+    assert result["wait_improvement_vs_fixed_pct"].isna().all()
+    assert result["improvement_reference_controller"].isna().all()
+
+
+def test_paired_report_formats_tiny_p_values_without_zero_rounding():
+    table = _paired_markdown_table(
+        [
+            {
+                "scenario": "high_load",
+                "duration_seconds": 3600,
+                "comparator": "fixed_35",
+                "pairs": 30,
+                "queue_based_minus_comparator_mean_seconds": 241.0,
+                "ci95_low_seconds": 230.0,
+                "ci95_high_seconds": 252.0,
+                "sign_test_p": 1e-9,
+                "holm_p": 5e-9,
+            }
+        ]
+    )
+
+    assert "| high_load | 3600 | fixed_35 | 30 | 241.00 | [230.00, 252.00] | <0.0001 | <0.0001 |" in table
+    assert "0.0000" not in table
+    assert _format_p_value(0.00321) == "0.0032"
+
+
+def test_report_omits_adaptive_comparison_when_controllers_are_absent():
+    summary = pd.DataFrame(
+        [
+            {
+                "scenario": "queue_only",
+                "scenario_title": "Queue only",
+                "controller": "queue_based",
+                "runs": 2,
+                "average_wait_seconds": 8.0,
+                "wait_std": 1.0,
+                "wait_95ci_half_width": 8.98,
+                "median_wait_seconds": 8.0,
+                "average_queue_length": 2.0,
+                "max_queue_length": 3.0,
+                "throughput_per_hour": 120.0,
+                "fairness_index": 1.0,
+                "stops": 4.0,
+            }
+        ]
+    )
+    summary = _add_baseline_improvement(summary)
+
+    report = build_markdown_report(summary)
+
+    assert "AI против adaptive" not in report
+    assert "N/A" in report

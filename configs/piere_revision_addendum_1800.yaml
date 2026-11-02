@@ -1,0 +1,114 @@
+name: piere_revision_addendum_1800
+title: 'PIERE revision addendum: 1800 s paired experiment'
+description: Дополнительные уровни спроса и зеркальная асимметрия; paired seeds 301–330.
+  Старый high_load 18/min сохранён без переименования.
+simulation:
+  duration_seconds: 1800
+  seeds:
+  - 301
+  - 302
+  - 303
+  - 304
+  - 305
+  - 306
+  - 307
+  - 308
+  - 309
+  - 310
+  - 311
+  - 312
+  - 313
+  - 314
+  - 315
+  - 316
+  - 317
+  - 318
+  - 319
+  - 320
+  - 321
+  - 322
+  - 323
+  - 324
+  - 325
+  - 326
+  - 327
+  - 328
+  - 329
+  - 330
+  service_time_seconds: 2.0
+scenarios:
+- name: symmetric_low
+  title: Низкий симметричный спрос
+  description: 3 автомобиля в минуту на каждом подходе.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 3
+      south:
+        arrival_rate_per_minute: 3
+      east:
+        arrival_rate_per_minute: 3
+      west:
+        arrival_rate_per_minute: 3
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: symmetric_9
+  title: Симметричный спрос 9 авто/мин
+  description: 9 автомобилей в минуту на каждом подходе; режим ниже прежнего кандидата
+    перегрузки 18 авто/мин.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 9
+      south:
+        arrival_rate_per_minute: 9
+      east:
+        arrival_rate_per_minute: 9
+      west:
+        arrival_rate_per_minute: 9
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: asymmetric_ew
+  title: Асимметричный спрос Восток–Запад
+  description: 4 автомобиля в минуту на N/S и 10 на E/W; зеркальный сценарий к asymmetric_ns.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 4
+      south:
+        arrival_rate_per_minute: 4
+      east:
+        arrival_rate_per_minute: 10
+      west:
+        arrival_rate_per_minute: 10
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: true_oversaturated
+  title: Насыщенный спрос 24 авто/мин
+  description: 24 автомобиля в минуту на каждом подходе; явно сверх расчётной пропускной
+    способности модели.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 24
+      south:
+        arrival_rate_per_minute: 24
+      east:
+        arrival_rate_per_minute: 24
+      west:
+        arrival_rate_per_minute: 24
+    min_green_seconds: 8
+    yellow_seconds: 3
+controllers:
+- type: fixed_15
+- type: fixed_35
+- type: fixed_webster
+- type: vehicle_actuated
+- type: queue_based
+- type: queue_based
+  legacy_rule: true
+  max_green_seconds: 45
+output:
+  path: outputs/piere_revision_addendum_1800.json
+  summary_csv: outputs/piere_revision_addendum_1800_summary.csv
+  report_markdown: outputs/piere_revision_addendum_1800_report.md
