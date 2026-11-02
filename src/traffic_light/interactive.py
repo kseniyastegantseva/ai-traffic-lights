@@ -3,15 +3,19 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Literal
 
-from traffic_light.config import LaneName, PhaseName
+from traffic_light.config import (
+    IntersectionConfig,
+    LaneName,
+    PhaseName,
+    SimulationConfig,
+    TrafficDemandConfig,
+)
+from traffic_light.controllers import QueueBasedController
+from traffic_light.simulation import IntersectionSimulation
 
 SignalColor = Literal["red", "yellow", "green"]
 
 LANES: tuple[LaneName, ...] = ("north", "west", "south", "east")
-PHASE_LANES: dict[PhaseName, tuple[LaneName, LaneName]] = {
-    "north_south": ("north", "south"),
-    "east_west": ("east", "west"),
-}
 
 
 @dataclass(frozen=True)
@@ -118,77 +122,87 @@ def simulate_interactive_traffic(
         )
         return InteractiveSimulationResult(initial, scenario, [frame], [], 0, 0, 0, 0, 0)
 
-    current_phase: PhaseName = _heavier_phase(queues)
-    signal_color: SignalColor = "green"
-    phase_started_at = 0
-    yellow_started_at: int | None = None
-    next_phase: PhaseName | None = None
-    last_service_at = 0
-    departed = 0
-    departed_by_lane = {lane: 0 for lane in LANES}
-    switches = 0
-    frames: list[InteractiveFrame] = []
-    raw_intervals: list[tuple[PhaseName, SignalColor, int]] = [
-        (current_phase, signal_color, 0)
+    initial_phase = _heavier_phase(queues)
+    intersection = IntersectionConfig(
+        lanes={lane: TrafficDemandConfig(arrival_rate_per_minute=0) for lane in LANES},
+        min_green_seconds=min_green_seconds,
+        yellow_seconds=yellow_seconds,
+    )
+    horizon = int(
+        total * service_time_seconds
+        + 2 * yellow_seconds * (total // max_green_seconds + 2)
+        + max_green_seconds
+        + 10
+    )
+    if horizon > 7200:
+        raise RuntimeError("Интерактивная симуляция превысила ограничение в два часа.")
+    trace: list[dict] = []
+    simulation = SimulationConfig(
+        duration_seconds=max(1, horizon),
+        seed=0,
+        service_time_seconds=service_time_seconds,
+    )
+    controller = QueueBasedController(
+        min_green_seconds=min_green_seconds,
+        max_green_seconds=max_green_seconds,
+        switching_margin=1,
+    )
+    sim_result = IntersectionSimulation(
+        intersection,
+        simulation,
+        controller,
+        initial_queues=queues,
+        arrivals=[],
+        initial_phase=initial_phase,
+        trace_callback=trace.append,
+    ).run()
+    clear_index = next(
+        (
+            index
+            for index, frame in enumerate(trace)
+            if frame["departed"] == total and not any(frame["queues"].values())
+        ),
+        None,
+    )
+    if clear_index is None:
+        raise RuntimeError("Интерактивная симуляция не очистила начальные очереди.")
+
+    frames = [
+        InteractiveFrame(
+            second=frame["second"],
+            signals=frame["signals"],
+            queues=frame["queues"],
+            departed=frame["departed"],
+            departed_by_lane=frame["departed_by_lane"],
+        )
+        for frame in trace[: clear_index + 1]
     ]
-    second = 0
-
-    while sum(queues.values()) > 0:
-        if signal_color == "yellow":
-            if yellow_started_at is not None and second - yellow_started_at >= yellow_seconds:
-                current_phase = next_phase or current_phase
-                signal_color = "green"
-                phase_started_at = second
-                last_service_at = second - service_time_seconds
-                raw_intervals.append((current_phase, signal_color, second))
-        else:
-            green_elapsed = second - phase_started_at
-            preferred = _preferred_phase(queues, current_phase, green_elapsed, max_green_seconds)
-            if preferred != current_phase and green_elapsed >= min_green_seconds:
-                signal_color = "yellow"
-                yellow_started_at = second
-                next_phase = preferred
-                switches += 1
-                raw_intervals.append((current_phase, signal_color, second))
-
-        if signal_color == "green" and second - last_service_at >= service_time_seconds:
-            for lane in PHASE_LANES[current_phase]:
-                if queues[lane] > 0:
-                    queues[lane] -= 1
-                    departed += 1
-                    departed_by_lane[lane] += 1
-            last_service_at = second
-
+    last = frames[-1]
+    for offset in range(1, 6):
         frames.append(
             InteractiveFrame(
-                second,
-                _signal_states(current_phase, signal_color),
-                queues.copy(),
-                departed,
-                departed_by_lane.copy(),
+                second=last.second + offset,
+                signals=last.signals.copy(),
+                queues=last.queues.copy(),
+                departed=last.departed,
+                departed_by_lane=last.departed_by_lane.copy(),
             )
         )
-        second += 1
-        if second > 7200:
-            raise RuntimeError("Интерактивная симуляция превысила ограничение в два часа.")
+    second = frames[-1].second + 1
 
-    # A vehicle needs time to leave the visible intersection after its queue
-    # position is released. Keep the final frames so the last vehicles cross
-    # the junction instead of vanishing at the stop line.
-    travel_clearance_seconds = 5
-    for _ in range(travel_clearance_seconds):
-        frames.append(
-            InteractiveFrame(
-                second,
-                _signal_states(current_phase, signal_color),
-                queues.copy(),
-                departed,
-                departed_by_lane.copy(),
-            )
+    raw_intervals: list[tuple[PhaseName, SignalColor, int]] = []
+    for frame in frames:
+        active_axis = next(
+            (axis for axis, color in frame.signals.items() if color != "red"),
+            None,
         )
-        second += 1
-
+        if active_axis is None:
+            continue
+        active_color = frame.signals[active_axis]
+        if not raw_intervals or raw_intervals[-1][:2] != (active_axis, active_color):
+            raw_intervals.append((active_axis, active_color, frame.second))
     phases = _build_intervals(raw_intervals, second)
+    switches = sum(interval.color == "yellow" for interval in phases)
     north_south_green = sum(
         interval.duration_seconds
         for interval in phases
@@ -205,7 +219,7 @@ def simulate_interactive_traffic(
         frames=frames,
         phases=phases,
         total_time_seconds=second,
-        departed=departed,
+        departed=sim_result.vehicles_departed,
         switches=switches,
         north_south_green_seconds=north_south_green,
         east_west_green_seconds=east_west_green,
@@ -216,22 +230,6 @@ def _heavier_phase(queues: dict[LaneName, int]) -> PhaseName:
     north_south = queues["north"] + queues["south"]
     east_west = queues["east"] + queues["west"]
     return "north_south" if north_south >= east_west else "east_west"
-
-
-def _preferred_phase(
-    queues: dict[LaneName, int],
-    current_phase: PhaseName,
-    green_elapsed: int,
-    max_green_seconds: int,
-) -> PhaseName:
-    other_phase: PhaseName = "east_west" if current_phase == "north_south" else "north_south"
-    current_pressure = sum(queues[lane] for lane in PHASE_LANES[current_phase])
-    other_pressure = sum(queues[lane] for lane in PHASE_LANES[other_phase])
-    if other_pressure == 0:
-        return current_phase
-    if current_pressure == 0 or green_elapsed >= max_green_seconds:
-        return other_phase
-    return other_phase if other_pressure > current_pressure + 1 else current_phase
 
 
 def _build_intervals(

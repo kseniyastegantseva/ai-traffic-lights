@@ -44,7 +44,7 @@
 
 **Response:** The manuscript now distinguishes aggregate Vehicle Count Accuracy from object-detection precision, recall, and mAP. A reproducible synthetic observation-error mechanism perturbs only the controller's view; physical queues remain unchanged.
 
-**Location/evidence:** `src/traffic_light/simulation.py`, `configs/piere_perception_sensitivity.yaml`, and `paper/simulation_results.md`. Existing repository artifacts report 16 images, 643 actual counts, 95 absolute directional errors, 85.23% Vehicle Count Accuracy, and MAE 1.484 vehicles per approach-image. Synthetic sensitivity metrics were identical over 0–20% error in the tested symmetric case. **Status: simulation completed; YOLO inference, checkpoint provenance, ablations, annotation, and full dashboard integration remain unverified.**
+**Location/evidence:** `src/traffic_light/simulation.py`, `src/traffic_light/interactive.py`, `app/dashboard.py`, `configs/piere_perception_sensitivity.yaml`, and `paper/simulation_results.md`. Existing repository artifacts report 16 images, 643 actual counts, 95 absolute directional errors, 85.23% Vehicle Count Accuracy, and MAE 1.484 vehicles per approach-image. Synthetic sensitivity metrics were identical over 0–20% error in the tested symmetric case. The dashboard now feeds its four image counts into the SimPy model as initial queues. **Status: model path and UI contract are tested; live YOLO inference, checkpoint provenance, ablations, and annotation remain unverified.**
 
 ## Minor comments (provisional topics)
 
@@ -64,7 +64,7 @@
 
 **Response:** The revised draft states that one image provides an initial count under an explicit queue-zone assumption; it does not imply continuous video tracking or field deployment.
 
-**Location/evidence:** `paper/revised_manuscript.md` and `wiki/architecture.md`. **Status: scope stated; the current dashboard path remains separate from the revised SimPy model and is not claimed as end-to-end integration.**
+**Location/evidence:** `paper/revised_manuscript.md`, `wiki/architecture.md`, `src/traffic_light/interactive.py`, and dashboard tests. **Status: four detector counts now initialize the revised SimPy model; no continuous video or live inference validation is claimed.**
 
 ### Minor 4 — Bibliography and review traceability
 

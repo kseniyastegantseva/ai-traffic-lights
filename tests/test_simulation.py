@@ -163,3 +163,32 @@ def test_observation_errors_do_not_mutate_physical_queues():
     observed = simulation._observed_queues(1.0)
     assert len(simulation.queues["north"]) == 100
     assert observed["north"] != 100
+
+
+def test_trace_callback_exposes_simpy_queue_phase_and_departure_state():
+    from traffic_light.controllers import QueueBasedController
+
+    trace = []
+    intersection_config = IntersectionConfig(
+        lanes={
+            lane: TrafficDemandConfig(arrival_rate_per_minute=0)
+            for lane in ("north", "south", "east", "west")
+        },
+        min_green_seconds=2,
+        yellow_seconds=1,
+    )
+    result = run_simulation(
+        intersection_config,
+        SimulationConfig(duration_seconds=30, seed=3, service_time_seconds=1),
+        QueueBasedController(min_green_seconds=2, max_green_seconds=5),
+        initial_queues={"north": 2, "south": 0, "east": 1, "west": 0},
+        arrivals=[],
+        initial_phase="north_south",
+        trace_callback=trace.append,
+    )
+
+    assert trace[0]["second"] == 0
+    assert trace[0]["queues"] == {"north": 2, "south": 0, "east": 1, "west": 0}
+    assert any(frame["color"] == "yellow" for frame in trace)
+    assert trace[-1]["departed_by_lane"] == {"north": 2, "south": 0, "east": 1, "west": 0}
+    assert result.vehicles_departed == 3

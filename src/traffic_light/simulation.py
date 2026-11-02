@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import random
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from statistics import mean, median
 
@@ -108,15 +109,18 @@ class IntersectionSimulation:
         controller: BaseController,
         initial_queues: dict[str, int] | None = None,
         arrivals: list[Arrival] | None = None,
+        initial_phase: PhaseName = "north_south",
+        trace_callback: Callable[[dict], None] | None = None,
     ) -> None:
         self.intersection = intersection
         self.config = simulation
         self.controller = controller
+        self.trace_callback = trace_callback
         self.env = simpy.Environment()
         self._service_wakeups = {lane: self.env.event() for lane in LANES}
-        self.current_phase: PhaseName = "north_south"
+        self.current_phase: PhaseName = initial_phase
         self.signal_color = "green"
-        self.phase_history: list[dict] = [{"at": 0.0, "phase": "north_south", "color": "green"}]
+        self.phase_history: list[dict] = [{"at": 0.0, "phase": initial_phase, "color": "green"}]
         self.phase_started_at = 0.0
         self.queues: dict[str, list[Vehicle]] = {lane: [] for lane in intersection.lanes}
         self.initial_vehicles = 0
@@ -145,7 +149,9 @@ class IntersectionSimulation:
             if event.at == 0:
                 self.queues[event.lane].append(Vehicle(event.lane, 0.0))
                 self.arrived += 1
+        self._initial_queue_counts = {lane: len(queue) for lane, queue in self.queues.items()}
         self.departed = 0
+        self.departed_by_lane = {lane: 0 for lane in LANES}
         self.in_service = 0
         self.stops = 0
         self._last_event_time = 0.0
@@ -190,6 +196,7 @@ class IntersectionSimulation:
                     self._integrate_queue_area()
                     self.in_service -= 1
                     self.departed += 1
+                    self.departed_by_lane[lane] += 1
                     self.waits.append(wait)
                     self.waits_by_lane[lane].append(wait)
                     self.stops += int(wait > 1)
@@ -249,6 +256,35 @@ class IntersectionSimulation:
         while True:
             self._integrate_queue_area()
             self.queue_samples.append(self._queue_count())
+            if self.trace_callback is not None:
+                is_initial_snapshot = self.env.now == 0
+                other_phase: PhaseName = (
+                    "east_west" if self.current_phase == "north_south" else "north_south"
+                )
+                self.trace_callback(
+                    {
+                        "second": int(self.env.now),
+                        "phase": self.phase_history[0]["phase"] if is_initial_snapshot else self.current_phase,
+                        "color": "green" if is_initial_snapshot else self.signal_color,
+                        "signals": {
+                            self.phase_history[0]["phase"] if is_initial_snapshot else self.current_phase: (
+                                "green" if is_initial_snapshot else self.signal_color
+                            ),
+                            other_phase: "red",
+                        },
+                        "queues": (
+                            self._initial_queue_counts.copy()
+                            if is_initial_snapshot
+                            else {lane: len(queue) for lane, queue in self.queues.items()}
+                        ),
+                        "departed": 0 if is_initial_snapshot else self.departed,
+                        "departed_by_lane": (
+                            {lane: 0 for lane in LANES}
+                            if is_initial_snapshot
+                            else self.departed_by_lane.copy()
+                        ),
+                    }
+                )
             yield self.env.timeout(1)
 
     def _queue_count(self) -> int:
@@ -323,8 +359,18 @@ def run_simulation(
     controller: BaseController,
     initial_queues: dict[str, int] | None = None,
     arrivals: list[Arrival] | None = None,
+    initial_phase: PhaseName = "north_south",
+    trace_callback: Callable[[dict], None] | None = None,
 ) -> SimulationResult:
-    return IntersectionSimulation(intersection, simulation, controller, initial_queues, arrivals).run()
+    return IntersectionSimulation(
+        intersection,
+        simulation,
+        controller,
+        initial_queues,
+        arrivals,
+        initial_phase,
+        trace_callback,
+    ).run()
 
 
 def _jain_index(values: list[float]) -> float:
