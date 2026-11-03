@@ -172,6 +172,8 @@ def _green_intervals(row: dict[str, Any]) -> tuple[dict[str, list[tuple[float, f
                 lane_intervals[lane].append((start, end))
         elif entry["color"] == "yellow":
             yellow_intervals.append((start, end))
+        elif entry["color"] == "all_red":
+            continue
         else:
             raise ValueError(f"unknown signal color {entry['color']!r}")
     return lane_intervals, yellow_intervals, green_lengths

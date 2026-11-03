@@ -28,12 +28,32 @@ from traffic_light.controllers import (
 )
 from traffic_light.experiments import build_controller, build_paired_statistics, run_experiment
 from traffic_light.queue_audit import (
+    _green_intervals,
     arrival_digest,
     max_red_with_queued_vehicles_by_phase,
     max_signal_red_by_phase,
     regenerate_arrivals,
     replay_run,
 )
+
+
+def test_queue_replay_phase_parser_accepts_dynamic_all_red_clearance():
+    lane_intervals, yellow_intervals, green_lengths = _green_intervals(
+        {
+            "duration_seconds": 12,
+            "phase_history": [
+                {"at": 0.0, "phase": "north_south", "color": "green"},
+                {"at": 4.0, "phase": "north_south", "color": "yellow"},
+                {"at": 7.0, "phase": "north_south", "color": "all_red"},
+                {"at": 9.0, "phase": "east_west", "color": "green"},
+            ],
+        }
+    )
+
+    assert lane_intervals["north"] == [(0.0, 4.0)]
+    assert lane_intervals["east"] == [(9.0, 12.0)]
+    assert yellow_intervals == [(4.0, 7.0)]
+    assert green_lengths == [4.0, 3.0]
 from traffic_light.simulation import run_simulation
 from traffic_light.statistics_audit import (
     _resolve_configured_path,

@@ -128,6 +128,39 @@ def test_controller_cannot_start_conflicting_green_during_yellow():
     assert green_phases[:2] == ["north_south", "east_west"]
 
 
+def test_conflicting_green_waits_for_in_service_vehicle_after_yellow():
+    from traffic_light.controllers import FixedTimeController
+
+    trace = []
+    result = run_simulation(
+        IntersectionConfig(
+            lanes={lane: TrafficDemandConfig(arrival_rate_per_minute=0) for lane in ("north", "south", "east", "west")},
+            yellow_seconds=3,
+        ),
+        SimulationConfig(duration_seconds=16, seed=1, service_time_seconds=9),
+        FixedTimeController(phase_duration_seconds=4),
+        initial_queues={"north": 1, "east": 1},
+        arrivals=[],
+        trace_callback=trace.append,
+    )
+
+    history = result.phase_history or []
+    assert history[:4] == [
+        {"at": 0.0, "phase": "north_south", "color": "green"},
+        {"at": 4, "phase": "north_south", "color": "yellow"},
+        {"at": 7, "phase": "north_south", "color": "all_red"},
+        {"at": 9, "phase": "east_west", "color": "green"},
+    ]
+    assert all(
+        frame["in_service_by_lane"]["north"] == 0
+        for frame in trace
+        if frame["signals"]["east_west"] == "green"
+    )
+    all_red_frames = [frame for frame in trace if frame["color"] == "all_red"]
+    assert all_red_frames
+    assert all(frame["signals"] == {"north_south": "red", "east_west": "red"} for frame in all_red_frames)
+
+
 def test_vehicle_actuated_gap_out_waits_for_gap_and_minimum_green():
     controller = VehicleActuatedController(min_green_seconds=5, max_green_seconds=30, gap_seconds=3)
     state = ControllerState(4, "north_south", 0, {"north": 0, "south": 0, "east": 1, "west": 0}, 5)
