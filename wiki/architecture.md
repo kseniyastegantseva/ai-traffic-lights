@@ -53,7 +53,7 @@ traffic-sim compare --config configs/experiment.yaml
 ## Основные компоненты
 
 - `config.py` валидирует YAML-конфиги через Pydantic.
-- `controllers.py` содержит фиксированные `fixed_8` / `fixed_15` / `fixed_35`, Webster split, vehicle-actuated, исходный `queue_based`, отдельный адаптивный `queue_based_improved`, legacy-вариант и сохранённые прежние стратегии для совместимости.
+- `controllers.py` содержит фиксированные `fixed_8` / `fixed_15` / `fixed_35`, Webster split, vehicle-actuated, исходный `queue_based`, отдельный адаптивный `queue_based_improved`, экспериментальный `queue_based_empty_gap_fix`, legacy-вариант и сохранённые прежние стратегии для совместимости. Empty-gap вариант использует proxy пустой очереди, не детекторный headway.
 - `simulation.py` запускает SimPy-модель с общими воспроизводимыми потоками, начальными очередями и раздельным состоянием waiting / in_service / departed.
 - `experiments.py` выполняет парные сравнения по seed, считает интервалы разностей и sign test с Holm correction; исследовательские YAML находятся в `configs/piere_revision_*.yaml`.
 - `gym_env.py` содержит минимальную Gymnasium-совместимую оболочку для будущего RL-обучения.

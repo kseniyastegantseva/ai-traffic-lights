@@ -1,5 +1,13 @@
 # Журнал задач
 
+## 2026-11-03 — Аудит системы и empty-green gap-out (этап 1, продолжается)
+
+- Прочитаны `AGENTS.md`, Wiki, история Queue-based и контракты контроллеров/SimPy. Создан живой реестр `docs/TOTAL_SYSTEM_IMPROVEMENT_AUDIT.md`; зафиксированы подтверждённое empty-axis правило, ограничения queue-based gap proxy, проблема перекрытия in-service при service time > yellow clearance и исправленная ошибка путей в statistics audit.
+- Добавлен независимый `queue_based_empty_gap_fix`, сохраняющий параметры и поведение Improved за пределами пустого зелёного; конфигурация испытывает порог 0/1/3 с. Тесты покрывают min-green, порог gap, queue-pressure fallback и штатный жёлтый переход.
+- На 30 новых development seed (2101–2130), 8 сценариях и горизонте 1800 с выполнено 1 920 paired запусков. Replay: 1 920 runs / 240 scenario-controller групп, ноль несовпадений и непарных результатов. Statistics audit: 64 сводные группы, 56 paired сравнений, ноль mismatches.
+- При 3 авто/мин empty-gap 1 с сократил завершённое среднее ожидание на 1,007 с относительно Improved, но отличие от Vehicle-actuated составило только −0,009 с и незначимо. При 9 авто/мин разница с Vehicle-actuated +0,628 с (95% CI [+0,378;+0,879], Holm p=0,033). При перегрузке gap-out не сработал и метрики совпали с Improved. За снижение ожидания на 3 авто/мин заплачено примерно 39 дополнительными переключениями и 118 с жёлтого за 1800 с.
+- Добавлены конфигурация, полный JSON/replay, сводка и парные CSV, 5 графиков PNG/SVG, environment metadata и SHA-256 manifest; подготовлены аналитические документы. После одного неповторившегося AppTest timeout его отдельный запуск и полный повтор прошли: `pytest -q` — 75 passed; Ruff и `git diff --check` чисты. Независимые replay/statistics audit пройдены. Docker CLI найден, daemon недоступен; `.github/workflows` в репозитории нет.
+
 ## 2026-11-03 — Независимая проверка Queue-based (завершена)
 
 - На ветке `revision/piere-review` создан журнал `docs/QUEUE_BASED_FINAL_VALIDATION.md`; исходные результаты и Streamlit не менялись.

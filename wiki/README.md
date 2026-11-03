@@ -16,6 +16,8 @@
 - `experiments.md` — дизайн экспериментов и метрики.
 - `../docs/REVISION_COMPLETION_AUDIT.md` — итоговый проверяемый аудит рукописи PIERE revision.
 - `../docs/QUEUE_BASED_FINAL_VALIDATION.md` — журнал независимой проверки, Fixed 8 s и разработки Queue-based improved.
+- `../docs/TOTAL_SYSTEM_IMPROVEMENT_AUDIT.md` — продолжающийся системный аудит и результаты следующих исследований Queue-based.
+- `../paper/QUEUE_BASED_NEXT_GENERATION_RU.md`, `../paper/NEW_ALGORITHM_COMPARISON.md`, `../paper/NEW_RESEARCH_RESULTS_FOR_PIERE.md` — промежуточное описание gap-out, сравнение и осторожные формулировки для будущей PIERE редакции.
 - `../docs/STREAMLIT_DEPLOYMENT.md` — инструкция развёртывания дашборда на целевой ветке.
 - `../paper/reviewer_response.md` — ответы по 11 темам ревизии с ограничениями.
 - `../paper/revised_manuscript.md` и `../paper/revised_manuscript_ru.md` — английская статья и полный русский перевод.

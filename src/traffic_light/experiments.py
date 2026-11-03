@@ -26,6 +26,7 @@ from traffic_light.controllers import (
     FixedWebsterController,
     QLearningPolicyController,
     QueueBasedController,
+    QueueBasedEmptyGapFixController,
     QueueBasedImprovedController,
     VehicleActuatedController,
 )
@@ -90,6 +91,17 @@ def build_controller(
             congested_min_green_seconds=config.congested_min_green_seconds,
             congestion_queue_threshold=config.congestion_queue_threshold,
             name=config.result_name or "queue_based_improved",
+        )
+    if config.type == "queue_based_empty_gap_fix":
+        return QueueBasedEmptyGapFixController(
+            min_green_seconds=config.min_green_seconds,
+            max_green_seconds=config.max_green_seconds,
+            switching_margin=config.switching_margin,
+            relative_switching_margin=config.relative_switching_margin,
+            congested_min_green_seconds=config.congested_min_green_seconds,
+            congestion_queue_threshold=config.congestion_queue_threshold,
+            empty_gap_seconds=config.empty_gap_seconds,
+            name=config.result_name or "queue_based_empty_gap_fix",
         )
     if config.type == "ai":
         return AIPhaseController(

@@ -1,0 +1,108 @@
+"""Create a seed-explicit development experiment for the empty-green diagnostic."""
+from __future__ import annotations
+
+from copy import deepcopy
+from pathlib import Path
+
+import yaml
+
+ROOT = Path(__file__).resolve().parents[1]
+SEEDS = list(range(2101, 2131))
+SCENARIOS = (
+    "symmetric_low",
+    "symmetric",
+    "symmetric_9",
+    "asymmetric_ns",
+    "asymmetric_ew",
+    "sudden_dominance_switch",
+    "high_load",
+    "true_oversaturated",
+)
+
+
+def main() -> None:
+    source = yaml.safe_load(
+        (ROOT / "configs/queue_based_final_1800.yaml").read_text(encoding="utf-8")
+    )
+    scenarios = [
+        deepcopy(scenario)
+        for scenario in source["scenarios"]
+        if scenario["name"] in SCENARIOS
+    ]
+    if {scenario["name"] for scenario in scenarios} != set(SCENARIOS):
+        raise ValueError("The source configuration is missing a requested scenario")
+
+    controllers = [
+        {"type": "fixed_8"},
+        {"type": "vehicle_actuated"},
+        {
+            "type": "queue_based",
+            "min_green_seconds": 8,
+            "max_green_seconds": 45,
+            "switching_margin": 1,
+        },
+        {
+            "type": "queue_based",
+            "legacy_rule": True,
+            "min_green_seconds": 8,
+            "max_green_seconds": 45,
+            "switching_margin": 1,
+        },
+        {
+            "type": "queue_based_improved",
+            "min_green_seconds": 8,
+            "max_green_seconds": 45,
+            "switching_margin": 1,
+            "relative_switching_margin": 0.10,
+            "congested_min_green_seconds": 25,
+            "congestion_queue_threshold": 14,
+        },
+    ]
+    for gap_seconds in (0.0, 1.0, 3.0):
+        controllers.append(
+            {
+                "type": "queue_based_empty_gap_fix",
+                "min_green_seconds": 8,
+                "max_green_seconds": 45,
+                "switching_margin": 1,
+                "relative_switching_margin": 0.10,
+                "congested_min_green_seconds": 25,
+                "congestion_queue_threshold": 14,
+                "empty_gap_seconds": gap_seconds,
+                "result_name": f"queue_based_empty_gap_{gap_seconds:g}s",
+            }
+        )
+
+    config = {
+        "name": "total_improvement_empty_gap_development_1800",
+        "title": "Диагностика empty-green gap-out, development, 1800 с",
+        "description": (
+            "Exploratory development comparison on seeds 2101–2130, separate from previous "
+            "experiments. Every controller shares the same Poisson arrival stream per "
+            "scenario/seed. Tests 0/1/3-second empty-current-axis gap-out against Fixed 8, "
+            "Vehicle-actuated, Queue-based original/legacy and locked Queue-based Improved. "
+            "These seeds are not a final test set."
+        ),
+        "simulation": {
+            "duration_seconds": 1800,
+            "seeds": SEEDS,
+            "service_time_seconds": 2.0,
+            "store_queue_series": False,
+        },
+        "scenarios": scenarios,
+        "controllers": controllers,
+        "output": {
+            "path": "outputs/total_improvement/empty_gap_development_1800.json",
+            "summary_csv": "outputs/total_improvement/empty_gap_development_1800_summary.csv",
+            "report_markdown": "outputs/total_improvement/empty_gap_development_1800_report.md",
+        },
+    }
+    target = ROOT / "configs/total_improvement_empty_gap_development_1800.yaml"
+    target.write_text(
+        yaml.safe_dump(config, allow_unicode=True, sort_keys=False, width=100),
+        encoding="utf-8",
+    )
+
+
+if __name__ == "__main__":
+    main()

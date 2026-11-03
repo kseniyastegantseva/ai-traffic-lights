@@ -128,12 +128,8 @@ def _independent_paired(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def audit_saved_statistics(path: Path) -> dict[str, Any]:
     payload = _load_payload(path)
     output = payload["configuration"].get("output", {})
-    csv_path = Path(output.get("summary_csv", ""))
-    report_path = Path(output.get("report_markdown", ""))
-    if not csv_path.is_absolute():
-        csv_path = path.parent.parent / csv_path
-    if not report_path.is_absolute():
-        report_path = path.parent.parent / report_path
+    csv_path = _resolve_configured_path(path, output.get("summary_csv", ""))
+    report_path = _resolve_configured_path(path, output.get("report_markdown", ""))
     csv_rows = list(csv.DictReader(csv_path.open(encoding="utf-8", newline="")))
     computed = _summary_from_runs(payload["runs"])
     expected_seeds = set(payload["configuration"]["simulation"]["seeds"])
@@ -222,6 +218,18 @@ def audit_saved_statistics(path: Path) -> dict[str, Any]:
         "csv_summary_rows": len(csv_rows),
         "mismatches": mismatches,
     }
+
+
+def _resolve_configured_path(result_path: Path, configured_path: str) -> Path:
+    path = Path(configured_path)
+    if path.is_absolute():
+        return path
+    # Experiment runners write configured paths relative to the working
+    # directory. Prefer that exact path; fall back to the repository/output
+    # directory for audits launched from another working directory.
+    if path.exists():
+        return path
+    return result_path.parent.parent / path
 
 
 def main() -> None:

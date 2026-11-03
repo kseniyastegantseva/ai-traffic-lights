@@ -179,6 +179,49 @@ class QueueBasedImprovedController(BaseController):
 
 
 @dataclass
+class QueueBasedEmptyGapFixController(QueueBasedImprovedController):
+    """Improved queue rule with an empty-green gap-out condition.
+
+    ``current_gap_seconds`` is computed from the absence of queued vehicles in
+    the current axis. It is only an aggregate-queue proxy, not detector headway
+    or proof that the intersection is physically clear.
+    """
+
+    congested_min_green_seconds: int = 25
+    congestion_queue_threshold: int = 14
+    empty_gap_seconds: float = 1.0
+    name: str = "queue_based_empty_gap_fix"
+
+    def choose_phase(self, state: ControllerState) -> PhaseName:
+        elapsed = state.now - state.phase_started_at
+        other = other_phase(state.current_phase)
+        current_q = sum(state.queues[lane] for lane in PHASE_LANES[state.current_phase])
+        other_q = sum(state.queues[lane] for lane in PHASE_LANES[other])
+        if other_q == 0:
+            return state.current_phase
+        if elapsed >= self.max_green_seconds:
+            return other
+
+        total_q = current_q + other_q
+        effective_min_green = (
+            self.congested_min_green_seconds
+            if total_q >= self.congestion_queue_threshold
+            else self.min_green_seconds
+        )
+        if elapsed < effective_min_green:
+            return state.current_phase
+
+        if current_q == 0 and state.current_gap_seconds >= self.empty_gap_seconds:
+            return other
+
+        margin = max(
+            self.switching_margin,
+            ceil(self.relative_switching_margin * total_q),
+        )
+        return other if other_q > current_q + margin else state.current_phase
+
+
+@dataclass
 class ActuatedController(BaseController):
     min_green_seconds: int = 15
     decision_interval_seconds: int = 10

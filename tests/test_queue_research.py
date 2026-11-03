@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from traffic_light.config import (
@@ -15,12 +17,18 @@ from traffic_light.controllers import (
     ControllerState,
     FixedTimeController,
     QueueBasedController,
+    QueueBasedEmptyGapFixController,
     QueueBasedImprovedController,
 )
 from traffic_light.experiments import build_controller, build_paired_statistics, run_experiment
 from traffic_light.queue_audit import arrival_digest, regenerate_arrivals, replay_run
 from traffic_light.simulation import run_simulation
-from traffic_light.statistics_audit import exact_sign_p, holm_adjust, paired_summary
+from traffic_light.statistics_audit import (
+    _resolve_configured_path,
+    exact_sign_p,
+    holm_adjust,
+    paired_summary,
+)
 
 LANES = ("north", "south", "east", "west")
 
@@ -109,6 +117,86 @@ def test_improved_controller_respects_max_green_when_competing_demand_exists():
     assert controller.choose_phase(state) == "east_west"
     state.queues.update(east=0, west=0)
     assert controller.choose_phase(state) == "north_south"
+
+
+def test_empty_gap_fix_switches_from_empty_axis_after_minimum_green():
+    state = ControllerState(
+        now=8,
+        current_phase="north_south",
+        phase_started_at=0,
+        queues={"north": 0, "south": 0, "east": 1, "west": 0},
+        current_gap_seconds=8,
+    )
+    improved = QueueBasedImprovedController(
+        min_green_seconds=8,
+        max_green_seconds=45,
+        switching_margin=1,
+        relative_switching_margin=0.10,
+        congested_min_green_seconds=25,
+        congestion_queue_threshold=14,
+    )
+    empty_gap_fix = QueueBasedEmptyGapFixController(
+        min_green_seconds=8,
+        max_green_seconds=45,
+        switching_margin=1,
+        relative_switching_margin=0.10,
+        congested_min_green_seconds=25,
+        congestion_queue_threshold=14,
+        empty_gap_seconds=1,
+    )
+
+    assert improved.choose_phase(state) == "north_south"
+    assert empty_gap_fix.choose_phase(state) == "east_west"
+    state.now = 7
+    assert empty_gap_fix.choose_phase(state) == "north_south"
+
+
+def test_empty_gap_fix_requires_configured_short_gap_and_keeps_queue_pressure_rule():
+    state = ControllerState(
+        now=8,
+        current_phase="north_south",
+        phase_started_at=0,
+        queues={"north": 0, "south": 0, "east": 1, "west": 0},
+        current_gap_seconds=1,
+    )
+    controller = QueueBasedEmptyGapFixController(empty_gap_seconds=3)
+    assert controller.choose_phase(state) == "north_south"
+    state.current_gap_seconds = 3
+    assert controller.choose_phase(state) == "east_west"
+
+    state.queues.update(north=1, east=1)
+    state.current_gap_seconds = 10
+    assert controller.choose_phase(state) == "north_south"
+
+
+def test_empty_gap_fix_factory_name_and_yellow_clearance_are_preserved():
+    controller = build_controller(
+        ControllerConfig(
+            type="queue_based_empty_gap_fix",
+            min_green_seconds=8,
+            max_green_seconds=45,
+            congested_min_green_seconds=25,
+            congestion_queue_threshold=14,
+            empty_gap_seconds=1,
+            result_name="empty_gap_1s",
+        ),
+        min_green_seconds=8,
+        intersection=zero_demand_intersection(),
+    )
+    result = run_simulation(
+        zero_demand_intersection(),
+        SimulationConfig(duration_seconds=16, seed=1),
+        controller,
+        initial_queues={"east": 1},
+        arrivals=[],
+    )
+
+    assert isinstance(controller, QueueBasedEmptyGapFixController)
+    assert result.phase_history[:3] == [
+        {"at": 0.0, "phase": "north_south", "color": "green"},
+        {"at": 8, "phase": "north_south", "color": "yellow"},
+        {"at": 11, "phase": "east_west", "color": "green"},
+    ]
 
 
 def test_improved_config_rejects_congested_minimum_above_max_green():
@@ -257,3 +345,13 @@ def test_independent_paired_statistics_match_hand_calculated_example():
     assert result["sign_p"] == 1.0
     assert exact_sign_p([-1.0, -1.0, -1.0, 0.0]) == 0.25
     assert holm_adjust([0.01, 0.04, 0.03]) == [0.03, 0.06, 0.06]
+
+
+def test_statistics_audit_resolves_nested_output_paths_from_repository_root(tmp_path, monkeypatch):
+    result_path = tmp_path / "outputs" / "total_improvement" / "runs.json"
+    configured = Path("outputs/total_improvement/summary.csv")
+    (tmp_path / configured).parent.mkdir(parents=True, exist_ok=True)
+    (tmp_path / configured).write_text("scenario,controller\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+
+    assert _resolve_configured_path(result_path, str(configured)) == configured
