@@ -1,0 +1,227 @@
+name: total_improvement_min_green_dynamics_1800
+title: Плавный и устойчивый minimum green, development, 1800 с
+description: Paired 30-seed development screen (5101–5130) comparing the locked Improved controller with
+  a linear queue ramp, enter/exit hysteresis and persistent-congestion variants. The strategies retain
+  the same base/congested min/max green and queue-switch margin; only the congestion activation rule changes.
+simulation:
+  duration_seconds: 1800
+  seeds:
+  - 5101
+  - 5102
+  - 5103
+  - 5104
+  - 5105
+  - 5106
+  - 5107
+  - 5108
+  - 5109
+  - 5110
+  - 5111
+  - 5112
+  - 5113
+  - 5114
+  - 5115
+  - 5116
+  - 5117
+  - 5118
+  - 5119
+  - 5120
+  - 5121
+  - 5122
+  - 5123
+  - 5124
+  - 5125
+  - 5126
+  - 5127
+  - 5128
+  - 5129
+  - 5130
+  service_time_seconds: 2.0
+  store_queue_series: false
+scenarios:
+- name: asymmetric_ns
+  title: Асимметричный спрос Север–Юг
+  description: 10 автомобилей в минуту на N/S и 4 на E/W.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 10
+      south:
+        arrival_rate_per_minute: 10
+      east:
+        arrival_rate_per_minute: 4
+      west:
+        arrival_rate_per_minute: 4
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: sudden_dominance_switch
+  title: Внезапная смена доминирующей оси
+  description: В 900 s максимум спроса переходит с N/S на E/W.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 10
+      south:
+        arrival_rate_per_minute: 10
+      east:
+        arrival_rate_per_minute: 4
+      west:
+        arrival_rate_per_minute: 4
+    min_green_seconds: 8
+    yellow_seconds: 3
+  demand_schedule:
+  - start_seconds: 0
+    end_seconds: 900
+    lanes:
+      north:
+        arrival_rate_per_minute: 10
+      south:
+        arrival_rate_per_minute: 10
+      east:
+        arrival_rate_per_minute: 4
+      west:
+        arrival_rate_per_minute: 4
+  - start_seconds: 900
+    end_seconds: 3600
+    lanes:
+      north:
+        arrival_rate_per_minute: 4
+      south:
+        arrival_rate_per_minute: 4
+      east:
+        arrival_rate_per_minute: 10
+      west:
+        arrival_rate_per_minute: 10
+- name: high_load
+  title: Высокая нагрузка
+  description: 18 автомобилей в минуту на каждом подходе; v/c оценивается относительно расчетной мощности
+    модели и должна быть подтверждена результатами очередей.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 18
+      south:
+        arrival_rate_per_minute: 18
+      east:
+        arrival_rate_per_minute: 18
+      west:
+        arrival_rate_per_minute: 18
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: symmetric_low
+  title: Низкий симметричный спрос
+  description: 3 автомобиля в минуту на каждом подходе.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 3
+      south:
+        arrival_rate_per_minute: 3
+      east:
+        arrival_rate_per_minute: 3
+      west:
+        arrival_rate_per_minute: 3
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: symmetric_9
+  title: Симметричный спрос 9 авто/мин
+  description: 9 автомобилей в минуту на каждом подходе; режим ниже прежнего кандидата перегрузки 18 авто/мин.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 9
+      south:
+        arrival_rate_per_minute: 9
+      east:
+        arrival_rate_per_minute: 9
+      west:
+        arrival_rate_per_minute: 9
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: asymmetric_ew
+  title: Асимметричный спрос Восток–Запад
+  description: 4 автомобиля в минуту на N/S и 10 на E/W; зеркальный сценарий к asymmetric_ns.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 4
+      south:
+        arrival_rate_per_minute: 4
+      east:
+        arrival_rate_per_minute: 10
+      west:
+        arrival_rate_per_minute: 10
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: true_oversaturated
+  title: Насыщенный спрос 24 авто/мин
+  description: 24 автомобиля в минуту на каждом подходе; явно сверх расчётной пропускной способности модели.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 24
+      south:
+        arrival_rate_per_minute: 24
+      east:
+        arrival_rate_per_minute: 24
+      west:
+        arrival_rate_per_minute: 24
+    min_green_seconds: 8
+    yellow_seconds: 3
+controllers:
+- type: vehicle_actuated
+  min_green_seconds: 8
+  max_green_seconds: 45
+  result_name: vehicle_actuated
+- type: queue_based
+  min_green_seconds: 8
+  max_green_seconds: 45
+  switching_margin: 1
+- type: queue_based_improved
+  min_green_seconds: 8
+  max_green_seconds: 45
+  switching_margin: 1
+  relative_switching_margin: 0.1
+  congested_min_green_seconds: 25
+  congestion_queue_threshold: 14
+- type: queue_based_smooth_min_green
+  min_green_seconds: 8
+  max_green_seconds: 45
+  switching_margin: 1
+  relative_switching_margin: 0.1
+  congested_min_green_seconds: 25
+  congestion_queue_threshold: 14
+  smooth_congestion_start_queue: 10
+  smooth_congestion_end_queue: 18
+  result_name: queue_based_smooth_min_green_10_18
+- type: queue_based_hysteresis
+  min_green_seconds: 8
+  max_green_seconds: 45
+  switching_margin: 1
+  relative_switching_margin: 0.1
+  congested_min_green_seconds: 25
+  congestion_queue_threshold: 14
+  congestion_exit_threshold: 10
+  result_name: queue_based_hysteresis_14_10
+- type: queue_based_persistent_congestion
+  min_green_seconds: 8
+  max_green_seconds: 45
+  switching_margin: 1
+  relative_switching_margin: 0.1
+  congested_min_green_seconds: 25
+  congestion_queue_threshold: 14
+  congestion_persistence_seconds: 5
+  result_name: queue_based_persistent_5s
+- type: queue_based_persistent_congestion
+  min_green_seconds: 8
+  max_green_seconds: 45
+  switching_margin: 1
+  relative_switching_margin: 0.1
+  congested_min_green_seconds: 25
+  congestion_queue_threshold: 14
+  congestion_persistence_seconds: 10
+  result_name: queue_based_persistent_10s
+output:
+  path: outputs/total_improvement/min_green_dynamics_1800.json
+  summary_csv: outputs/total_improvement/min_green_dynamics_1800_summary.csv
+  report_markdown: outputs/total_improvement/min_green_dynamics_1800_report.md

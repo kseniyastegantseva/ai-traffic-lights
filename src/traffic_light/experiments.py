@@ -27,8 +27,11 @@ from traffic_light.controllers import (
     QLearningPolicyController,
     QueueBasedController,
     QueueBasedEmptyGapFixController,
+    QueueBasedHysteresisController,
     QueueBasedImprovedController,
     QueueBasedMaxRedController,
+    QueueBasedPersistentCongestionController,
+    QueueBasedSmoothMinGreenController,
     VehicleActuatedController,
 )
 from traffic_light.simulation import generate_arrivals, run_simulation
@@ -114,6 +117,40 @@ def build_controller(
             congestion_queue_threshold=config.congestion_queue_threshold,
             max_red_seconds=config.max_red_seconds,
             name=config.result_name or "queue_based_max_red",
+        )
+    if config.type == "queue_based_smooth_min_green":
+        return QueueBasedSmoothMinGreenController(
+            min_green_seconds=config.min_green_seconds,
+            max_green_seconds=config.max_green_seconds,
+            switching_margin=config.switching_margin,
+            relative_switching_margin=config.relative_switching_margin,
+            congested_min_green_seconds=config.congested_min_green_seconds,
+            congestion_queue_threshold=config.congestion_queue_threshold,
+            smooth_congestion_start_queue=config.smooth_congestion_start_queue,
+            smooth_congestion_end_queue=config.smooth_congestion_end_queue,
+            name=config.result_name or "queue_based_smooth_min_green",
+        )
+    if config.type == "queue_based_hysteresis":
+        return QueueBasedHysteresisController(
+            min_green_seconds=config.min_green_seconds,
+            max_green_seconds=config.max_green_seconds,
+            switching_margin=config.switching_margin,
+            relative_switching_margin=config.relative_switching_margin,
+            congested_min_green_seconds=config.congested_min_green_seconds,
+            congestion_queue_threshold=config.congestion_queue_threshold,
+            congestion_exit_threshold=config.congestion_exit_threshold,
+            name=config.result_name or "queue_based_hysteresis",
+        )
+    if config.type == "queue_based_persistent_congestion":
+        return QueueBasedPersistentCongestionController(
+            min_green_seconds=config.min_green_seconds,
+            max_green_seconds=config.max_green_seconds,
+            switching_margin=config.switching_margin,
+            relative_switching_margin=config.relative_switching_margin,
+            congested_min_green_seconds=config.congested_min_green_seconds,
+            congestion_queue_threshold=config.congestion_queue_threshold,
+            congestion_persistence_seconds=config.congestion_persistence_seconds,
+            name=config.result_name or "queue_based_persistent_congestion",
         )
     if config.type == "ai":
         return AIPhaseController(

@@ -156,21 +156,28 @@ class QueueBasedImprovedController(BaseController):
     congestion_queue_threshold: int = 10
     name: str = "queue_based_improved"
 
+    def _observe_queue_state(self, total_q: int, state: ControllerState) -> None:
+        """Hook for experimental minimum-green policies with memory."""
+
+    def _effective_min_green(self, total_q: int) -> float:
+        return (
+            self.congested_min_green_seconds
+            if total_q >= self.congestion_queue_threshold
+            else self.min_green_seconds
+        )
+
     def choose_phase(self, state: ControllerState) -> PhaseName:
         elapsed = state.now - state.phase_started_at
         other = other_phase(state.current_phase)
         current_q = sum(state.queues[lane] for lane in PHASE_LANES[state.current_phase])
         other_q = sum(state.queues[lane] for lane in PHASE_LANES[other])
         total_q = current_q + other_q
+        self._observe_queue_state(total_q, state)
         if other_q == 0:
             return state.current_phase
         if elapsed >= self.max_green_seconds:
             return other
-        effective_min_green = (
-            self.congested_min_green_seconds
-            if total_q >= self.congestion_queue_threshold
-            else self.min_green_seconds
-        )
+        effective_min_green = self._effective_min_green(total_q)
         if elapsed < effective_min_green:
             return state.current_phase
         margin = max(
@@ -178,6 +185,74 @@ class QueueBasedImprovedController(BaseController):
             ceil(self.relative_switching_margin * total_q),
         )
         return other if other_q > current_q + margin else state.current_phase
+
+
+@dataclass
+class QueueBasedSmoothMinGreenController(QueueBasedImprovedController):
+    """Linearly ramps minimum green across a queue band instead of one threshold."""
+
+    smooth_congestion_start_queue: int = 10
+    smooth_congestion_end_queue: int = 18
+    name: str = "queue_based_smooth_min_green"
+
+    def _effective_min_green(self, total_q: int) -> float:
+        width = self.smooth_congestion_end_queue - self.smooth_congestion_start_queue
+        progress = min(
+            1.0,
+            max(0.0, (total_q - self.smooth_congestion_start_queue) / width),
+        )
+        return self.min_green_seconds + progress * (
+            self.congested_min_green_seconds - self.min_green_seconds
+        )
+
+
+@dataclass
+class QueueBasedHysteresisController(QueueBasedImprovedController):
+    """Uses separate queue thresholds to enter and leave congestion mode."""
+
+    congestion_exit_threshold: int = 10
+    congestion_active: bool = False
+    name: str = "queue_based_hysteresis"
+
+    def _observe_queue_state(self, total_q: int, state: ControllerState) -> None:
+        if self.congestion_active:
+            if total_q <= self.congestion_exit_threshold:
+                self.congestion_active = False
+        elif total_q >= self.congestion_queue_threshold:
+            self.congestion_active = True
+
+    def _effective_min_green(self, total_q: int) -> float:
+        return (
+            self.congested_min_green_seconds
+            if self.congestion_active
+            else self.min_green_seconds
+        )
+
+
+@dataclass
+class QueueBasedPersistentCongestionController(QueueBasedImprovedController):
+    """Enters congestion mode only after high pressure persists for a set time."""
+
+    congestion_persistence_seconds: float = 5.0
+    high_pressure_since: float | None = None
+    current_time: float = 0.0
+    name: str = "queue_based_persistent_congestion"
+
+    def _observe_queue_state(self, total_q: int, state: ControllerState) -> None:
+        self.current_time = state.now
+        if total_q >= self.congestion_queue_threshold:
+            if self.high_pressure_since is None:
+                self.high_pressure_since = state.now
+        else:
+            self.high_pressure_since = None
+
+    def _effective_min_green(self, total_q: int) -> float:
+        persistent = (
+            self.high_pressure_since is not None
+            and total_q >= self.congestion_queue_threshold
+            and self.high_pressure_since + self.congestion_persistence_seconds <= self.current_time
+        )
+        return self.congested_min_green_seconds if persistent else self.min_green_seconds
 
 
 @dataclass

@@ -18,8 +18,11 @@ from traffic_light.controllers import (
     FixedTimeController,
     QueueBasedController,
     QueueBasedEmptyGapFixController,
+    QueueBasedHysteresisController,
     QueueBasedImprovedController,
     QueueBasedMaxRedController,
+    QueueBasedPersistentCongestionController,
+    QueueBasedSmoothMinGreenController,
 )
 from traffic_light.experiments import build_controller, build_paired_statistics, run_experiment
 from traffic_light.queue_audit import (
@@ -256,6 +259,88 @@ def test_improved_controller_uses_base_minimum_at_low_demand_and_longer_hold_at_
     assert controller.choose_phase(state) == "north_south"
     state.now = 25
     assert controller.choose_phase(state) == "east_west"
+
+
+def test_smooth_min_green_ramps_across_queue_band_without_early_threshold_jump():
+    improved = QueueBasedImprovedController(
+        min_green_seconds=8,
+        max_green_seconds=45,
+        switching_margin=1,
+        relative_switching_margin=0.10,
+        congested_min_green_seconds=25,
+        congestion_queue_threshold=14,
+    )
+    smooth = QueueBasedSmoothMinGreenController(
+        min_green_seconds=8,
+        max_green_seconds=45,
+        switching_margin=1,
+        relative_switching_margin=0.10,
+        congested_min_green_seconds=25,
+        congestion_queue_threshold=14,
+        smooth_congestion_start_queue=10,
+        smooth_congestion_end_queue=18,
+    )
+    state = ControllerState(
+        now=9,
+        current_phase="north_south",
+        phase_started_at=0,
+        queues={"north": 0, "south": 0, "east": 11, "west": 0},
+    )
+
+    assert improved.choose_phase(state) == "east_west"
+    assert smooth.choose_phase(state) == "north_south"
+
+
+def test_congestion_hysteresis_stays_active_until_exit_threshold():
+    controller = QueueBasedHysteresisController(
+        min_green_seconds=8,
+        max_green_seconds=45,
+        congested_min_green_seconds=25,
+        congestion_queue_threshold=14,
+        congestion_exit_threshold=10,
+    )
+    state = ControllerState(
+        now=9,
+        current_phase="north_south",
+        phase_started_at=0,
+        queues={"north": 0, "south": 0, "east": 14, "west": 0},
+    )
+    assert controller.choose_phase(state) == "north_south"
+
+    state.now = 10
+    state.queues["east"] = 12
+    assert controller.choose_phase(state) == "north_south"
+    state.now = 11
+    state.queues["east"] = 10
+    assert controller.choose_phase(state) == "east_west"
+
+
+def test_persistent_congestion_uses_consecutive_observation_duration():
+    persistent_5 = QueueBasedPersistentCongestionController(
+        min_green_seconds=8,
+        max_green_seconds=45,
+        congested_min_green_seconds=25,
+        congestion_queue_threshold=14,
+        congestion_persistence_seconds=5,
+    )
+    persistent_10 = QueueBasedPersistentCongestionController(
+        min_green_seconds=8,
+        max_green_seconds=45,
+        congested_min_green_seconds=25,
+        congestion_queue_threshold=14,
+        congestion_persistence_seconds=10,
+    )
+    state = ControllerState(
+        now=0,
+        current_phase="north_south",
+        phase_started_at=0,
+        queues={"north": 0, "south": 0, "east": 14, "west": 0},
+    )
+    assert persistent_5.choose_phase(state) == "north_south"
+    assert persistent_10.choose_phase(state) == "north_south"
+    state.now = 8
+    assert persistent_5.choose_phase(state) == "north_south"
+    assert persistent_10.choose_phase(state) == "east_west"
 
 
 def test_independent_replay_recovers_known_censored_queue_metrics():

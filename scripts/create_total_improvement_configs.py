@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SEEDS = list(range(2101, 2131))
 CAPACITY_SEEDS = list(range(3101, 3116))
 MAX_RED_SEEDS = list(range(4101, 4131))
+MIN_GREEN_SEEDS = list(range(5101, 5131))
 SCENARIOS = (
     "symmetric_low",
     "symmetric",
@@ -267,6 +268,144 @@ def main() -> None:
     max_red_target = ROOT / "configs/total_improvement_max_red_development_1800.yaml"
     max_red_target.write_text(
         yaml.safe_dump(max_red_config, allow_unicode=True, sort_keys=False, width=100),
+        encoding="utf-8",
+    )
+
+    min_green_scenarios = [
+        deepcopy(scenario)
+        for scenario in source["scenarios"]
+        if scenario["name"] in (
+            "symmetric_low",
+            "symmetric_9",
+            "asymmetric_ns",
+            "asymmetric_ew",
+            "sudden_dominance_switch",
+            "high_load",
+            "true_oversaturated",
+        )
+    ]
+    min_green_controllers = [
+        {
+            "type": "vehicle_actuated",
+            "min_green_seconds": 8,
+            "max_green_seconds": 45,
+            "result_name": "vehicle_actuated",
+        },
+        {
+            "type": "queue_based",
+            "min_green_seconds": 8,
+            "max_green_seconds": 45,
+            "switching_margin": 1,
+        },
+        {
+            "type": "queue_based_improved",
+            "min_green_seconds": 8,
+            "max_green_seconds": 45,
+            "switching_margin": 1,
+            "relative_switching_margin": 0.10,
+            "congested_min_green_seconds": 25,
+            "congestion_queue_threshold": 14,
+        },
+        {
+            "type": "queue_based_smooth_min_green",
+            "min_green_seconds": 8,
+            "max_green_seconds": 45,
+            "switching_margin": 1,
+            "relative_switching_margin": 0.10,
+            "congested_min_green_seconds": 25,
+            "congestion_queue_threshold": 14,
+            "smooth_congestion_start_queue": 10,
+            "smooth_congestion_end_queue": 18,
+            "result_name": "queue_based_smooth_min_green_10_18",
+        },
+        {
+            "type": "queue_based_hysteresis",
+            "min_green_seconds": 8,
+            "max_green_seconds": 45,
+            "switching_margin": 1,
+            "relative_switching_margin": 0.10,
+            "congested_min_green_seconds": 25,
+            "congestion_queue_threshold": 14,
+            "congestion_exit_threshold": 10,
+            "result_name": "queue_based_hysteresis_14_10",
+        },
+        {
+            "type": "queue_based_persistent_congestion",
+            "min_green_seconds": 8,
+            "max_green_seconds": 45,
+            "switching_margin": 1,
+            "relative_switching_margin": 0.10,
+            "congested_min_green_seconds": 25,
+            "congestion_queue_threshold": 14,
+            "congestion_persistence_seconds": 5,
+            "result_name": "queue_based_persistent_5s",
+        },
+        {
+            "type": "queue_based_persistent_congestion",
+            "min_green_seconds": 8,
+            "max_green_seconds": 45,
+            "switching_margin": 1,
+            "relative_switching_margin": 0.10,
+            "congested_min_green_seconds": 25,
+            "congestion_queue_threshold": 14,
+            "congestion_persistence_seconds": 10,
+            "result_name": "queue_based_persistent_10s",
+        },
+    ]
+    min_green_config = {
+        "name": "total_improvement_min_green_dynamics_1800",
+        "title": "Плавный и устойчивый minimum green, development, 1800 с",
+        "description": (
+            "Paired 30-seed development screen (5101–5130) comparing the locked Improved controller "
+            "with a linear queue ramp, enter/exit hysteresis and persistent-congestion variants. "
+            "The strategies retain the same base/congested min/max green and queue-switch margin; "
+            "only the congestion activation rule changes."
+        ),
+        "simulation": {
+            "duration_seconds": 1800,
+            "seeds": MIN_GREEN_SEEDS,
+            "service_time_seconds": 2.0,
+            "store_queue_series": False,
+        },
+        "scenarios": min_green_scenarios,
+        "controllers": min_green_controllers,
+        "output": {
+            "path": "outputs/total_improvement/min_green_dynamics_1800.json",
+            "summary_csv": "outputs/total_improvement/min_green_dynamics_1800_summary.csv",
+            "report_markdown": "outputs/total_improvement/min_green_dynamics_1800_report.md",
+        },
+    }
+    min_green_target = ROOT / "configs/total_improvement_min_green_dynamics_1800.yaml"
+    min_green_target.write_text(
+        yaml.safe_dump(min_green_config, allow_unicode=True, sort_keys=False, width=100),
+        encoding="utf-8",
+    )
+
+    validation = deepcopy(min_green_config)
+    validation.update(
+        name="total_improvement_min_green_validation_1800",
+        title="Независимая проверка плавного minimum green, 1800 с",
+        description=(
+            "Independent paired validation on previously unused seeds 6101–6130. Compares the locked "
+            "Queue-based Improved rule with the preselected linear minimum-green ramp from the "
+            "development screen, across the same seven demand regimes. This is a confirmation set, "
+            "not used for parameter selection."
+        ),
+    )
+    validation["simulation"]["seeds"] = list(range(6101, 6131))
+    validation["controllers"] = [
+        deepcopy(controller)
+        for controller in min_green_controllers
+        if controller["type"] in {"queue_based_improved", "queue_based_smooth_min_green"}
+    ]
+    validation["output"] = {
+        "path": "outputs/total_improvement/min_green_validation_1800.json",
+        "summary_csv": "outputs/total_improvement/min_green_validation_1800_summary.csv",
+        "report_markdown": "outputs/total_improvement/min_green_validation_1800_report.md",
+    }
+    validation_target = ROOT / "configs/total_improvement_min_green_validation_1800.yaml"
+    validation_target.write_text(
+        yaml.safe_dump(validation, allow_unicode=True, sort_keys=False, width=100),
         encoding="utf-8",
     )
 

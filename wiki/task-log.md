@@ -1,5 +1,14 @@
 # Журнал задач
 
+## 2026-11-03 — Плавный minimum green и независимая проверка (этап 4, продолжается)
+
+- Добавлены экспериментальные smooth-ramp, hysteresis и persistent-congestion наследники Improved; исходные контроллеры и SimPy API не менялись. Созданы воспроизводимые конфиги на 30 development seed 5101–5130 и отдельные 30 validation seed 6101–6130.
+- Development: 1 470 прогонов (7 сценариев × 7 стратегий × 30 seed), custom analyzer — 1 617 контрастов по 11 метрикам; независимый replay: 210 групп, 0 duplicates/unpaired/mismatches. Built-in statistics audit: 49 групп, 42 сравнения, 0 mismatch.
+- На development выбрана только рампа min-green 10–18: при symmetric_9 −0,276 с против Improved (95% CI [−0,428; −0,124], Holm p=0,0172 в development семье из 21 пары). Гистерезис и persistence 5/10 с убедительного выигрыша не дали.
+- Отдельная валидация на новых seed: 420 запусков (7 сценариев × 2 контроллера × 30 seed), replay — 210 групп, 0 mismatches. Рампа подтвердила узкий эффект при symmetric_9: −0,333 с (95% paired CI [−0,510; −0,156], Holm p=0,0023 по 7 сценариям); в остальных шести сценариях значимого различия после Holm не установлено.
+- Встроенный statistics audit validation обнаружил 14 групп и 0 парных сравнений из-за нестандартных имён контроллеров; отдельный analyzer заранее заданных семи пар пересчитал paired t-интервалы и exact sign test с Holm. Полные метрики, парные CSV, архивы, replay и графики добавлены; основная PIERE статья не менялась.
+- Обновлены архитектурная/экспериментальная Wiki, системный аудит, осторожная заметка для будущей статьи и воспроизводимый финализатор артефактов. Проверки: focused `test_queue_research.py` — 23 passed; полный `pytest -q` — 83 passed; `ruff check .`, `git diff --check`, `gzip -t`, SHA-256 manifest и replay обоих gzip-наборов прошли. Docker daemon недоступен. Изменения предназначены для ветки `revision/piere-review`; push будет после итоговой проверки.
+
 ## 2026-11-03 — Max-red fairness controller (этап 3, продолжается)
 
 - Добавлен отдельный `queue_based_max_red`: учитывает observed request на red-фазе, сохраняет minimum green и начинает переход с запасом на yellow clearance и один секундный шаг. Добавлены config/factory wiring и `SimulationResult.max_red_with_queue_seconds_by_phase`.

@@ -26,6 +26,13 @@ python scripts/analyze_total_improvement_max_red.py
 python scripts/plot_total_improvement_max_red.py
 python scripts/audit_queue_based_results.py outputs/total_improvement/max_red_development_1800.json --replay-output outputs/total_improvement/max_red_development_1800_replay.json
 python scripts/audit_queue_based_statistics.py outputs/total_improvement/max_red_development_1800.json
+traffic-sim compare --config configs/total_improvement_min_green_dynamics_1800.yaml
+python scripts/analyze_total_improvement_min_green.py
+python scripts/plot_total_improvement_min_green.py
+python scripts/audit_queue_based_results.py outputs/total_improvement/min_green_dynamics_1800.json --replay-output outputs/total_improvement/min_green_dynamics_1800_replay.json
+traffic-sim compare --config configs/total_improvement_min_green_validation_1800.yaml
+python scripts/analyze_total_improvement_min_green_validation.py
+python scripts/audit_queue_based_results.py outputs/total_improvement/min_green_validation_1800.json --replay-output outputs/total_improvement/min_green_validation_1800_replay.json
 python scripts/audit_queue_based_results.py outputs/total_improvement/capacity_boundary_1800.json --replay-output outputs/total_improvement/capacity_boundary_1800_replay.json
 python scripts/audit_queue_based_statistics.py outputs/total_improvement/capacity_boundary_1800.json
 python scripts/audit_queue_based_results.py outputs/total_improvement/capacity_boundary_3600.json --replay-output outputs/total_improvement/capacity_boundary_3600_replay.json
@@ -39,6 +46,10 @@ python scripts/audit_queue_based_results.py outputs/total_improvement/capacity_b
 python scripts/audit_queue_based_statistics.py outputs/total_improvement/capacity_boundary_3600.json.gz
 python scripts/audit_queue_based_results.py outputs/total_improvement/max_red_development_1800.json.gz
 python scripts/audit_queue_based_statistics.py outputs/total_improvement/max_red_development_1800.json.gz
+python scripts/audit_queue_based_results.py outputs/total_improvement/min_green_dynamics_1800.json.gz
+python scripts/audit_queue_based_statistics.py outputs/total_improvement/min_green_dynamics_1800.json.gz
+python scripts/audit_queue_based_results.py outputs/total_improvement/min_green_validation_1800.json.gz
+python scripts/audit_queue_based_statistics.py outputs/total_improvement/min_green_validation_1800.json.gz
 ```
 
 The simulation used CPU only. Exact package versions and SHA-256 values are recorded in
@@ -49,4 +60,6 @@ metrics are retained.
 
 Seed 2101–2130 are development seeds and are not an independent final-test set after their results
 have been examined. See `../../docs/TOTAL_SYSTEM_IMPROVEMENT_AUDIT.md` for interpretation and
-limitations.
+limitations. The min-green candidate was preselected on development seeds 5101–5130 and checked
+on separate validation seeds 6101–6130; its supported effect is limited to symmetric demand 9 in
+this model. Neither new screen changes the main PIERE manuscript.

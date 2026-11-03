@@ -11,6 +11,7 @@ PhaseName = Literal["north_south", "east_west"]
 ControllerType = Literal[
     "fixed", "fixed_8", "fixed_15", "fixed_35", "fixed_webster", "vehicle_actuated",
     "queue_based", "queue_based_improved", "queue_based_empty_gap_fix", "queue_based_max_red",
+    "queue_based_smooth_min_green", "queue_based_hysteresis", "queue_based_persistent_congestion",
     "actuated", "ai", "q_learning",
 ]
 
@@ -51,6 +52,10 @@ class ControllerConfig(BaseModel):
     congestion_queue_threshold: int = Field(default=10, ge=0)
     empty_gap_seconds: float = Field(default=1.0, ge=0.0)
     max_red_seconds: float = Field(default=48.0, gt=0.0)
+    smooth_congestion_start_queue: int = Field(default=10, ge=0)
+    smooth_congestion_end_queue: int = Field(default=18, ge=1)
+    congestion_exit_threshold: int = Field(default=10, ge=0)
+    congestion_persistence_seconds: float = Field(default=5.0, ge=0.0)
     result_name: str | None = None
     legacy_rule: bool = False
     policy_path: str = "outputs/q_learning_policy.json"
@@ -60,12 +65,28 @@ class ControllerConfig(BaseModel):
         if self.max_green_seconds < self.min_green_seconds:
             raise ValueError("max_green_seconds must be greater than or equal to min_green_seconds")
         if (
-            self.type in {"queue_based_improved", "queue_based_max_red"}
+            self.type in {
+                "queue_based_improved",
+                "queue_based_max_red",
+                "queue_based_smooth_min_green",
+                "queue_based_hysteresis",
+                "queue_based_persistent_congestion",
+            }
             and self.max_green_seconds < self.congested_min_green_seconds
         ):
             raise ValueError(
                 "max_green_seconds must be greater than or equal to congested_min_green_seconds"
             )
+        if (
+            self.type == "queue_based_smooth_min_green"
+            and self.smooth_congestion_end_queue <= self.smooth_congestion_start_queue
+        ):
+            raise ValueError("smooth_congestion_end_queue must exceed smooth_congestion_start_queue")
+        if (
+            self.type == "queue_based_hysteresis"
+            and self.congestion_exit_threshold >= self.congestion_queue_threshold
+        ):
+            raise ValueError("congestion_exit_threshold must be below congestion_queue_threshold")
         return self
 
 

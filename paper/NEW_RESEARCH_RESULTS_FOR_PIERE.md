@@ -84,3 +84,23 @@ oversaturated conditions.
 The controller responds to observed queue counts; observation errors were not included in this
 screen. Its results do not establish a deployment-ready fairness guarantee with camera inputs.
 This candidate paragraph is for author review only; the main PIERE manuscript is unchanged.
+
+## Smooth minimum-green rule: a narrow independent validation result
+
+An exploratory development screen compared Queue-based Improved with three alternatives for
+activating the longer congested minimum green: a linear queue ramp from 10 to 18 vehicles,
+entry/exit hysteresis at 14/10, and persistence above the congestion threshold for 5 or 10 s.
+The 1,470 paired runs used 30 development seeds across seven demand scenarios. An independent
+replay found no run-level metric mismatches. The linear ramp was selected for one fixed validation
+contrast because it showed a promising development result at symmetric demand of 9 vehicles per
+minute per approach.
+
+On 30 previously unused paired seeds, the ramp reduced completed mean waiting time by 0.333 s
+relative to Improved at that single demand (95% paired CI [−0.510, −0.156], Holm-adjusted exact
+sign-test p=0.0023 across seven scenarios). The other six scenarios did not show a corrected
+difference; at high load the estimated change was +0.270 s (95% CI [−0.688, +1.228]), and at 24
+vehicles/minute it was +0.062 s (95% CI [−0.375, +0.499]). This is a small, scenario-specific
+simulation result and does not establish a general advantage or deployment benefit. The model
+uses Poisson arrivals and perfect aggregate queue observations; different arrival processes,
+camera-count errors, and field data remain untested. The main PIERE manuscript is unchanged; this
+paragraph is for author review only.
