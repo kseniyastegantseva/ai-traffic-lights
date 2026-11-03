@@ -12,6 +12,8 @@ CAPACITY_SEEDS = list(range(3101, 3116))
 MAX_RED_SEEDS = list(range(4101, 4131))
 MIN_GREEN_SEEDS = list(range(5101, 5131))
 AXIS_SPECIFIC_SEEDS = list(range(7101, 7131))
+SWITCHING_MARGIN_SEEDS = list(range(8101, 8131))
+SWITCHING_MARGIN_VALIDATION_SEEDS = list(range(9101, 9131))
 SCENARIOS = (
     "symmetric_low",
     "symmetric",
@@ -471,6 +473,129 @@ def main() -> None:
     axis_target = ROOT / "configs/total_improvement_axis_specific_congestion_1800.yaml"
     axis_target.write_text(
         yaml.safe_dump(axis_config, allow_unicode=True, sort_keys=False, width=100),
+        encoding="utf-8",
+    )
+
+    margin_controllers = [
+        {"type": "vehicle_actuated", "min_green_seconds": 8, "max_green_seconds": 45},
+        {"type": "queue_based", "min_green_seconds": 8, "max_green_seconds": 45, "switching_margin": 1},
+    ]
+    for absolute_margin, relative_margin, result_name in (
+        (1, 0.10, "improved_abs1_rel010"),
+        (0, 0.0, "margin_abs0_rel000"),
+        (1, 0.0, "margin_abs1_rel000"),
+        (2, 0.0, "margin_abs2_rel000"),
+        (1, 0.20, "margin_abs1_rel020"),
+    ):
+        margin_controllers.append(
+            {
+                "type": "queue_based_improved",
+                "min_green_seconds": 8,
+                "max_green_seconds": 45,
+                "switching_margin": absolute_margin,
+                "relative_switching_margin": relative_margin,
+                "congested_min_green_seconds": 25,
+                "congestion_queue_threshold": 14,
+                "result_name": result_name,
+            }
+        )
+    margin_controllers.append(
+        {
+            "type": "queue_based_elapsed_margin",
+            "min_green_seconds": 8,
+            "max_green_seconds": 45,
+            "switching_margin": 1,
+            "relative_switching_margin": 0.20,
+            "congested_min_green_seconds": 25,
+            "congestion_queue_threshold": 14,
+            "switching_margin_decay_per_second": 0.025,
+            "minimum_switching_margin": 1,
+            "result_name": "margin_elapsed_decay_0025",
+        }
+    )
+    margin_scenarios = [
+        deepcopy(scenario)
+        for scenario in source["scenarios"]
+        if scenario["name"] in (
+            "symmetric_low",
+            "symmetric_9",
+            "asymmetric_ns",
+            "asymmetric_ew",
+            "sudden_dominance_switch",
+            "high_load",
+            "true_oversaturated",
+        )
+    ]
+    margin_config = {
+        "name": "total_improvement_switching_margin_1800",
+        "title": "Абсолютные, относительные и временные пороги переключения, 1800 с",
+        "description": (
+            "Paired development screen on new seeds 8101–8130. Compares absolute and relative "
+            "queue margins, including zero/low/high values and a time-decaying margin that relaxes "
+            "after effective minimum green. Original Queue-based and Vehicle-actuated references are included."
+        ),
+        "simulation": {
+            "duration_seconds": 1800,
+            "seeds": SWITCHING_MARGIN_SEEDS,
+            "service_time_seconds": 2.0,
+            "store_queue_series": False,
+        },
+        "scenarios": margin_scenarios,
+        "controllers": margin_controllers,
+        "output": {
+            "path": "outputs/total_improvement/switching_margin_1800.json",
+            "summary_csv": "outputs/total_improvement/switching_margin_1800_summary.csv",
+            "report_markdown": "outputs/total_improvement/switching_margin_1800_report.md",
+        },
+    }
+    margin_target = ROOT / "configs/total_improvement_switching_margin_1800.yaml"
+    margin_target.write_text(
+        yaml.safe_dump(margin_config, allow_unicode=True, sort_keys=False, width=100),
+        encoding="utf-8",
+    )
+
+    margin_validation = deepcopy(margin_config)
+    margin_validation.update(
+        name="total_improvement_switching_margin_validation_1800",
+        title="Независимая проверка относительного switching margin 0,20, 1800 с",
+        description=(
+            "Independent paired validation on unused seeds 9101–9130. Compares one preselected "
+            "relative-margin candidate (absolute 1, relative 0.20) against locked Improved "
+            "(absolute 1, relative 0.10) and Vehicle-actuated across all seven scenarios."
+        ),
+    )
+    margin_validation["simulation"]["seeds"] = SWITCHING_MARGIN_VALIDATION_SEEDS
+    margin_validation["controllers"] = [
+        {"type": "vehicle_actuated", "min_green_seconds": 8, "max_green_seconds": 45},
+        {
+            "type": "queue_based_improved",
+            "min_green_seconds": 8,
+            "max_green_seconds": 45,
+            "switching_margin": 1,
+            "relative_switching_margin": 0.10,
+            "congested_min_green_seconds": 25,
+            "congestion_queue_threshold": 14,
+            "result_name": "improved_abs1_rel010",
+        },
+        {
+            "type": "queue_based_improved",
+            "min_green_seconds": 8,
+            "max_green_seconds": 45,
+            "switching_margin": 1,
+            "relative_switching_margin": 0.20,
+            "congested_min_green_seconds": 25,
+            "congestion_queue_threshold": 14,
+            "result_name": "margin_abs1_rel020",
+        },
+    ]
+    margin_validation["output"] = {
+        "path": "outputs/total_improvement/switching_margin_validation_1800.json",
+        "summary_csv": "outputs/total_improvement/switching_margin_validation_1800_summary.csv",
+        "report_markdown": "outputs/total_improvement/switching_margin_validation_1800_report.md",
+    }
+    margin_validation_target = ROOT / "configs/total_improvement_switching_margin_validation_1800.yaml"
+    margin_validation_target.write_text(
+        yaml.safe_dump(margin_validation, allow_unicode=True, sort_keys=False, width=100),
         encoding="utf-8",
     )
 

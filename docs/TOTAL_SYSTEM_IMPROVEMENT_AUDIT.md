@@ -250,6 +250,42 @@ Holm correction. Исходная PIERE рукопись не обновляла
 - **Проверка:** unit test подтверждает поведение при большой очереди на red оси и при загруженной green оси. Replay: 840 запусков / 210 групп, ноль duplicates, unpaired и metric mismatch; statistics: 28 групп / 21 пар, 0 mismatch. Custom analyzer включил 378 contrasts (9 метрик × 6 пар × 7 сценариев) с Holm correction.
 - **Ограничения:** только агрегированная пуассоновская модель, идеальные наблюдения, 30 development seed и горизонт 1800 с; калибровка порога не оптимизировалась и независимая validation не проводилась, так как кандидат не прошёл development screen.
 
+## Порог переключения очередей: абсолютный, относительный и зависящий от времени
+
+В `QueueBasedImprovedController` baseline margin равен `max(switching_margin,
+ceil(relative_switching_margin × total_queue))`. Проведён отдельный paired development screen:
+30 seed 8101–8130, семь сценариев, восемь стратегий (1 680 запусков): Vehicle-actuated,
+original Queue-based, baseline Improved 1/0,10, absolute-only 0/1/2, relative 1/0,20 и
+`queue_based_elapsed_margin` с ослаблением margin 0,025/с после effective min-green. Независимый
+replay: 210 scenario/controller групп, 0 duplicates/unpaired/mismatch. Statistics audit: 56
+summary групп, 49 canonical pairs и 0 mismatch; custom analyzer проверил 1 764 contrasts
+(9 метрик × 28 пар × 7 сценариев), Holm внутри каждой scenario × metric.
+
+Margin 0 резко увеличил переключения (например, на 17–21 за 1800 с при низком спросе) и mean
+wait против Improved на 8,94 с при high-load и 10,71 с при 24 авто/мин. Absolute-only 2 с
+сократил число переключений, но ухудшил ожидание на 2,02 с в symmetric-low и около 9–10 с при
+перегрузке. Absolute-only 1 повторил baseline; повышение relative margin до 0,20 снизило wait
+наиболее последовательно в средне/высоких нагрузках.
+
+Для validation заранее выбран только relative margin 0,20 (absolute floor 1) и сопоставлен с
+baseline Improved и Vehicle-actuated на независимых seed 9101–9130: 630 прогонов и 210
+scenario/controller групп. Independent replay — без ошибок; встроенная статистика сохранила
+21 группу и 0 пар из-за result names, поэтому отдельный analyzer провёл 14 парных сравнений и
+Holm correction общей семьёй.
+
+Candidate minus Improved: high-load −6,236 с (95% CI [−6,856; −5,616], Holm p<0,0001; −3,2%),
+symmetric_9 −0,732 с ([−0,913; −0,551], p<0,0001; −7,2%), 24 авто/мин −3,384 с
+([−3,879; −2,889], p<0,0001; −0,9%). Другие четыре сценария не дали скорректированного
+значимого эффекта. При high-load candidate уступил Vehicle-actuated на +2,951 с
+([+1,400; +4,503], p=0,0143), при symmetric-low — +1,161 с ([+1,019; +1,304], p<0,0001).
+На symmetric_9 точечная разница с VA +0,233 с, но общая Holm p=0,129; при 24 авто/мин разница
+с VA не подтверждена. Результат — реальное локальное улучшение Improved, но не всеобщая
+победа: при high-load предпочтительнее VA по mean wait.
+
+Новый elapsed-dependent вариант в development был близок к relative margin 0,20 и независимой
+валидации отдельно не проходил. Проверенная скорость затухания — одна выбранная конфигурация;
+оптимизация этой скорости не выполнялась.
+
 ## Оставшиеся направления аудита
 
 Не завершены: exact-boundary события SimPy (arrival/service/horizon ties), startup lost time,

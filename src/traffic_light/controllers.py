@@ -166,6 +166,13 @@ class QueueBasedImprovedController(BaseController):
             else self.min_green_seconds
         )
 
+    def _effective_switching_margin(self, total_q: int, elapsed: float) -> int:
+        del elapsed
+        return max(
+            self.switching_margin,
+            ceil(self.relative_switching_margin * total_q),
+        )
+
     def choose_phase(self, state: ControllerState) -> PhaseName:
         elapsed = state.now - state.phase_started_at
         other = other_phase(state.current_phase)
@@ -180,10 +187,7 @@ class QueueBasedImprovedController(BaseController):
         effective_min_green = self._effective_min_green(total_q, current_q)
         if elapsed < effective_min_green:
             return state.current_phase
-        margin = max(
-            self.switching_margin,
-            ceil(self.relative_switching_margin * total_q),
-        )
+        margin = self._effective_switching_margin(total_q, elapsed)
         return other if other_q > current_q + margin else state.current_phase
 
 
@@ -267,6 +271,28 @@ class QueueBasedAxisSpecificCongestionController(QueueBasedImprovedController):
             if current_q >= self.congestion_queue_threshold
             else self.min_green_seconds
         )
+
+
+@dataclass
+class QueueBasedElapsedMarginController(QueueBasedImprovedController):
+    """Gradually relaxes the queue margin after the effective minimum green."""
+
+    switching_margin_decay_per_second: float = 0.025
+    minimum_switching_margin: int = 1
+    name: str = "queue_based_elapsed_margin"
+
+    def _effective_switching_margin(self, total_q: int, elapsed: float) -> int:
+        base_margin = max(
+            self.switching_margin,
+            ceil(self.relative_switching_margin * total_q),
+        )
+        minimum_green = self._effective_min_green(total_q, 0)
+        elapsed_after_min = max(0.0, elapsed - minimum_green)
+        scale = max(
+            self.minimum_switching_margin / max(base_margin, 1),
+            1.0 - self.switching_margin_decay_per_second * elapsed_after_min,
+        )
+        return max(self.minimum_switching_margin, ceil(base_margin * scale))
 
 
 @dataclass

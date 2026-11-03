@@ -27,6 +27,7 @@ from traffic_light.controllers import (
     QLearningPolicyController,
     QueueBasedAxisSpecificCongestionController,
     QueueBasedController,
+    QueueBasedElapsedMarginController,
     QueueBasedEmptyGapFixController,
     QueueBasedHysteresisController,
     QueueBasedImprovedController,
@@ -162,6 +163,18 @@ def build_controller(
             congested_min_green_seconds=config.congested_min_green_seconds,
             congestion_queue_threshold=config.congestion_queue_threshold,
             name=config.result_name or "queue_based_axis_specific_congestion",
+        )
+    if config.type == "queue_based_elapsed_margin":
+        return QueueBasedElapsedMarginController(
+            min_green_seconds=config.min_green_seconds,
+            max_green_seconds=config.max_green_seconds,
+            switching_margin=config.switching_margin,
+            relative_switching_margin=config.relative_switching_margin,
+            congested_min_green_seconds=config.congested_min_green_seconds,
+            congestion_queue_threshold=config.congestion_queue_threshold,
+            switching_margin_decay_per_second=config.switching_margin_decay_per_second,
+            minimum_switching_margin=config.minimum_switching_margin,
+            name=config.result_name or "queue_based_elapsed_margin",
         )
     if config.type == "ai":
         return AIPhaseController(

@@ -1,11 +1,20 @@
 # Журнал задач
 
+## 2026-11-03 — Абляция switching margin и независимая проверка (этап 6, продолжается)
+
+- Исходное правило абсолютного/относительного margin сохранено. Добавлен отдельный `queue_based_elapsed_margin`, который затухает после effective min-green, с отдельным wiring и граничным тестом.
+- Development: 1 680 парных запусков (30 seed 8101–8130, 7 сценариев, 8 политик). Independent replay — 210 групп, 0 duplicates/unpaired/mismatches; statistics audit — 56 групп / 49 canonical pairs, 0 mismatch; custom analyzer — 1 764 contrast по 9 метрикам, Holm внутри scenario × metric.
+- Нулевой margin чаще переключает и ухудшил mean wait против Improved на 8,94 с в high-load и 10,71 с при 24 авто/мин. Absolute margin 2 уменьшил переключения, но проиграл +2,02 с при symmetric-low и около +9–10 с при перегрузке. Выбран relative margin 0,20 с absolute floor 1.
+- Independent validation: 630 запусков, 30 новых seed 9101–9130, 7 сценариев, три стратегии (кандидат, Improved 0,10, Vehicle-actuated). Replay — 210 групп без mismatches; built-in audit — 21 группа, 0 built-in pairs из-за кастомных имён; custom analyzer пересчитал 14 парных контрастов с Holm across family.
+- Relative 0,20 против Improved: high-load −6,236 с (95% CI [−6,856; −5,616], Holm p<0,0001; ~−3,2%), symmetric_9 −0,732 с (CI [−0,913; −0,551], p<0,0001; ~−7,2%), 24 авто/мин −3,384 с (CI [−3,879; −2,889], p<0,0001; ~−0,9%). Но кандидат проиграл VA на 2,951 с в high-load (CI [+1,400; +4,503], p=0,0143) и на 1,161 с в symmetric-low (CI [+1,019; +1,304], p<0,0001). Универсальным лучшим контроллером не признан.
+- Документы, конфиги, replay, CSV и графики обновлены; основная статья PIERE не менялась. Полный `pytest -q` — 85 passed; `ruff check .`, `git diff --check`, gzip и SHA-256 manifest прошли. Независимый replay сырого и архивного JSON обоих наборов: 2 310 запусков, ноль duplicate/unpaired/mismatch; statistics audit development — 56 групп/49 пар/0 ошибок, validation — 21 группа/0 встроенных пар/0 ошибок (14 custom contrasts пересчитаны отдельно). Docker daemon недоступен. Коммит и push этого этапа впереди.
+
 ## 2026-11-03 — Axis-specific congestion screen (этап 5, продолжается)
 
 - Реализован отдельный `queue_based_axis_specific_congestion`, который продлевает min-green при очереди ≥14 именно на текущей green-оси, а не по общей сумме. Добавлена фабрика, config type, граничные тесты и seed-explicit конфиг; Improved и simulation API сохранены.
 - Development: 840 paired запусков, 30 новых seed 7101–7130, 7 сценариев и 4 контроллера. Replay: 840 / 210 групп, 0 duplicate/unpaired/mismatches. Встроенный statistics audit: 28 групп / 21 pair, 0 mismatches; custom analyzer — 378 contrasts по 9 метрикам, Holm внутри scenario × metric.
 - Гипотеза улучшения не поддержана. Axis-specific хуже Improved по mean wait на 3,035 с в high-load (95% CI [+1,699; +4,370], Holm p=0,0001), на 1,263 с при 24 авто/мин (CI [+0,438; +2,088], p=0,0081) и на 0,183 с в symmetric_9 (CI [+0,108; +0,258], p<0,0001). В high-load также ниже throughput и больше переключений; остальные сценарии не показали значимого эффекта. Кандидат не отправляется на validation.
-- Добавлены сравнительные таблицы, четыре визуализации, replay и анализ; документы фиксируют отрицательный вывод и не отправляют вариант на validation. `pytest -q` — 84 passed; `ruff check .`, `git diff --check`, gzip и SHA-256 manifest чисты. Независимый replay сырого и архивного JSON: 840 запусков / 210 групп, ноль mismatch; statistics audit: 28 групп / 21 сравнение, 0 mismatch. Docker daemon недоступен. Коммит и push выполняются.
+- Добавлены сравнительные таблицы, четыре визуализации, replay и анализ; документы фиксируют отрицательный вывод и не отправляют вариант на validation. `pytest -q` — 84 passed; `ruff check .`, `git diff --check`, gzip и SHA-256 manifest чисты. Независимый replay сырого и архивного JSON: 840 запусков / 210 групп, ноль mismatch; statistics audit: 28 групп / 21 сравнение, 0 mismatch. Docker daemon недоступен. Закоммичено `2129eb2` и отправлено в `origin/revision/piere-review`.
 
 ## 2026-11-03 — Плавный minimum green и независимая проверка (этап 4, продолжается)
 
@@ -14,7 +23,7 @@
 - На development выбрана только рампа min-green 10–18: при symmetric_9 −0,276 с против Improved (95% CI [−0,428; −0,124], Holm p=0,0172 в development семье из 21 пары). Гистерезис и persistence 5/10 с убедительного выигрыша не дали.
 - Отдельная валидация на новых seed: 420 запусков (7 сценариев × 2 контроллера × 30 seed), replay — 210 групп, 0 mismatches. Рампа подтвердила узкий эффект при symmetric_9: −0,333 с (95% paired CI [−0,510; −0,156], Holm p=0,0023 по 7 сценариям); в остальных шести сценариях значимого различия после Holm не установлено.
 - Встроенный statistics audit validation обнаружил 14 групп и 0 парных сравнений из-за нестандартных имён контроллеров; отдельный analyzer заранее заданных семи пар пересчитал paired t-интервалы и exact sign test с Holm. Полные метрики, парные CSV, архивы, replay и графики добавлены; основная PIERE статья не менялась.
-- Обновлены архитектурная/экспериментальная Wiki, системный аудит, осторожная заметка для будущей статьи и воспроизводимый финализатор артефактов. Проверки: focused `test_queue_research.py` — 23 passed; полный `pytest -q` — 83 passed; `ruff check .`, `git diff --check`, `gzip -t`, SHA-256 manifest и replay обоих gzip-наборов прошли. Docker daemon недоступен. Изменения предназначены для ветки `revision/piere-review`; push будет после итоговой проверки.
+- Обновлены архитектурная/экспериментальная Wiki, системный аудит, осторожная заметка для будущей статьи и воспроизводимый финализатор артефактов. Проверки: focused `test_queue_research.py` — 23 passed; полный `pytest -q` — 83 passed; `ruff check .`, `git diff --check`, `gzip -t`, SHA-256 manifest и replay обоих gzip-наборов прошли. Docker daemon недоступен. Закоммичено `de1bfd8` и отправлено в `origin/revision/piere-review`.
 
 ## 2026-11-03 — Max-red fairness controller (этап 3, продолжается)
 

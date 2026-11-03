@@ -18,6 +18,7 @@ from traffic_light.controllers import (
     FixedTimeController,
     QueueBasedAxisSpecificCongestionController,
     QueueBasedController,
+    QueueBasedElapsedMarginController,
     QueueBasedEmptyGapFixController,
     QueueBasedHysteresisController,
     QueueBasedImprovedController,
@@ -368,10 +369,25 @@ def test_axis_specific_minimum_green_depends_on_current_axis_not_total_queue():
 
     assert improved.choose_phase(state) == "north_south"
     assert axis_specific.choose_phase(state) == "east_west"
-
     state.current_phase = "east_west"
     state.queues = {"north": 1, "south": 0, "east": 20, "west": 0}
     assert axis_specific.choose_phase(state) == "east_west"
+
+
+def test_elapsed_margin_relaxes_after_minimum_green():
+    controller = QueueBasedElapsedMarginController(
+        min_green_seconds=8,
+        max_green_seconds=45,
+        switching_margin=1,
+        relative_switching_margin=0.10,
+        congested_min_green_seconds=8,
+        congestion_queue_threshold=14,
+        switching_margin_decay_per_second=0.025,
+        minimum_switching_margin=1,
+    )
+
+    assert controller._effective_switching_margin(total_q=20, elapsed=8) == 2
+    assert controller._effective_switching_margin(total_q=20, elapsed=28) == 1
 
 
 def test_independent_replay_recovers_known_censored_queue_metrics():

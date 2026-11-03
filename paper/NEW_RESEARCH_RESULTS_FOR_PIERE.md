@@ -104,3 +104,21 @@ simulation result and does not establish a general advantage or deployment benef
 uses Poisson arrivals and perfect aggregate queue observations; different arrival processes,
 camera-count errors, and field data remain untested. The main PIERE manuscript is unchanged; this
 paragraph is for author review only.
+
+## Relative queue switching margin: independent validation
+
+A separate development screen varied the absolute and relative queue-difference thresholds and
+tested a time-decaying margin. Zero margin increased unnecessary phase changes and worsened delay;
+the absolute-only margin of two vehicles reduced switching but raised delay at low and oversaturated
+demand. One relative-margin candidate was selected before validation: absolute floor 1 plus 0.20
+times total observed queue, compared with the locked Improved rule's 0.10 coefficient.
+
+On 30 previously unused paired seeds across seven scenarios, this candidate reduced completed mean
+waiting time versus Improved by 6.236 s at high load (95% CI [−6.856, −5.616], Holm-adjusted
+p<0.0001), 0.732 s at symmetric demand of 9 vehicles/minute/approach (95% CI [−0.913, −0.551],
+p<0.0001), and 3.384 s at 24 vehicles/minute/approach (95% CI [−3.879, −2.889], p<0.0001).
+It remained 2.951 s worse than Vehicle-actuated at high load (95% CI [+1.400, +4.503], p=0.0143)
+and 1.161 s worse under low symmetric demand (95% CI [+1.019, +1.304], p<0.0001). The result
+supports a conditional improvement relative to Improved, not a general replacement for
+Vehicle-actuated. It is based on the current Poisson simulation and perfect queue observations;
+the main PIERE paper is unchanged.

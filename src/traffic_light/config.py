@@ -13,6 +13,7 @@ ControllerType = Literal[
     "queue_based", "queue_based_improved", "queue_based_empty_gap_fix", "queue_based_max_red",
     "queue_based_smooth_min_green", "queue_based_hysteresis", "queue_based_persistent_congestion",
     "queue_based_axis_specific_congestion",
+    "queue_based_elapsed_margin",
     "actuated", "ai", "q_learning",
 ]
 
@@ -57,6 +58,8 @@ class ControllerConfig(BaseModel):
     smooth_congestion_end_queue: int = Field(default=18, ge=1)
     congestion_exit_threshold: int = Field(default=10, ge=0)
     congestion_persistence_seconds: float = Field(default=5.0, ge=0.0)
+    switching_margin_decay_per_second: float = Field(default=0.025, ge=0.0)
+    minimum_switching_margin: int = Field(default=1, ge=1)
     result_name: str | None = None
     legacy_rule: bool = False
     policy_path: str = "outputs/q_learning_policy.json"
@@ -73,6 +76,7 @@ class ControllerConfig(BaseModel):
                 "queue_based_hysteresis",
                 "queue_based_persistent_congestion",
                 "queue_based_axis_specific_congestion",
+                "queue_based_elapsed_margin",
             }
             and self.max_green_seconds < self.congested_min_green_seconds
         ):
