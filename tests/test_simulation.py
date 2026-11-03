@@ -86,6 +86,18 @@ def test_arrivals_at_zero_are_present_before_first_service_and_horizon_is_half_o
     assert result.in_service_at_end == 1
 
 
+def test_max_queue_includes_initial_and_zero_time_arrivals():
+    result = run_simulation(
+        intersection(),
+        SimulationConfig(duration_seconds=1, seed=8),
+        FixedTimeController(),
+        initial_queues={"south": 2},
+        arrivals=[Arrival(0.0, "north"), Arrival(0.0, "east")],
+    )
+
+    assert result.max_queue_length == 4
+
+
 def test_arrival_during_green_starts_service_at_its_event_time():
     result = run_simulation(
         intersection(),

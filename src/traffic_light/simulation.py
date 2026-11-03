@@ -175,7 +175,8 @@ class IntersectionSimulation:
         self.stops = 0
         self._last_event_time = 0.0
         self._queue_area = 0.0
-        self._max_queue = self.initial_vehicles
+        # Include both supplied initial queues and arrivals preloaded at t=0.
+        self._max_queue = self._queue_count()
         self._observed_delay = 0.0
 
     def run(self) -> SimulationResult:
