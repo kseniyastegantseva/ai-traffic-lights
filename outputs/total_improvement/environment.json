@@ -56,7 +56,8 @@
   "uncompressed_run_json_sha256": {
     "empty_gap_development_1800": "f79cf29c978fc8c0850c041a4616b64479d8c5d9cb8705aec1277949c9bbcbda",
     "capacity_boundary_1800": "5fd0c1842104862521a5d18a92dc8d8246a85b6f6e410a2c2335b02383f6aa86",
-    "capacity_boundary_3600": "d10033fb97041ccdd6d51b1c00d470cf8d6af44f80d2319530c08969d2d47424"
+    "capacity_boundary_3600": "d10033fb97041ccdd6d51b1c00d470cf8d6af44f80d2319530c08969d2d47424",
+    "max_red_development_1800": "248dbfc271e2eb808d4245408e2c63a6a1d7e3f8f568e02215b9698c1a848134"
   },
   "empty_gap_development": {
     "duration_seconds": 1800,
@@ -170,5 +171,46 @@
     "replay_audit": "0 metric mismatches, 0 unpaired groups, 0 duplicate keys",
     "statistics_audit": "90 groups, 80 paired comparisons, 0 mismatches",
     "seed_relation": "same seed IDs and 1800-second arrival prefixes as the shorter screen; not independent replications"
+  },
+  "max_red_development_1800": {
+    "duration_seconds": 1800,
+    "seeds": [
+      4101,
+      4102,
+      4103,
+      4104,
+      4105,
+      4106,
+      4107,
+      4108,
+      4109,
+      4110,
+      4111,
+      4112,
+      4113,
+      4114,
+      4115,
+      4116,
+      4117,
+      4118,
+      4119,
+      4120,
+      4121,
+      4122,
+      4123,
+      4124,
+      4125,
+      4126,
+      4127,
+      4128,
+      4129,
+      4130
+    ],
+    "scenario_count": 6,
+    "controller_rows": 5,
+    "run_count": 900,
+    "replay_audit": "0 metric mismatches, 0 unpaired groups, 0 duplicate keys",
+    "statistics_audit": "30 groups; paired contrasts independently recomputed from run JSON",
+    "paired_family": "10 controller contrasts within each scenario × metric (custom analyzer)"
   }
 }

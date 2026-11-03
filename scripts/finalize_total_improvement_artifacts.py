@@ -48,6 +48,12 @@ HASH_PATHS = (
     OUT / "capacity_boundary_3600_summary.csv",
     OUT / "capacity_boundary_3600_metrics.csv",
     OUT / "capacity_boundary_3600_paired.csv",
+    ROOT / "configs/total_improvement_max_red_development_1800.yaml",
+    OUT / "max_red_development_1800.json.gz",
+    OUT / "max_red_development_1800_replay.json",
+    OUT / "max_red_development_1800_summary.csv",
+    OUT / "max_red_development_1800_metrics.csv",
+    OUT / "max_red_development_1800_paired.csv",
 )
 
 
@@ -57,6 +63,7 @@ def main() -> None:
         "empty_gap_development_1800",
         "capacity_boundary_1800",
         "capacity_boundary_3600",
+        "max_red_development_1800",
     ):
         raw_json = OUT / f"{name}.json"
         compressed_json = OUT / f"{name}.json.gz"
@@ -115,6 +122,16 @@ def main() -> None:
             "statistics_audit": "90 groups, 80 paired comparisons, 0 mismatches",
             "seed_relation": "same seed IDs and 1800-second arrival prefixes as the shorter screen; not independent replications",
         },
+        "max_red_development_1800": {
+            "duration_seconds": 1800,
+            "seeds": list(range(4101, 4131)),
+            "scenario_count": 6,
+            "controller_rows": 5,
+            "run_count": 900,
+            "replay_audit": "0 metric mismatches, 0 unpaired groups, 0 duplicate keys",
+            "statistics_audit": "30 groups; paired contrasts independently recomputed from run JSON",
+            "paired_family": "10 controller contrasts within each scenario × metric (custom analyzer)",
+        },
     }
     (OUT / "environment.json").write_text(
         json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
@@ -152,6 +169,11 @@ python scripts/analyze_total_improvement_capacity_boundary.py --duration 1800
 python scripts/analyze_total_improvement_capacity_boundary.py --duration 3600
 python scripts/plot_total_improvement_capacity_boundary.py --duration 1800
 python scripts/plot_total_improvement_capacity_boundary.py --duration 3600
+traffic-sim compare --config configs/total_improvement_max_red_development_1800.yaml
+python scripts/analyze_total_improvement_max_red.py
+python scripts/plot_total_improvement_max_red.py
+python scripts/audit_queue_based_results.py outputs/total_improvement/max_red_development_1800.json --replay-output outputs/total_improvement/max_red_development_1800_replay.json
+python scripts/audit_queue_based_statistics.py outputs/total_improvement/max_red_development_1800.json
 python scripts/audit_queue_based_results.py outputs/total_improvement/capacity_boundary_1800.json --replay-output outputs/total_improvement/capacity_boundary_1800_replay.json
 python scripts/audit_queue_based_statistics.py outputs/total_improvement/capacity_boundary_1800.json
 python scripts/audit_queue_based_results.py outputs/total_improvement/capacity_boundary_3600.json --replay-output outputs/total_improvement/capacity_boundary_3600_replay.json
@@ -163,6 +185,8 @@ python scripts/audit_queue_based_results.py outputs/total_improvement/capacity_b
 python scripts/audit_queue_based_statistics.py outputs/total_improvement/capacity_boundary_1800.json.gz
 python scripts/audit_queue_based_results.py outputs/total_improvement/capacity_boundary_3600.json.gz
 python scripts/audit_queue_based_statistics.py outputs/total_improvement/capacity_boundary_3600.json.gz
+python scripts/audit_queue_based_results.py outputs/total_improvement/max_red_development_1800.json.gz
+python scripts/audit_queue_based_statistics.py outputs/total_improvement/max_red_development_1800.json.gz
 ```
 
 The simulation used CPU only. Exact package versions and SHA-256 values are recorded in

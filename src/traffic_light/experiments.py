@@ -28,6 +28,7 @@ from traffic_light.controllers import (
     QueueBasedController,
     QueueBasedEmptyGapFixController,
     QueueBasedImprovedController,
+    QueueBasedMaxRedController,
     VehicleActuatedController,
 )
 from traffic_light.simulation import generate_arrivals, run_simulation
@@ -102,6 +103,17 @@ def build_controller(
             congestion_queue_threshold=config.congestion_queue_threshold,
             empty_gap_seconds=config.empty_gap_seconds,
             name=config.result_name or "queue_based_empty_gap_fix",
+        )
+    if config.type == "queue_based_max_red":
+        return QueueBasedMaxRedController(
+            min_green_seconds=config.min_green_seconds,
+            max_green_seconds=config.max_green_seconds,
+            switching_margin=config.switching_margin,
+            relative_switching_margin=config.relative_switching_margin,
+            congested_min_green_seconds=config.congested_min_green_seconds,
+            congestion_queue_threshold=config.congestion_queue_threshold,
+            max_red_seconds=config.max_red_seconds,
+            name=config.result_name or "queue_based_max_red",
         )
     if config.type == "ai":
         return AIPhaseController(

@@ -1,5 +1,13 @@
 # Журнал задач
 
+## 2026-11-03 — Max-red fairness controller (этап 3, продолжается)
+
+- Добавлен отдельный `queue_based_max_red`: учитывает observed request на red-фазе, сохраняет minimum green и начинает переход с запасом на yellow clearance и один секундный шаг. Добавлены config/factory wiring и `SimulationResult.max_red_with_queue_seconds_by_phase`.
+- Метрика измеряет red при реальной ожидающей очереди и независимо пересчитывается из arrival-потоков, фаз и start-of-service событий. Дополнены replay audit и тесты на интервалы с/без очереди, yellow clearance, minimum green и предел cap.
+- 900 paired прогонов: 30 seed (4101–4130), 6 сценариев, 1800 с, Vehicle-actuated, Improved и cap 36/42/48. Независимый replay: 900 / 180 групп, дубликаты/непарные потоки/metric mismatches — 0. Встроенный statistics audit подтвердил 30 summary групп, 0 mismatches; он не создаёт paired файл при отсутствии канонического `queue_based`, поэтому custom analyzer пересчитал 720 contrasts (12 метрик × 10 пар × 6 сценариев) и Holm correction.
+- Cap36 удержал worst red при очереди в пределах 36 с, но увеличил wait против Improved на 14,15 с при high-load и на 16,53 с при 24 авто/мин (обе paired CI положительны, Holm p<0,0001), уменьшив throughput на 31,5/42,5 авто/ч соответственно. На low/asymmetric/demand-switch против Improved убедительных различий нет; в low-symmetric Vehicle-actuated лучше cap36 на 1,00 с. Cap42 смягчает, но не снимает перегрузочную цену. Кандидат остаётся fairness guardrail, не выбирается как алгоритм минимизации среднего ожидания.
+- Обновлены architecture Wiki, experiments Wiki, системный audit, comparison и осторожная заметка к будущей PIERE редакции; основная статья не менялась. `PYTHONPATH=src pytest -q` — 80 passed; Ruff и `git diff --check` чисты. Gzip replay — 900/180 groups, 0 mismatches; gzip summary audit — 30 groups, 0 mismatches (0 built-in pairs, custom analyzer рассчитан отдельно). `gzip -t` и SHA-256 прошли. Docker daemon недоступен; CI workflow не обнаружен.
+
 ## 2026-11-03 — Capacity boundary 9–18 авто/мин (этап 2, продолжается)
 
 - Созданы явные YAML-конфигурации на горизонтах 1800/3600 с для уровней спроса 9–18 авто/мин/подход, 15 пар seed и 9 стратегий; полные JSON после gzip добавлены в `outputs/total_improvement/`, рядом находятся replay, summary, метрики, paired CSV и графики.

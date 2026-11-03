@@ -24,6 +24,8 @@ class ControllerState:
     phase_started_at: float
     queues: dict[str, int]
     current_gap_seconds: float = 0.0
+    red_request_elapsed_seconds: dict[PhaseName, float] | None = None
+    yellow_seconds: float = 0.0
 
 
 class BaseController:
@@ -212,6 +214,48 @@ class QueueBasedEmptyGapFixController(QueueBasedImprovedController):
             return state.current_phase
 
         if current_q == 0 and state.current_gap_seconds >= self.empty_gap_seconds:
+            return other
+
+        margin = max(
+            self.switching_margin,
+            ceil(self.relative_switching_margin * total_q),
+        )
+        return other if other_q > current_q + margin else state.current_phase
+
+
+@dataclass
+class QueueBasedMaxRedController(QueueBasedImprovedController):
+    """Improved queue controller with an observed red-time fairness bound."""
+
+    max_red_seconds: float = 48.0
+    name: str = "queue_based_max_red"
+
+    def choose_phase(self, state: ControllerState) -> PhaseName:
+        elapsed = state.now - state.phase_started_at
+        other = other_phase(state.current_phase)
+        current_q = sum(state.queues[lane] for lane in PHASE_LANES[state.current_phase])
+        other_q = sum(state.queues[lane] for lane in PHASE_LANES[other])
+        if other_q == 0:
+            return state.current_phase
+        if elapsed >= self.max_green_seconds:
+            return other
+
+        total_q = current_q + other_q
+        effective_min_green = (
+            self.congested_min_green_seconds
+            if total_q >= self.congestion_queue_threshold
+            else self.min_green_seconds
+        )
+        if elapsed < effective_min_green:
+            return state.current_phase
+
+        red_wait_elapsed = (state.red_request_elapsed_seconds or {}).get(other, 0.0)
+        # The request remains red during yellow clearance, so start the transition
+        # early enough for the opposing green to begin by the configured limit.
+        # The controller observes queues on integer-second ticks. Reserve one
+        # additional second for the worst-case observation delay.
+        red_limit_at_decision = max(0.0, self.max_red_seconds - state.yellow_seconds - 1.0)
+        if red_wait_elapsed >= red_limit_at_decision:
             return other
 
         margin = max(

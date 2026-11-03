@@ -53,8 +53,8 @@ traffic-sim compare --config configs/experiment.yaml
 ## Основные компоненты
 
 - `config.py` валидирует YAML-конфиги через Pydantic.
-- `controllers.py` содержит фиксированные `fixed_8` / `fixed_15` / `fixed_35`, Webster split, vehicle-actuated, исходный `queue_based`, отдельный адаптивный `queue_based_improved`, экспериментальный `queue_based_empty_gap_fix`, legacy-вариант и сохранённые прежние стратегии для совместимости. Empty-gap вариант использует proxy пустой очереди, не детекторный headway.
-- `simulation.py` запускает SimPy-модель с общими воспроизводимыми потоками, начальными очередями и раздельным состоянием waiting / in_service / departed.
+- `controllers.py` содержит фиксированные `fixed_8` / `fixed_15` / `fixed_35`, Webster split, vehicle-actuated, исходный `queue_based`, отдельный адаптивный `queue_based_improved`, экспериментальные `queue_based_empty_gap_fix` и `queue_based_max_red`, legacy-вариант и сохранённые прежние стратегии для совместимости. Empty-gap использует proxy пустой очереди. Max-red использует наблюдаемое наличие очереди на красной фазе, ждёт minimum green и начинает переход заранее с учётом yellow clearance и односекундного шага наблюдений.
+- `simulation.py` запускает SimPy-модель с общими воспроизводимыми потоками, начальными очередями и раздельным состоянием waiting / in_service / departed. `SimulationResult.max_red_with_queue_seconds_by_phase` отдельно сообщает максимальный red-интервал, пересекающийся с фактически ожидающей очередью; он отличается от непрерывного красного сигнала без запроса и от времени ожидания завершённого автомобиля.
 - `experiments.py` выполняет парные сравнения по seed, считает интервалы разностей и sign test с Holm correction; исследовательские YAML находятся в `configs/piere_revision_*.yaml`.
 - `gym_env.py` содержит минимальную Gymnasium-совместимую оболочку для будущего RL-обучения.
 - `queue_audit.py` независимо воспроизводит seeded arrivals и FIFO обслуживание по архивным фазовым журналам; `statistics_audit.py` проверяет сводки, pair coverage, t-интервалы, sign test и Holm correction.

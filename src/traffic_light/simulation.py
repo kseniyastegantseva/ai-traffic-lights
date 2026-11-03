@@ -10,7 +10,7 @@ from statistics import mean, median
 import simpy
 
 from traffic_light.config import DemandPeriodConfig, IntersectionConfig, PhaseName, SimulationConfig
-from traffic_light.controllers import PHASE_LANES, BaseController, ControllerState
+from traffic_light.controllers import PHASE_LANES, BaseController, ControllerState, other_phase
 
 LANES = ("north", "south", "east", "west")
 
@@ -85,6 +85,7 @@ class SimulationResult:
     phase_history: list[dict] | None = None
     arrival_stream_sha256: str = ""
     observation_error_rate: float = 0.0
+    max_red_with_queue_seconds_by_phase: dict[PhaseName, float] | None = None
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -153,6 +154,20 @@ class IntersectionSimulation:
                 self.queues[event.lane].append(Vehicle(event.lane, 0.0))
                 self.arrived += 1
         self._initial_queue_counts = {lane: len(queue) for lane, queue in self.queues.items()}
+        initial_red_phase = other_phase(initial_phase)
+        self.red_request_started_at: dict[PhaseName, float] = (
+            {initial_red_phase: 0.0}
+            if sum(self._initial_queue_counts[lane] for lane in PHASE_LANES[initial_red_phase]) > 0
+            else {}
+        )
+        self.red_queue_since: dict[PhaseName, float] = (
+            {initial_red_phase: 0.0}
+            if sum(self._initial_queue_counts[lane] for lane in PHASE_LANES[initial_red_phase]) > 0
+            else {}
+        )
+        self.max_red_with_queue_seconds_by_phase: dict[PhaseName, float] = {
+            phase: 0.0 for phase in PHASE_LANES
+        }
         self.departed = 0
         self.departed_by_lane = {lane: 0 for lane in LANES}
         self.in_service = 0
@@ -183,6 +198,9 @@ class IntersectionSimulation:
                 yield self.env.timeout(delay)
             self._integrate_queue_area()
             self.queues[event.lane].append(Vehicle(event.lane, event.at))
+            arrival_phase = "north_south" if event.lane in PHASE_LANES["north_south"] else "east_west"
+            if arrival_phase != self.current_phase:
+                self.red_queue_since.setdefault(arrival_phase, event.at)
             self.arrived += 1
             self._max_queue = max(self._max_queue, self._queue_count())
             self._notify_services()
@@ -219,9 +237,25 @@ class IntersectionSimulation:
             now = self.env.now
             if self.signal_color == "yellow":
                 if now - self.phase_started_at >= self.intersection.yellow_seconds:
-                    self.current_phase = "east_west" if self.current_phase == "north_south" else "north_south"
+                    previous_phase = self.current_phase
+                    self.current_phase = other_phase(previous_phase)
                     self.signal_color = "green"
                     self.phase_started_at = now
+                    red_started = self.red_queue_since.pop(self.current_phase, None)
+                    if red_started is not None:
+                        self.max_red_with_queue_seconds_by_phase[self.current_phase] = max(
+                            self.max_red_with_queue_seconds_by_phase[self.current_phase],
+                            now - red_started,
+                        )
+                    if sum(len(self.queues[lane]) for lane in PHASE_LANES[previous_phase]) > 0:
+                        self.red_queue_since[previous_phase] = now
+                    else:
+                        self.red_queue_since.pop(previous_phase, None)
+                    self.red_request_started_at.pop(self.current_phase, None)
+                    if sum(len(self.queues[lane]) for lane in PHASE_LANES[previous_phase]) > 0:
+                        self.red_request_started_at[previous_phase] = now
+                    else:
+                        self.red_request_started_at.pop(previous_phase, None)
                     self.phase_history.append({"at": now, "phase": self.current_phase, "color": "green"})
                     self._notify_services()
             else:
@@ -229,6 +263,13 @@ class IntersectionSimulation:
                 for lane, count in observed_queues.items():
                     if count:
                         self.last_observed_request_at[lane] = now
+                red_phase = other_phase(self.current_phase)
+                red_queue = sum(observed_queues[lane] for lane in PHASE_LANES[red_phase])
+                if red_queue > 0:
+                    self.red_request_started_at.setdefault(red_phase, now)
+                else:
+                    self.red_request_started_at.pop(red_phase, None)
+                self.red_request_started_at.pop(self.current_phase, None)
                 state = ControllerState(
                     now=now,
                     current_phase=self.current_phase,
@@ -242,6 +283,11 @@ class IntersectionSimulation:
                             for lane in PHASE_LANES[self.current_phase]
                         ),
                     ),
+                    red_request_elapsed_seconds={
+                        phase: now - started_at
+                        for phase, started_at in self.red_request_started_at.items()
+                    },
+                    yellow_seconds=self.intersection.yellow_seconds,
                 )
                 next_phase = self.controller.choose_phase(state)
                 if next_phase != self.current_phase:
@@ -252,6 +298,19 @@ class IntersectionSimulation:
                             {"at": now, "phase": self.current_phase, "color": "yellow"}
                         )
                     else:
+                        red_started = self.red_queue_since.pop(next_phase, None)
+                        if red_started is not None:
+                            self.max_red_with_queue_seconds_by_phase[next_phase] = max(
+                                self.max_red_with_queue_seconds_by_phase[next_phase],
+                                now - red_started,
+                            )
+                        if sum(len(self.queues[lane]) for lane in PHASE_LANES[self.current_phase]) > 0:
+                            self.red_queue_since[self.current_phase] = now
+                        else:
+                            self.red_queue_since.pop(self.current_phase, None)
+                        self.red_request_started_at.pop(next_phase, None)
+                        if sum(len(self.queues[lane]) for lane in PHASE_LANES[self.current_phase]) > 0:
+                            self.red_request_started_at[self.current_phase] = now
                         self.current_phase = next_phase
                         self.signal_color = "green"
                         self.phase_history.append({"at": now, "phase": self.current_phase, "color": "green"})
@@ -332,6 +391,9 @@ class IntersectionSimulation:
         duration = self.config.duration_seconds
         lane_waits = {lane: mean(waits) if waits else 0.0 for lane, waits in self.waits_by_lane.items()}
         waiting = self._queue_count()
+        max_red_with_queue = self.max_red_with_queue_seconds_by_phase.copy()
+        for phase, started_at in self.red_queue_since.items():
+            max_red_with_queue[phase] = max(max_red_with_queue[phase], duration - started_at)
         self._observed_delay += sum(
             duration - vehicle.arrived_at
             for queue in self.queues.values()
@@ -361,6 +423,7 @@ class IntersectionSimulation:
             phase_history=self.phase_history,
             arrival_stream_sha256=self.arrival_stream_sha256,
             observation_error_rate=self.config.observation_error_rate,
+            max_red_with_queue_seconds_by_phase=max_red_with_queue,
         )
 
 

@@ -10,7 +10,8 @@ LaneName = Literal["north", "south", "east", "west"]
 PhaseName = Literal["north_south", "east_west"]
 ControllerType = Literal[
     "fixed", "fixed_8", "fixed_15", "fixed_35", "fixed_webster", "vehicle_actuated",
-    "queue_based", "queue_based_improved", "queue_based_empty_gap_fix", "actuated", "ai", "q_learning",
+    "queue_based", "queue_based_improved", "queue_based_empty_gap_fix", "queue_based_max_red",
+    "actuated", "ai", "q_learning",
 ]
 
 
@@ -49,6 +50,7 @@ class ControllerConfig(BaseModel):
     congested_min_green_seconds: int = Field(default=20, ge=1)
     congestion_queue_threshold: int = Field(default=10, ge=0)
     empty_gap_seconds: float = Field(default=1.0, ge=0.0)
+    max_red_seconds: float = Field(default=48.0, gt=0.0)
     result_name: str | None = None
     legacy_rule: bool = False
     policy_path: str = "outputs/q_learning_policy.json"
@@ -58,7 +60,7 @@ class ControllerConfig(BaseModel):
         if self.max_green_seconds < self.min_green_seconds:
             raise ValueError("max_green_seconds must be greater than or equal to min_green_seconds")
         if (
-            self.type == "queue_based_improved"
+            self.type in {"queue_based_improved", "queue_based_max_red"}
             and self.max_green_seconds < self.congested_min_green_seconds
         ):
             raise ValueError(

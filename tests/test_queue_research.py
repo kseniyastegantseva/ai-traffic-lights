@@ -19,10 +19,12 @@ from traffic_light.controllers import (
     QueueBasedController,
     QueueBasedEmptyGapFixController,
     QueueBasedImprovedController,
+    QueueBasedMaxRedController,
 )
 from traffic_light.experiments import build_controller, build_paired_statistics, run_experiment
 from traffic_light.queue_audit import (
     arrival_digest,
+    max_red_with_queued_vehicles_by_phase,
     max_signal_red_by_phase,
     regenerate_arrivals,
     replay_run,
@@ -374,4 +376,97 @@ def test_capacity_boundary_max_red_is_derived_from_phase_history():
     assert max_signal_red_by_phase(history, 25) == {
         "north_south": 11.0,
         "east_west": 11.0,
+    }
+
+
+def test_capacity_boundary_max_red_ends_at_green_when_there_is_no_yellow():
+    history = [
+        {"at": 0.0, "phase": "north_south", "color": "green"},
+        {"at": 8.0, "phase": "east_west", "color": "green"},
+        {"at": 16.0, "phase": "north_south", "color": "green"},
+    ]
+
+    assert max_signal_red_by_phase(history, 20) == {
+        "north_south": 8.0,
+        "east_west": 8.0,
+    }
+
+
+def test_independent_red_with_queue_replay_uses_first_arrival_during_red():
+    history = [
+        {"at": 0.0, "phase": "north_south", "color": "green"},
+        {"at": 8.0, "phase": "north_south", "color": "yellow"},
+        {"at": 11.0, "phase": "east_west", "color": "green"},
+        {"at": 19.0, "phase": "east_west", "color": "yellow"},
+        {"at": 22.0, "phase": "north_south", "color": "green"},
+    ]
+    arrivals = {"north": [15.0], "south": [], "east": [4.0], "west": []}
+    service_starts = {lane: [] for lane in LANES}
+
+    assert max_red_with_queued_vehicles_by_phase(history, 25, arrivals, service_starts) == {
+        "north_south": 7.0,
+        "east_west": 7.0,
+    }
+
+
+def test_max_red_controller_forces_competing_phase_after_minimum_green():
+    controller = QueueBasedMaxRedController(
+        min_green_seconds=8,
+        max_green_seconds=45,
+        switching_margin=1,
+        relative_switching_margin=0.1,
+        congested_min_green_seconds=25,
+        congestion_queue_threshold=14,
+        max_red_seconds=48,
+    )
+    state = ControllerState(
+        now=20,
+        current_phase="north_south",
+        phase_started_at=0,
+        queues={"north": 20, "south": 0, "east": 1, "west": 0},
+        red_request_elapsed_seconds={"east_west": 48},
+        yellow_seconds=3,
+    )
+    assert controller.choose_phase(state) == "north_south"
+
+    state.now = 25
+    assert controller.choose_phase(state) == "east_west"
+    state.red_request_elapsed_seconds = {}
+    state.queues.update(east=0)
+    assert controller.choose_phase(state) == "north_south"
+
+
+def test_max_red_controller_and_factory_preserve_minimum_and_yellow_clearance():
+    controller = build_controller(
+        ControllerConfig(
+            type="queue_based_max_red",
+            min_green_seconds=8,
+            max_green_seconds=45,
+            congested_min_green_seconds=8,
+            congestion_queue_threshold=1000,
+            switching_margin=1000,
+            max_red_seconds=13,
+        ),
+        min_green_seconds=8,
+        intersection=zero_demand_intersection(),
+    )
+    result = run_simulation(
+        zero_demand_intersection(),
+        SimulationConfig(duration_seconds=27, seed=1),
+        controller,
+        initial_queues={"north": 100, "east": 20},
+        arrivals=[],
+    )
+
+    assert isinstance(controller, QueueBasedMaxRedController)
+    assert result.phase_history[:5] == [
+        {"at": 0.0, "phase": "north_south", "color": "green"},
+        {"at": 9, "phase": "north_south", "color": "yellow"},
+        {"at": 12, "phase": "east_west", "color": "green"},
+        {"at": 21, "phase": "east_west", "color": "yellow"},
+        {"at": 24, "phase": "north_south", "color": "green"},
+    ]
+    assert result.max_red_with_queue_seconds_by_phase == {
+        "north_south": 12.0,
+        "east_west": 12.0,
     }

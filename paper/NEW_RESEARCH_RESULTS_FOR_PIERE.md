@@ -62,3 +62,25 @@ needed around 13–15 vehicles/minute/approach.
 
 This paragraph is a candidate for later author review; the main six-page PIERE manuscript remains
 unchanged. Full per-controller tables and audit artifacts are in `outputs/total_improvement/`.
+
+## Maximum-red constraint: exploratory result
+
+A separate controller variant enforced a 36, 42 or 48 second maximum red interval while a queue
+was present. The policy preserved minimum green and included yellow clearance plus a one-second
+observation reserve. In a paired 30-seed development screen across six symmetric, asymmetric,
+changing and high-load scenarios (900 runs), an independent replay verified the recorded
+queue-present red metric with no mismatches.
+
+The 36-second limit reduced worst red while a queue was present from 48 to at most 36 seconds in
+the sampled scenarios. It did not materially change mean waiting time against Queue-based
+Improved under the low, asymmetric or demand-switch scenarios. Under high load, mean wait
+increased from 203.95 to 218.10 seconds (+14.15 s, 95% CI [+13.19, +15.11], Holm-adjusted
+p<0.0001); at 24 vehicles/minute/approach it increased from 369.01 to 385.54 seconds (+16.53 s,
+95% CI [+15.85, +17.20], Holm-adjusted p<0.0001). The candidate therefore serves as a possible
+operational fairness constraint when a strict red limit is required, not as a general delay
+improvement. Queue-based Improved and Vehicle-actuated retain better mean delay under the tested
+oversaturated conditions.
+
+The controller responds to observed queue counts; observation errors were not included in this
+screen. Its results do not establish a deployment-ready fairness guarantee with camera inputs.
+This candidate paragraph is for author review only; the main PIERE manuscript is unchanged.

@@ -63,6 +63,54 @@ def max_signal_red_by_phase(history: list[dict], duration_seconds: int) -> dict[
     return result
 
 
+def max_red_with_queued_vehicles_by_phase(
+    history: list[dict],
+    duration_seconds: int,
+    arrivals_by_lane: dict[str, list[float]],
+    service_starts_by_lane: dict[str, list[tuple[float, float, float]]],
+) -> dict[str, float]:
+    """Independently derive the longest red interval that overlaps a waiting queue.
+
+    Waiting starts at the red interval boundary if a queue already exists, or at
+    the first arrival during red. The interval ends when that axis receives green.
+    Service starts, rather than completions, remove a vehicle from its waiting queue.
+    """
+    green_events = [
+        (float(event["at"]), event["phase"])
+        for event in history
+        if event["color"] == "green"
+    ]
+    result = {phase: 0.0 for phase in PHASE_LANES}
+    for phase, lanes in PHASE_LANES.items():
+        arrivals = sorted(time for lane in lanes for time in arrivals_by_lane[lane])
+        service_starts = sorted(
+            start for lane in lanes for start, _, _ in service_starts_by_lane[lane]
+        )
+        for red_start, green_phase in green_events:
+            if green_phase == phase:
+                continue
+            next_own_green = next(
+                (time for time, candidate in green_events if time > red_start and candidate == phase),
+                float(duration_seconds),
+            )
+            red_end = min(float(duration_seconds), next_own_green)
+            if red_end <= red_start:
+                continue
+            queued_at_red_start = sum(time <= red_start for time in arrivals) - sum(
+                time <= red_start for time in service_starts
+            )
+            if queued_at_red_start > 0:
+                request_start = red_start
+            else:
+                request_start = next(
+                    (time for time in arrivals if red_start < time < red_end),
+                    None,
+                )
+            if request_start is not None:
+                result[phase] = max(result[phase], red_end - request_start)
+    return result
+
+
 def load_payload(path: Path) -> dict[str, Any]:
     opener = gzip.open if path.suffix == ".gz" else open
     with opener(path, "rt", encoding="utf-8") as handle:
@@ -187,6 +235,13 @@ def replay_run(
         queue_delay_area += sum(duration - at for at in times[cursor:])
         lane_green_seconds[lane] = sum(end - start for start, end in lane_green[lane])
 
+    max_red_with_queue = max_red_with_queued_vehicles_by_phase(
+        history=row.get("phase_history") or [],
+        duration_seconds=int(duration),
+        arrivals_by_lane=by_lane,
+        service_starts_by_lane=starts_by_lane,
+    )
+
     # Queue maximum is evaluated after arrivals at a timestamp and before
     # service starts at that timestamp, matching the model's stated tie rule.
     arrivals_at: Counter[float] = Counter()
@@ -273,6 +328,7 @@ def replay_run(
         "green_fraction": green_seconds / duration,
         "yellow_seconds": yellow_seconds,
         "phase_switches": int(phase_switches),
+        "max_red_with_queue_seconds_by_phase": max_red_with_queue,
         "green_durations_seconds": green_lengths,
         "green_mean_seconds": statistics.mean(green_lengths) if green_lengths else 0.0,
         "green_max_reached_count": sum(length >= max_green - 1e-9 for length in green_lengths),
@@ -342,6 +398,18 @@ def audit_file(path: Path) -> dict[str, Any]:
             stored = float(row[stored_name])
             if not math.isclose(float(actual), stored, rel_tol=1e-10, abs_tol=1e-8):
                 row_errors.append({"metric": stored_name, "stored": stored, "replayed": actual})
+        stored_red_with_queue = row.get("max_red_with_queue_seconds_by_phase")
+        if stored_red_with_queue is not None:
+            for phase, actual in replay["max_red_with_queue_seconds_by_phase"].items():
+                stored = float(stored_red_with_queue[phase])
+                if not math.isclose(float(actual), stored, rel_tol=1e-10, abs_tol=1e-8):
+                    row_errors.append(
+                        {
+                            "metric": f"max_red_with_queue_seconds_by_phase.{phase}",
+                            "stored": stored,
+                            "replayed": actual,
+                        }
+                    )
         for lane, stored_wait in row["lane_waits"].items():
             replayed_wait = replay["lane_waits"][lane]
             if not math.isclose(
