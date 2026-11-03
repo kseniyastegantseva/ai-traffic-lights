@@ -109,6 +109,41 @@ def test_arrival_during_green_starts_service_at_its_event_time():
     assert result.average_wait_seconds == 0
 
 
+def test_startup_lost_time_delays_only_until_green_startup_deadline():
+    delayed = run_simulation(
+        intersection(),
+        SimulationConfig(duration_seconds=10, seed=8, startup_lost_time_seconds=2),
+        FixedTimeController(phase_duration_seconds=20),
+        initial_queues={"north": 1},
+        arrivals=[],
+    )
+    late_arrival = run_simulation(
+        intersection(),
+        SimulationConfig(duration_seconds=10, seed=8, startup_lost_time_seconds=2),
+        FixedTimeController(phase_duration_seconds=20),
+        arrivals=[Arrival(3.0, "north")],
+    )
+
+    assert delayed.average_wait_seconds == 2
+    assert delayed.vehicles_departed == 1
+    assert late_arrival.average_wait_seconds == 0
+    assert late_arrival.vehicles_departed == 1
+
+
+def test_startup_timer_does_not_start_service_after_green_ends():
+    result = run_simulation(
+        intersection(),
+        SimulationConfig(duration_seconds=5, seed=8, startup_lost_time_seconds=3),
+        FixedTimeController(phase_duration_seconds=1),
+        initial_queues={"north": 1},
+        arrivals=[],
+    )
+
+    assert result.vehicles_departed == 0
+    assert result.in_service_at_end == 0
+    assert result.waiting_at_end == 1
+
+
 def test_controller_cannot_start_conflicting_green_during_yellow():
     from traffic_light.controllers import QueueBasedController
 

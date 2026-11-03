@@ -196,6 +196,7 @@ def run_experiment(config: ExperimentConfig) -> tuple[list[dict], pd.DataFrame]:
                 duration_seconds=config.simulation.duration_seconds,
                 seed=seed,
                 service_time_seconds=config.simulation.service_time_seconds,
+                startup_lost_time_seconds=config.simulation.startup_lost_time_seconds,
                 observation_error_rate=scenario.get("observation_error_rate", 0.0),
                 empirical_observation_errors_by_lane=(
                     config.simulation.empirical_observation_errors_by_lane

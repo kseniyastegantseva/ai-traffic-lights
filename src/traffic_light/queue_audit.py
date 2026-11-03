@@ -187,6 +187,7 @@ def replay_run(
     """Recompute run metrics from regenerated arrivals and archived phases."""
     duration = float(row["duration_seconds"])
     service = float(configuration["simulation"]["service_time_seconds"])
+    startup_loss = float(configuration["simulation"].get("startup_lost_time_seconds", 0.0))
     arrivals = regenerate_arrivals(configuration, scenario, int(row["seed"]))
     if arrival_digest(arrivals) != row["arrival_stream_sha256"]:
         raise ValueError("regenerated arrival stream does not match the saved digest")
@@ -214,7 +215,7 @@ def replay_run(
         available_at = 0.0
         for green_start, green_end in lane_green[lane]:
             while cursor < len(times):
-                start = max(green_start, available_at, times[cursor])
+                start = max(green_start + startup_loss, available_at, times[cursor])
                 # A new service must begin strictly before green ends. Service
                 # already started can finish during yellow.
                 if start >= green_end or start >= duration:

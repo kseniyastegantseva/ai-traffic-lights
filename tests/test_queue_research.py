@@ -54,6 +54,39 @@ def test_queue_replay_phase_parser_accepts_dynamic_all_red_clearance():
     assert lane_intervals["east"] == [(9.0, 12.0)]
     assert yellow_intervals == [(4.0, 7.0)]
     assert green_lengths == [4.0, 3.0]
+
+
+def test_queue_replay_applies_startup_lost_time_before_saturation_service():
+    from traffic_light.simulation import run_simulation
+
+    lanes = {lane: TrafficDemandConfig(arrival_rate_per_minute=0) for lane in ("north", "south", "east", "west")}
+    scenario = {
+        "initial_queues": {"north": 1},
+        "intersection": {"lanes": {lane: {"arrival_rate_per_minute": 0} for lane in lanes}},
+    }
+    simulation_config = {
+        "duration_seconds": 6,
+        "seed": 7,
+        "service_time_seconds": 2,
+        "startup_lost_time_seconds": 2,
+    }
+    row = run_simulation(
+        IntersectionConfig(lanes=lanes),
+        SimulationConfig(**simulation_config),
+        FixedTimeController(phase_duration_seconds=20),
+        initial_queues=scenario["initial_queues"],
+        arrivals=[],
+    ).to_dict()
+
+    replayed = replay_run(
+        row,
+        scenario,
+        {"simulation": simulation_config},
+    )
+
+    assert row["average_wait_seconds"] == 2
+    assert replayed["average_wait_seconds"] == 2
+    assert replayed["departures"] == 1
 from traffic_light.simulation import run_simulation
 from traffic_light.statistics_audit import (
     _resolve_configured_path,

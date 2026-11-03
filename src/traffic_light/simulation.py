@@ -97,7 +97,9 @@ class IntersectionSimulation:
     A vehicle joins its queue at its arrival timestamp. A green signal may start
     service; each started vehicle occupies the server for service_time_seconds
     and departs at completion, including when yellow starts in between. Queue
-    samples use integer-second left endpoints. Simultaneous arrivals are added
+    samples use integer-second left endpoints. Startup lost time delays service
+    starts only until the phase's startup deadline; saturation headway remains
+    service_time_seconds. Simultaneous arrivals are added
     before service starts; at integer ties, phase decisions run before a new
     service starts. Departures at the horizon are not counted.
     Initial vehicles are present at t=0; their pre-observation delay is unknown
@@ -213,6 +215,10 @@ class IntersectionSimulation:
     def _service(self, lane: str):
         while True:
             if self.signal_color == "green" and lane in PHASE_LANES[self.current_phase] and self.queues[lane]:
+                startup_ready_at = self.phase_started_at + self.config.startup_lost_time_seconds
+                if self.env.now < startup_ready_at:
+                    yield self.env.timeout(startup_ready_at - self.env.now)
+                    continue
                 self._integrate_queue_area()
                 vehicle = self.queues[lane].popleft()
                 self.in_service += 1
