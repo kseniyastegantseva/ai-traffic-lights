@@ -178,3 +178,42 @@ def test_preview_experiment_is_paired_conserves_vehicles_and_beats_blind_rollout
         )
     waits = summary.set_index("controller")["average_wait_seconds"]
     assert waits["preview"] < waits["va_tuned"]
+
+
+def test_noisy_preview_cannot_expose_vehicle_before_true_window(monkeypatch):
+    # Ошибка ETA не может сдвинуть момент появления сообщения за пределы окна.
+    monkeypatch.setattr('traffic_light.simulation.random.Random.gauss', lambda *args: -8.0)
+    recorder = _Recorder()
+    run_simulation(_intersection(), SimulationConfig(duration_seconds=20, preview_seconds=10,
+                   preview_time_jitter_seconds=1), recorder, arrivals=[Arrival(15.5, 'east')])
+    by_time = {int(state.now): state for state in recorder.states}
+    assert by_time[5].upcoming_arrival_offsets['east'] == []
+    assert by_time[6].upcoming_arrival_offsets['east'] == [1.5]
+    assert by_time[8].upcoming_arrival_offsets['east'] == [0.0]
+    assert by_time[16].upcoming_arrival_offsets['east'] == []
+
+
+def test_late_eta_remains_visible_until_observed_arrival(monkeypatch):
+    monkeypatch.setattr('traffic_light.simulation.random.Random.gauss', lambda *args: 8.0)
+    recorder = _Recorder()
+    run_simulation(_intersection(), SimulationConfig(duration_seconds=20, preview_seconds=10,
+                   preview_time_jitter_seconds=1), recorder, arrivals=[Arrival(5.5, 'east')])
+    by_time = {int(state.now): state for state in recorder.states}
+    assert by_time[0].upcoming_arrival_offsets['east'] == [13.5]
+    assert by_time[5].upcoming_arrival_offsets['east'] == [8.5]
+    assert by_time[6].upcoming_arrival_offsets['east'] == []
+
+
+def test_unobservable_future_does_not_change_controller_decision():
+    def states(arrivals):
+        recorder = _Recorder()
+        run_simulation(_intersection(), SimulationConfig(duration_seconds=45, preview_seconds=10),
+                       recorder, arrivals=arrivals)
+        return recorder.states
+
+    first = states([Arrival(30, 'north')])
+    second = states([Arrival(40, 'east')])
+    controller = QueueBasedApproachPreviewController(min_green_seconds=1)
+    for a, b in zip(first[:8], second[:8], strict=True):
+        assert a == b
+        assert controller.choose_phase(a) == controller.choose_phase(b)

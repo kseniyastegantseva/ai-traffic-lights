@@ -28,6 +28,7 @@
 - Конфигурации экспериментов находятся в `../configs/`; расширенная чувствительность к ошибке детекции — `../configs/piere_perception_sensitivity_expanded.yaml`.
 - Отдельные seed-явные конфигурации проверки Queue-based находятся в `../configs/queue_based_*.yaml`; стандартные библиотечные аудиторские replay-скрипты — `../scripts/audit_queue_based_results.py` и `../scripts/audit_queue_based_statistics.py`.
 - Эмпирический bootstrap ошибок направленного подсчёта — `../configs/piere_perception_empirical_errors.yaml`.
+- `../docs/APPROACH_PREVIEW_CAUSALITY_AUDIT.md` — аудит preview и оставшиеся исследовательские задачи.
 - `task-log.md` — хронологический журнал выполненных задач и ограничений среды.
 
 ## Правило документации

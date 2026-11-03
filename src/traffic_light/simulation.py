@@ -309,7 +309,7 @@ class IntersectionSimulation:
             yield self.env.timeout(1)
 
     def _build_preview_events(self) -> tuple[list[float], list[tuple[float, float, str]]]:
-        """Прибытия, которые видит датчик подъезда: (время по датчику, истинное время, полоса).
+        """События: (истинное время прибытия, прогнозное время, полоса).
 
         Обнаружение и погрешность времени фиксируются для каждой машины отдельно и не зависят
         от остальных генераторов случайных чисел, поэтому потоки прибытий и прочие метрики
@@ -327,7 +327,7 @@ class IntersectionSimulation:
             jitter = rng.gauss(0.0, self.config.preview_time_jitter_seconds) if (
                 self.config.preview_time_jitter_seconds > 0
             ) else 0.0
-            events.append((event.at + jitter, event.at, event.lane))
+            events.append((event.at, event.at + jitter, event.lane))
         events.sort()
         return [item[0] for item in events], events
 
@@ -338,9 +338,10 @@ class IntersectionSimulation:
         end = now + self.config.preview_seconds
         index = bisect.bisect_right(self._preview_times, now)
         while index < len(self._preview_events) and self._preview_events[index][0] < end:
-            seen_at, actual_at, lane = self._preview_events[index]
+            actual_at, predicted_at, lane = self._preview_events[index]
             if actual_at > now:
-                offsets[lane].append(seen_at - now)
+                # Просроченный прогноз остаётся видимым до наблюдаемого прибытия.
+                offsets[lane].append(max(0.0, predicted_at - now))
             index += 1
         return offsets
 
