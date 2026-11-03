@@ -26,6 +26,11 @@ class ControllerState:
     current_gap_seconds: float = 0.0
     red_request_elapsed_seconds: dict[PhaseName, float] | None = None
     yellow_seconds: float = 0.0
+    service_seconds: float = 2.0
+    in_service_by_lane: dict[str, int] | None = None
+    # Смещения (с, от now) ожидаемых прибытий по полосам по данным датчика подъезда;
+    # None — датчика нет, пустой список — датчик есть, но машин в окне не видит.
+    upcoming_arrival_offsets: dict[str, list[float]] | None = None
 
 
 class BaseController:
@@ -106,6 +111,100 @@ class VehicleActuatedController(BaseController):
         if current_q == 0 and other_q > 0 and state.current_gap_seconds >= self.gap_seconds:
             return other
         return state.current_phase
+
+
+@dataclass
+class QueueBasedApproachPreviewController(BaseController):
+    """Rollout-управление по очередям и подъезжающим автомобилям.
+
+    На каждом такте перебирает момент переключения (сейчас, через 1..N секунд, не
+    переключать) и оценивает каждый вариант прогоном вперёд: очередь плюс ожидаемые
+    прибытия по датчику подъезда, дальше — правило gap-out. Выбирает вариант с наименьшей
+    площадью очереди. При равной оценке удерживает текущий зелёный. Максимальный зелёный
+    при конкурирующей очереди принудительный, поэтому ось не может быть заморожена.
+    Без датчика (``upcoming_arrival_offsets is None``) прибытия в прогоне нулевые.
+    """
+
+    min_green_seconds: int = 4
+    max_green_seconds: int = 45
+    planning_horizon_seconds: int = 50
+    max_switch_delay_seconds: int = 24
+    continuation_min_green_seconds: int = 8
+    name: str = "queue_based_approach_preview"
+
+    def choose_phase(self, state: ControllerState) -> PhaseName:
+        elapsed = state.now - state.phase_started_at
+        phase = state.current_phase
+        other = other_phase(phase)
+        current_lanes, other_lanes = PHASE_LANES[phase], PHASE_LANES[other]
+        current_q = sum(state.queues[lane] for lane in current_lanes)
+        other_q = sum(state.queues[lane] for lane in other_lanes)
+        upcoming = state.upcoming_arrival_offsets or {}
+        other_expected = sum(len(upcoming.get(lane, ())) for lane in other_lanes)
+        if elapsed < self.min_green_seconds or (other_q == 0 and other_expected == 0):
+            return phase
+        if elapsed >= self.max_green_seconds and other_q > 0:
+            return other
+
+        base_switch_now = other_q > 0 and (
+            elapsed >= self.max_green_seconds
+            or (elapsed >= self.continuation_min_green_seconds and current_q == 0)
+        )
+        candidates: list[int | None] = list(range(self.max_switch_delay_seconds + 1))
+        if not base_switch_now:
+            candidates.append(None)
+        best_cost, best_delay = None, None
+        for delay in candidates:
+            cost = self._rollout(state, elapsed, delay)
+            if best_cost is None or cost <= best_cost + 1e-9:
+                best_cost, best_delay = cost, delay
+        return other if best_delay == 0 else phase
+
+    def _rollout(self, state: ControllerState, elapsed: float, switch_delay: int | None) -> float:
+        lanes = tuple(state.queues)
+        queue = {lane: float(state.queues[lane]) for lane in lanes}
+        service = max(state.service_seconds, 1e-9)
+        busy = state.in_service_by_lane or {}
+        free_at = {lane: (1.0 if busy.get(lane) else 0.0) for lane in lanes}
+        arrivals: dict[str, dict[int, int]] = {lane: {} for lane in lanes}
+        for lane, offsets in (state.upcoming_arrival_offsets or {}).items():
+            for offset in offsets:
+                second = int(offset)
+                if second < self.planning_horizon_seconds:
+                    arrivals[lane][second] = arrivals[lane].get(second, 0) + 1
+
+        green = state.current_phase
+        yellow_until: float | None = None
+        plan_done = switch_delay is None
+        cost = 0.0
+        for step in range(self.planning_horizon_seconds):
+            for lane in lanes:
+                queue[lane] += arrivals[lane].get(step, 0)
+            if yellow_until is not None and step >= yellow_until:
+                green, yellow_until, elapsed = other_phase(green), None, 0.0
+                for lane in PHASE_LANES[green]:
+                    free_at[lane] = max(free_at[lane], float(step))
+            if yellow_until is None:
+                current = sum(queue[lane] for lane in PHASE_LANES[green])
+                competing = sum(queue[lane] for lane in PHASE_LANES[other_phase(green)])
+                switch = False
+                if not plan_done and step == switch_delay:
+                    switch, plan_done = True, True
+                elif plan_done and competing > 0 and (
+                    elapsed >= self.max_green_seconds
+                    or (elapsed >= self.continuation_min_green_seconds and current == 0)
+                ):
+                    switch = True
+                if switch:
+                    yellow_until = step + state.yellow_seconds
+                else:
+                    for lane in PHASE_LANES[green]:
+                        if queue[lane] >= 1.0 and free_at[lane] <= step:
+                            queue[lane] -= 1.0
+                            free_at[lane] = step + service
+                    elapsed += 1
+            cost += sum(queue.values())
+        return cost
 
 
 @dataclass

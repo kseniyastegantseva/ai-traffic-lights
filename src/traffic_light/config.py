@@ -13,7 +13,7 @@ ControllerType = Literal[
     "queue_based", "queue_based_improved", "queue_based_empty_gap_fix", "queue_based_max_red",
     "queue_based_smooth_min_green", "queue_based_hysteresis", "queue_based_persistent_congestion",
     "queue_based_axis_specific_congestion",
-    "queue_based_elapsed_margin",
+    "queue_based_elapsed_margin", "queue_based_approach_preview",
     "actuated", "ai", "q_learning",
 ]
 
@@ -41,6 +41,10 @@ class SimulationConfig(BaseModel):
     startup_lost_time_seconds: float = Field(default=0.0, ge=0.0)
     observation_error_rate: float = Field(default=0.0, ge=0.0, le=0.2)
     empirical_observation_errors_by_lane: dict[LaneName, list[int]] = Field(default_factory=dict)
+    # Датчик подъезжающих автомобилей (камера/детектор выше по потоку). Ноль — датчика нет.
+    preview_seconds: float = Field(default=0.0, ge=0.0)
+    preview_detection_probability: float = Field(default=1.0, ge=0.0, le=1.0)
+    preview_time_jitter_seconds: float = Field(default=0.0, ge=0.0)
 
 
 class ControllerConfig(BaseModel):
@@ -49,6 +53,10 @@ class ControllerConfig(BaseModel):
     decision_interval_seconds: int = Field(default=10, ge=1)
     min_green_seconds: int = Field(default=8, ge=1)
     max_green_seconds: int = Field(default=45, ge=1)
+    gap_seconds: float = Field(default=3.0, ge=0.0)
+    planning_horizon_seconds: int = Field(default=50, ge=5)
+    max_switch_delay_seconds: int = Field(default=24, ge=0)
+    continuation_min_green_seconds: int = Field(default=8, ge=1)
     switching_margin: int = Field(default=1, ge=0)
     relative_switching_margin: float = Field(default=0.10, ge=0.0, le=1.0)
     congested_min_green_seconds: int = Field(default=20, ge=1)
@@ -110,6 +118,9 @@ class ExperimentSimulationConfig(BaseModel):
     service_time_seconds: float = Field(default=2.0, gt=0)
     startup_lost_time_seconds: float = Field(default=0.0, ge=0.0)
     empirical_observation_errors_by_lane: dict[LaneName, list[int]] = Field(default_factory=dict)
+    preview_seconds: float = Field(default=0.0, ge=0.0)
+    preview_detection_probability: float = Field(default=1.0, ge=0.0, le=1.0)
+    preview_time_jitter_seconds: float = Field(default=0.0, ge=0.0)
     store_queue_series: bool = True
 
 

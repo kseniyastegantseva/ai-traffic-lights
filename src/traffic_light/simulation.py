@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import bisect
 import hashlib
 import random
 from collections import deque
@@ -148,6 +149,7 @@ class IntersectionSimulation:
         stream_text = "\n".join(f"{float(event.at).hex()},{event.lane}" for event in self.arrivals)
         self.arrival_stream_sha256 = hashlib.sha256(stream_text.encode("utf-8")).hexdigest()
         self.last_observed_request_at: dict[str, float] = {lane: 0.0 for lane in LANES}
+        self._preview_times, self._preview_events = self._build_preview_events()
         self.waits: list[float] = []
         self.waits_by_lane: dict[str, list[float]] = {lane: [] for lane in intersection.lanes}
         self.queue_samples: list[int] = []
@@ -286,6 +288,9 @@ class IntersectionSimulation:
                         for phase, started_at in self.red_request_started_at.items()
                     },
                     yellow_seconds=self.intersection.yellow_seconds,
+                    service_seconds=self.config.service_time_seconds,
+                    in_service_by_lane=self.in_service_by_lane.copy(),
+                    upcoming_arrival_offsets=self._upcoming_arrival_offsets(now),
                 )
                 next_phase = self.controller.choose_phase(state)
                 if next_phase != self.current_phase:
@@ -302,6 +307,42 @@ class IntersectionSimulation:
                         self._activate_pending_phase(now)
                     self._notify_services()
             yield self.env.timeout(1)
+
+    def _build_preview_events(self) -> tuple[list[float], list[tuple[float, float, str]]]:
+        """Прибытия, которые видит датчик подъезда: (время по датчику, истинное время, полоса).
+
+        Обнаружение и погрешность времени фиксируются для каждой машины отдельно и не зависят
+        от остальных генераторов случайных чисел, поэтому потоки прибытий и прочие метрики
+        не меняются при включении датчика.
+        """
+        if self.config.preview_seconds <= 0:
+            return [], []
+        events: list[tuple[float, float, str]] = []
+        for index, event in enumerate(self.arrivals):
+            if event.at <= 0:
+                continue
+            rng = random.Random(f"{self.config.seed}:{index}:preview")
+            if rng.random() >= self.config.preview_detection_probability:
+                continue
+            jitter = rng.gauss(0.0, self.config.preview_time_jitter_seconds) if (
+                self.config.preview_time_jitter_seconds > 0
+            ) else 0.0
+            events.append((event.at + jitter, event.at, event.lane))
+        events.sort()
+        return [item[0] for item in events], events
+
+    def _upcoming_arrival_offsets(self, now: float) -> dict[str, list[float]] | None:
+        if self.config.preview_seconds <= 0:
+            return None
+        offsets: dict[str, list[float]] = {lane: [] for lane in LANES}
+        end = now + self.config.preview_seconds
+        index = bisect.bisect_right(self._preview_times, now)
+        while index < len(self._preview_events) and self._preview_events[index][0] < end:
+            seen_at, actual_at, lane = self._preview_events[index]
+            if actual_at > now:
+                offsets[lane].append(seen_at - now)
+            index += 1
+        return offsets
 
     def _activate_pending_phase(self, now: float) -> None:
         next_phase = self._pending_phase

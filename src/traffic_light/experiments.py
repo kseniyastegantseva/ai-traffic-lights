@@ -25,6 +25,7 @@ from traffic_light.controllers import (
     FixedTimeController,
     FixedWebsterController,
     QLearningPolicyController,
+    QueueBasedApproachPreviewController,
     QueueBasedAxisSpecificCongestionController,
     QueueBasedController,
     QueueBasedElapsedMarginController,
@@ -79,6 +80,17 @@ def build_controller(
         return VehicleActuatedController(
             min_green_seconds=config.min_green_seconds,
             max_green_seconds=config.max_green_seconds,
+            gap_seconds=config.gap_seconds,
+            name=config.result_name or "vehicle_actuated",
+        )
+    if config.type == "queue_based_approach_preview":
+        return QueueBasedApproachPreviewController(
+            min_green_seconds=config.min_green_seconds,
+            max_green_seconds=config.max_green_seconds,
+            planning_horizon_seconds=config.planning_horizon_seconds,
+            max_switch_delay_seconds=config.max_switch_delay_seconds,
+            continuation_min_green_seconds=config.continuation_min_green_seconds,
+            name=config.result_name or "queue_based_approach_preview",
         )
     if config.type == "queue_based":
         return QueueBasedController(
@@ -201,6 +213,9 @@ def run_experiment(config: ExperimentConfig) -> tuple[list[dict], pd.DataFrame]:
                 empirical_observation_errors_by_lane=(
                     config.simulation.empirical_observation_errors_by_lane
                 ),
+                preview_seconds=config.simulation.preview_seconds,
+                preview_detection_probability=config.simulation.preview_detection_probability,
+                preview_time_jitter_seconds=config.simulation.preview_time_jitter_seconds,
             )
             arrivals = generate_arrivals(
                 scenario["intersection"], simulation, scenario.get("demand_schedule")

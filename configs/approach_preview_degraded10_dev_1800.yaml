@@ -1,0 +1,207 @@
+name: approach_preview_degraded10_dev_1800
+title: 'Управление с датчиком подъезда: ухудшенный датчик: окно 10 с, обнаружение
+  80%, погрешность времени σ=1 с, development 1800 с'
+description: Seed 12101–12130; те же потоки прибытий, что в baseline-серии. Для парности
+  включён anchor Vehicle-actuated 4 с / gap 1 с.
+simulation:
+  duration_seconds: 1800
+  seeds:
+  - 12101
+  - 12102
+  - 12103
+  - 12104
+  - 12105
+  - 12106
+  - 12107
+  - 12108
+  - 12109
+  - 12110
+  - 12111
+  - 12112
+  - 12113
+  - 12114
+  - 12115
+  - 12116
+  - 12117
+  - 12118
+  - 12119
+  - 12120
+  - 12121
+  - 12122
+  - 12123
+  - 12124
+  - 12125
+  - 12126
+  - 12127
+  - 12128
+  - 12129
+  - 12130
+  service_time_seconds: 2.0
+  store_queue_series: false
+  preview_seconds: 10.0
+  preview_detection_probability: 0.8
+  preview_time_jitter_seconds: 1.0
+scenarios:
+- name: symmetric
+  title: Симметричный спрос
+  description: 6 автомобилей в минуту на каждом подходе.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 6
+      south:
+        arrival_rate_per_minute: 6
+      east:
+        arrival_rate_per_minute: 6
+      west:
+        arrival_rate_per_minute: 6
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: asymmetric_ns
+  title: Асимметричный спрос Север–Юг
+  description: 10 автомобилей в минуту на N/S и 4 на E/W.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 10
+      south:
+        arrival_rate_per_minute: 10
+      east:
+        arrival_rate_per_minute: 4
+      west:
+        arrival_rate_per_minute: 4
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: sudden_dominance_switch
+  title: Внезапная смена доминирующей оси
+  description: В 900 s максимум спроса переходит с N/S на E/W.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 10
+      south:
+        arrival_rate_per_minute: 10
+      east:
+        arrival_rate_per_minute: 4
+      west:
+        arrival_rate_per_minute: 4
+    min_green_seconds: 8
+    yellow_seconds: 3
+  demand_schedule:
+  - start_seconds: 0
+    end_seconds: 900
+    lanes:
+      north:
+        arrival_rate_per_minute: 10
+      south:
+        arrival_rate_per_minute: 10
+      east:
+        arrival_rate_per_minute: 4
+      west:
+        arrival_rate_per_minute: 4
+  - start_seconds: 900
+    end_seconds: 3600
+    lanes:
+      north:
+        arrival_rate_per_minute: 4
+      south:
+        arrival_rate_per_minute: 4
+      east:
+        arrival_rate_per_minute: 10
+      west:
+        arrival_rate_per_minute: 10
+- name: high_load
+  title: Высокая нагрузка
+  description: 18 автомобилей в минуту на каждом подходе; v/c оценивается относительно
+    расчетной мощности модели и должна быть подтверждена результатами очередей.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 18
+      south:
+        arrival_rate_per_minute: 18
+      east:
+        arrival_rate_per_minute: 18
+      west:
+        arrival_rate_per_minute: 18
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: symmetric_low
+  title: Низкий симметричный спрос
+  description: 3 автомобиля в минуту на каждом подходе.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 3
+      south:
+        arrival_rate_per_minute: 3
+      east:
+        arrival_rate_per_minute: 3
+      west:
+        arrival_rate_per_minute: 3
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: symmetric_9
+  title: Симметричный спрос 9 авто/мин
+  description: 9 автомобилей в минуту на каждом подходе; режим ниже прежнего кандидата
+    перегрузки 18 авто/мин.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 9
+      south:
+        arrival_rate_per_minute: 9
+      east:
+        arrival_rate_per_minute: 9
+      west:
+        arrival_rate_per_minute: 9
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: asymmetric_ew
+  title: Асимметричный спрос Восток–Запад
+  description: 4 автомобиля в минуту на N/S и 10 на E/W; зеркальный сценарий к asymmetric_ns.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 4
+      south:
+        arrival_rate_per_minute: 4
+      east:
+        arrival_rate_per_minute: 10
+      west:
+        arrival_rate_per_minute: 10
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: true_oversaturated
+  title: Насыщенный спрос 24 авто/мин
+  description: 24 автомобиля в минуту на каждом подходе; явно сверх расчётной пропускной
+    способности модели.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 24
+      south:
+        arrival_rate_per_minute: 24
+      east:
+        arrival_rate_per_minute: 24
+      west:
+        arrival_rate_per_minute: 24
+    min_green_seconds: 8
+    yellow_seconds: 3
+controllers:
+- type: vehicle_actuated
+  min_green_seconds: 4
+  max_green_seconds: 45
+  gap_seconds: 1.0
+  result_name: va_min4_gap1
+- type: queue_based_approach_preview
+  min_green_seconds: 4
+  max_green_seconds: 45
+  planning_horizon_seconds: 50
+  max_switch_delay_seconds: 24
+  continuation_min_green_seconds: 8
+  result_name: preview_degraded10
+output:
+  path: outputs/approach_preview/approach_preview_degraded10_dev_1800.json
+  summary_csv: outputs/approach_preview/approach_preview_degraded10_dev_1800_summary.csv
+  report_markdown: outputs/approach_preview/approach_preview_degraded10_dev_1800_report.md
