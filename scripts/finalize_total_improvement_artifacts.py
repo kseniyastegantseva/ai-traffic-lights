@@ -67,6 +67,13 @@ HASH_PATHS = (
     OUT / "min_green_validation_1800_summary.csv",
     OUT / "min_green_validation_1800_paired.csv",
     OUT / "min_green_validation_1800_analysis.md",
+    ROOT / "configs/total_improvement_axis_specific_congestion_1800.yaml",
+    OUT / "axis_specific_congestion_1800.json.gz",
+    OUT / "axis_specific_congestion_1800_replay.json",
+    OUT / "axis_specific_congestion_1800_summary.csv",
+    OUT / "axis_specific_congestion_1800_metrics.csv",
+    OUT / "axis_specific_congestion_1800_paired.csv",
+    OUT / "axis_specific_congestion_1800_analysis.md",
 )
 
 
@@ -79,6 +86,7 @@ def main() -> None:
         "max_red_development_1800",
         "min_green_dynamics_1800",
         "min_green_validation_1800",
+        "axis_specific_congestion_1800",
     ):
         raw_json = OUT / f"{name}.json"
         compressed_json = OUT / f"{name}.json.gz"
@@ -166,6 +174,15 @@ def main() -> None:
             "statistics_audit": "14 groups, custom analyzer computed 7 paired contrasts",
             "paired_family": "one preselected controller contrast within each scenario; Holm over 7 scenarios",
         },
+        "axis_specific_congestion_1800": {
+            "duration_seconds": 1800,
+            "seeds": list(range(7101, 7131)),
+            "scenario_count": 7,
+            "controller_rows": 4,
+            "run_count": 840,
+            "replay_audit": "0 metric mismatches, 0 unpaired groups, 0 duplicate keys",
+            "statistics_audit": "28 groups, 21 built-in pairs; 378 custom paired contrasts across 9 metrics",
+        },
     }
     (OUT / "environment.json").write_text(
         json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
@@ -215,6 +232,10 @@ python scripts/audit_queue_based_results.py outputs/total_improvement/min_green_
 traffic-sim compare --config configs/total_improvement_min_green_validation_1800.yaml
 python scripts/analyze_total_improvement_min_green_validation.py
 python scripts/audit_queue_based_results.py outputs/total_improvement/min_green_validation_1800.json --replay-output outputs/total_improvement/min_green_validation_1800_replay.json
+traffic-sim compare --config configs/total_improvement_axis_specific_congestion_1800.yaml
+python scripts/analyze_total_improvement_axis_specific.py
+python scripts/plot_total_improvement_axis_specific.py
+python scripts/audit_queue_based_results.py outputs/total_improvement/axis_specific_congestion_1800.json --replay-output outputs/total_improvement/axis_specific_congestion_1800_replay.json
 python scripts/audit_queue_based_results.py outputs/total_improvement/capacity_boundary_1800.json --replay-output outputs/total_improvement/capacity_boundary_1800_replay.json
 python scripts/audit_queue_based_statistics.py outputs/total_improvement/capacity_boundary_1800.json
 python scripts/audit_queue_based_results.py outputs/total_improvement/capacity_boundary_3600.json --replay-output outputs/total_improvement/capacity_boundary_3600_replay.json
@@ -232,6 +253,8 @@ python scripts/audit_queue_based_results.py outputs/total_improvement/min_green_
 python scripts/audit_queue_based_statistics.py outputs/total_improvement/min_green_dynamics_1800.json.gz
 python scripts/audit_queue_based_results.py outputs/total_improvement/min_green_validation_1800.json.gz
 python scripts/audit_queue_based_statistics.py outputs/total_improvement/min_green_validation_1800.json.gz
+python scripts/audit_queue_based_results.py outputs/total_improvement/axis_specific_congestion_1800.json.gz
+python scripts/audit_queue_based_statistics.py outputs/total_improvement/axis_specific_congestion_1800.json.gz
 ```
 
 The simulation used CPU only. Exact package versions and SHA-256 values are recorded in

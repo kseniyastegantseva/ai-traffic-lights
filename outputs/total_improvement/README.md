@@ -33,6 +33,10 @@ python scripts/audit_queue_based_results.py outputs/total_improvement/min_green_
 traffic-sim compare --config configs/total_improvement_min_green_validation_1800.yaml
 python scripts/analyze_total_improvement_min_green_validation.py
 python scripts/audit_queue_based_results.py outputs/total_improvement/min_green_validation_1800.json --replay-output outputs/total_improvement/min_green_validation_1800_replay.json
+traffic-sim compare --config configs/total_improvement_axis_specific_congestion_1800.yaml
+python scripts/analyze_total_improvement_axis_specific.py
+python scripts/plot_total_improvement_axis_specific.py
+python scripts/audit_queue_based_results.py outputs/total_improvement/axis_specific_congestion_1800.json --replay-output outputs/total_improvement/axis_specific_congestion_1800_replay.json
 python scripts/audit_queue_based_results.py outputs/total_improvement/capacity_boundary_1800.json --replay-output outputs/total_improvement/capacity_boundary_1800_replay.json
 python scripts/audit_queue_based_statistics.py outputs/total_improvement/capacity_boundary_1800.json
 python scripts/audit_queue_based_results.py outputs/total_improvement/capacity_boundary_3600.json --replay-output outputs/total_improvement/capacity_boundary_3600_replay.json
@@ -50,6 +54,8 @@ python scripts/audit_queue_based_results.py outputs/total_improvement/min_green_
 python scripts/audit_queue_based_statistics.py outputs/total_improvement/min_green_dynamics_1800.json.gz
 python scripts/audit_queue_based_results.py outputs/total_improvement/min_green_validation_1800.json.gz
 python scripts/audit_queue_based_statistics.py outputs/total_improvement/min_green_validation_1800.json.gz
+python scripts/audit_queue_based_results.py outputs/total_improvement/axis_specific_congestion_1800.json.gz
+python scripts/audit_queue_based_statistics.py outputs/total_improvement/axis_specific_congestion_1800.json.gz
 ```
 
 The simulation used CPU only. Exact package versions and SHA-256 values are recorded in

@@ -16,6 +16,7 @@ from traffic_light.config import (
 from traffic_light.controllers import (
     ControllerState,
     FixedTimeController,
+    QueueBasedAxisSpecificCongestionController,
     QueueBasedController,
     QueueBasedEmptyGapFixController,
     QueueBasedHysteresisController,
@@ -341,6 +342,36 @@ def test_persistent_congestion_uses_consecutive_observation_duration():
     state.now = 8
     assert persistent_5.choose_phase(state) == "north_south"
     assert persistent_10.choose_phase(state) == "east_west"
+
+
+def test_axis_specific_minimum_green_depends_on_current_axis_not_total_queue():
+    improved = QueueBasedImprovedController(
+        min_green_seconds=8,
+        max_green_seconds=45,
+        switching_margin=1,
+        congested_min_green_seconds=25,
+        congestion_queue_threshold=14,
+    )
+    axis_specific = QueueBasedAxisSpecificCongestionController(
+        min_green_seconds=8,
+        max_green_seconds=45,
+        switching_margin=1,
+        congested_min_green_seconds=25,
+        congestion_queue_threshold=14,
+    )
+    state = ControllerState(
+        now=9,
+        current_phase="north_south",
+        phase_started_at=0,
+        queues={"north": 1, "south": 0, "east": 20, "west": 0},
+    )
+
+    assert improved.choose_phase(state) == "north_south"
+    assert axis_specific.choose_phase(state) == "east_west"
+
+    state.current_phase = "east_west"
+    state.queues = {"north": 1, "south": 0, "east": 20, "west": 0}
+    assert axis_specific.choose_phase(state) == "east_west"
 
 
 def test_independent_replay_recovers_known_censored_queue_metrics():

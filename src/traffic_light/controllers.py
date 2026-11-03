@@ -159,7 +159,7 @@ class QueueBasedImprovedController(BaseController):
     def _observe_queue_state(self, total_q: int, state: ControllerState) -> None:
         """Hook for experimental minimum-green policies with memory."""
 
-    def _effective_min_green(self, total_q: int) -> float:
+    def _effective_min_green(self, total_q: int, current_q: int) -> float:
         return (
             self.congested_min_green_seconds
             if total_q >= self.congestion_queue_threshold
@@ -177,7 +177,7 @@ class QueueBasedImprovedController(BaseController):
             return state.current_phase
         if elapsed >= self.max_green_seconds:
             return other
-        effective_min_green = self._effective_min_green(total_q)
+        effective_min_green = self._effective_min_green(total_q, current_q)
         if elapsed < effective_min_green:
             return state.current_phase
         margin = max(
@@ -195,7 +195,7 @@ class QueueBasedSmoothMinGreenController(QueueBasedImprovedController):
     smooth_congestion_end_queue: int = 18
     name: str = "queue_based_smooth_min_green"
 
-    def _effective_min_green(self, total_q: int) -> float:
+    def _effective_min_green(self, total_q: int, current_q: int) -> float:
         width = self.smooth_congestion_end_queue - self.smooth_congestion_start_queue
         progress = min(
             1.0,
@@ -221,7 +221,7 @@ class QueueBasedHysteresisController(QueueBasedImprovedController):
         elif total_q >= self.congestion_queue_threshold:
             self.congestion_active = True
 
-    def _effective_min_green(self, total_q: int) -> float:
+    def _effective_min_green(self, total_q: int, current_q: int) -> float:
         return (
             self.congested_min_green_seconds
             if self.congestion_active
@@ -246,13 +246,27 @@ class QueueBasedPersistentCongestionController(QueueBasedImprovedController):
         else:
             self.high_pressure_since = None
 
-    def _effective_min_green(self, total_q: int) -> float:
+    def _effective_min_green(self, total_q: int, current_q: int) -> float:
         persistent = (
             self.high_pressure_since is not None
             and total_q >= self.congestion_queue_threshold
             and self.high_pressure_since + self.congestion_persistence_seconds <= self.current_time
         )
         return self.congested_min_green_seconds if persistent else self.min_green_seconds
+
+
+@dataclass
+class QueueBasedAxisSpecificCongestionController(QueueBasedImprovedController):
+    """Extends the green only when the currently served axis is congested."""
+
+    name: str = "queue_based_axis_specific_congestion"
+
+    def _effective_min_green(self, total_q: int, current_q: int) -> float:
+        return (
+            self.congested_min_green_seconds
+            if current_q >= self.congestion_queue_threshold
+            else self.min_green_seconds
+        )
 
 
 @dataclass

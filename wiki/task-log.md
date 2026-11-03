@@ -1,5 +1,12 @@
 # Журнал задач
 
+## 2026-11-03 — Axis-specific congestion screen (этап 5, продолжается)
+
+- Реализован отдельный `queue_based_axis_specific_congestion`, который продлевает min-green при очереди ≥14 именно на текущей green-оси, а не по общей сумме. Добавлена фабрика, config type, граничные тесты и seed-explicit конфиг; Improved и simulation API сохранены.
+- Development: 840 paired запусков, 30 новых seed 7101–7130, 7 сценариев и 4 контроллера. Replay: 840 / 210 групп, 0 duplicate/unpaired/mismatches. Встроенный statistics audit: 28 групп / 21 pair, 0 mismatches; custom analyzer — 378 contrasts по 9 метрикам, Holm внутри scenario × metric.
+- Гипотеза улучшения не поддержана. Axis-specific хуже Improved по mean wait на 3,035 с в high-load (95% CI [+1,699; +4,370], Holm p=0,0001), на 1,263 с при 24 авто/мин (CI [+0,438; +2,088], p=0,0081) и на 0,183 с в symmetric_9 (CI [+0,108; +0,258], p<0,0001). В high-load также ниже throughput и больше переключений; остальные сценарии не показали значимого эффекта. Кандидат не отправляется на validation.
+- Добавлены сравнительные таблицы, четыре визуализации, replay и анализ; документы фиксируют отрицательный вывод и не отправляют вариант на validation. `pytest -q` — 84 passed; `ruff check .`, `git diff --check`, gzip и SHA-256 manifest чисты. Независимый replay сырого и архивного JSON: 840 запусков / 210 групп, ноль mismatch; statistics audit: 28 групп / 21 сравнение, 0 mismatch. Docker daemon недоступен. Коммит и push выполняются.
+
 ## 2026-11-03 — Плавный minimum green и независимая проверка (этап 4, продолжается)
 
 - Добавлены экспериментальные smooth-ramp, hysteresis и persistent-congestion наследники Improved; исходные контроллеры и SimPy API не менялись. Созданы воспроизводимые конфиги на 30 development seed 5101–5130 и отдельные 30 validation seed 6101–6130.

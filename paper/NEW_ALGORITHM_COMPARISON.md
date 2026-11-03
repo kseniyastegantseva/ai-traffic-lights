@@ -130,3 +130,18 @@ mismatches. Наиболее перспективной оказалась пл�
 
 Данные, парные CSV и графики сохранены в `outputs/total_improvement/min_green_*`; основная
 PIERE статья пока не изменялась.
+
+## Axis-specific congestion: development candidate отвергнут
+
+В отдельном paired screen проверялось правило, которое активирует congested min-green 25 с
+только если очередь на текущей обслуживаемой оси не меньше 14. Это сопоставлено с общим порогом
+Improved, original Queue-based и Vehicle-actuated на 30 новых seed, семи сценариях и 840
+прогонах. Independent replay обнаружил 0 mismatch; custom analyzer посчитал 378 сравнений по
+девяти метрикам.
+
+Axis-specific проиграл Improved по completed mean wait на 3,035 с при high-load (95% CI
+[+1,699; +4,370], Holm p=0,0001), на 1,263 с при 24 авто/мин (95% CI [+0,438; +2,088],
+Holm p=0,0081) и на 0,183 с в symmetric_9 (95% CI [+0,108; +0,258], Holm p<0,0001).
+В остальных сценариях различие не подтверждено. При высокой нагрузке ухудшились также
+throughput и число переключений. Поэтому ось-специфичный вариант не направлен на validation;
+изменение общей логики Improved не предлагается.

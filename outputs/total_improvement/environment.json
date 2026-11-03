@@ -59,7 +59,8 @@
     "capacity_boundary_3600": "d10033fb97041ccdd6d51b1c00d470cf8d6af44f80d2319530c08969d2d47424",
     "max_red_development_1800": "248dbfc271e2eb808d4245408e2c63a6a1d7e3f8f568e02215b9698c1a848134",
     "min_green_dynamics_1800": "6c15d125e4380f5b4270ea042c6276f14a5f1cccc060bab36aafdfaaf2fc39af",
-    "min_green_validation_1800": "0e1c6bbc3b37c84b26cc8ea740eeede8c116e4ab405fabd01517a25718528ff0"
+    "min_green_validation_1800": "0e1c6bbc3b37c84b26cc8ea740eeede8c116e4ab405fabd01517a25718528ff0",
+    "axis_specific_congestion_1800": "11e0b5e601be43844d362422865b11a02d57c57ab629e1352566c5747225e1e5"
   },
   "empty_gap_development": {
     "duration_seconds": 1800,
@@ -295,5 +296,45 @@
     "replay_audit": "0 metric mismatches, 0 unpaired groups, 0 duplicate keys",
     "statistics_audit": "14 groups, custom analyzer computed 7 paired contrasts",
     "paired_family": "one preselected controller contrast within each scenario; Holm over 7 scenarios"
+  },
+  "axis_specific_congestion_1800": {
+    "duration_seconds": 1800,
+    "seeds": [
+      7101,
+      7102,
+      7103,
+      7104,
+      7105,
+      7106,
+      7107,
+      7108,
+      7109,
+      7110,
+      7111,
+      7112,
+      7113,
+      7114,
+      7115,
+      7116,
+      7117,
+      7118,
+      7119,
+      7120,
+      7121,
+      7122,
+      7123,
+      7124,
+      7125,
+      7126,
+      7127,
+      7128,
+      7129,
+      7130
+    ],
+    "scenario_count": 7,
+    "controller_rows": 4,
+    "run_count": 840,
+    "replay_audit": "0 metric mismatches, 0 unpaired groups, 0 duplicate keys",
+    "statistics_audit": "28 groups, 21 built-in pairs; 378 custom paired contrasts across 9 metrics"
   }
 }

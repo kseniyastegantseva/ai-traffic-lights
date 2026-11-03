@@ -11,6 +11,7 @@ SEEDS = list(range(2101, 2131))
 CAPACITY_SEEDS = list(range(3101, 3116))
 MAX_RED_SEEDS = list(range(4101, 4131))
 MIN_GREEN_SEEDS = list(range(5101, 5131))
+AXIS_SPECIFIC_SEEDS = list(range(7101, 7131))
 SCENARIOS = (
     "symmetric_low",
     "symmetric",
@@ -406,6 +407,70 @@ def main() -> None:
     validation_target = ROOT / "configs/total_improvement_min_green_validation_1800.yaml"
     validation_target.write_text(
         yaml.safe_dump(validation, allow_unicode=True, sort_keys=False, width=100),
+        encoding="utf-8",
+    )
+
+    axis_scenarios = [
+        deepcopy(scenario)
+        for scenario in source["scenarios"]
+        if scenario["name"] in (
+            "symmetric_low",
+            "symmetric_9",
+            "asymmetric_ns",
+            "asymmetric_ew",
+            "sudden_dominance_switch",
+            "high_load",
+            "true_oversaturated",
+        )
+    ]
+    axis_controllers = [
+        {"type": "vehicle_actuated", "min_green_seconds": 8, "max_green_seconds": 45},
+        {"type": "queue_based", "min_green_seconds": 8, "max_green_seconds": 45, "switching_margin": 1},
+        {
+            "type": "queue_based_improved",
+            "min_green_seconds": 8,
+            "max_green_seconds": 45,
+            "switching_margin": 1,
+            "relative_switching_margin": 0.10,
+            "congested_min_green_seconds": 25,
+            "congestion_queue_threshold": 14,
+        },
+        {
+            "type": "queue_based_axis_specific_congestion",
+            "min_green_seconds": 8,
+            "max_green_seconds": 45,
+            "switching_margin": 1,
+            "relative_switching_margin": 0.10,
+            "congested_min_green_seconds": 25,
+            "congestion_queue_threshold": 14,
+        },
+    ]
+    axis_config = {
+        "name": "total_improvement_axis_specific_congestion_1800",
+        "title": "Congestion по обслуживаемой оси, development, 1800 с",
+        "description": (
+            "Paired development screen on new seeds 7101–7130. Compares the current intersection-total "
+            "congestion trigger with a policy that activates the 25-second minimum only when the "
+            "currently served axis itself has at least 14 queued vehicles. Includes original Queue-based "
+            "and Vehicle-actuated references."
+        ),
+        "simulation": {
+            "duration_seconds": 1800,
+            "seeds": AXIS_SPECIFIC_SEEDS,
+            "service_time_seconds": 2.0,
+            "store_queue_series": False,
+        },
+        "scenarios": axis_scenarios,
+        "controllers": axis_controllers,
+        "output": {
+            "path": "outputs/total_improvement/axis_specific_congestion_1800.json",
+            "summary_csv": "outputs/total_improvement/axis_specific_congestion_1800_summary.csv",
+            "report_markdown": "outputs/total_improvement/axis_specific_congestion_1800_report.md",
+        },
+    }
+    axis_target = ROOT / "configs/total_improvement_axis_specific_congestion_1800.yaml"
+    axis_target.write_text(
+        yaml.safe_dump(axis_config, allow_unicode=True, sort_keys=False, width=100),
         encoding="utf-8",
     )
 

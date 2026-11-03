@@ -12,6 +12,7 @@ ControllerType = Literal[
     "fixed", "fixed_8", "fixed_15", "fixed_35", "fixed_webster", "vehicle_actuated",
     "queue_based", "queue_based_improved", "queue_based_empty_gap_fix", "queue_based_max_red",
     "queue_based_smooth_min_green", "queue_based_hysteresis", "queue_based_persistent_congestion",
+    "queue_based_axis_specific_congestion",
     "actuated", "ai", "q_learning",
 ]
 
@@ -71,6 +72,7 @@ class ControllerConfig(BaseModel):
                 "queue_based_smooth_min_green",
                 "queue_based_hysteresis",
                 "queue_based_persistent_congestion",
+                "queue_based_axis_specific_congestion",
             }
             and self.max_green_seconds < self.congested_min_green_seconds
         ):
