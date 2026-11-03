@@ -1,0 +1,210 @@
+name: total_improvement_capacity_boundary_1800
+title: Граница насыщения 9–18 авто/мин/подход, development, 1800 с
+description: Paired exploratory load sweep across 9–18 vehicles/minute/approach on seeds 3101–3115. All
+  controllers share arrivals within a demand/seed pair. The screen reports completed wait together with
+  queue area, residual, throughput, switching, yellow and signal-red metrics; it is not an independent
+  final test.
+simulation:
+  duration_seconds: 1800
+  seeds:
+  - 3101
+  - 3102
+  - 3103
+  - 3104
+  - 3105
+  - 3106
+  - 3107
+  - 3108
+  - 3109
+  - 3110
+  - 3111
+  - 3112
+  - 3113
+  - 3114
+  - 3115
+  service_time_seconds: 2.0
+  store_queue_series: false
+scenarios:
+- name: demand_9
+  title: Симметричный спрос 9 авто/мин/подход
+  description: 9 автомобиля в минуту на каждом подходе; development screen, не final test.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 9
+      south:
+        arrival_rate_per_minute: 9
+      east:
+        arrival_rate_per_minute: 9
+      west:
+        arrival_rate_per_minute: 9
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: demand_10
+  title: Симметричный спрос 10 авто/мин/подход
+  description: 10 автомобиля в минуту на каждом подходе; development screen, не final test.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 10
+      south:
+        arrival_rate_per_minute: 10
+      east:
+        arrival_rate_per_minute: 10
+      west:
+        arrival_rate_per_minute: 10
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: demand_11
+  title: Симметричный спрос 11 авто/мин/подход
+  description: 11 автомобиля в минуту на каждом подходе; development screen, не final test.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 11
+      south:
+        arrival_rate_per_minute: 11
+      east:
+        arrival_rate_per_minute: 11
+      west:
+        arrival_rate_per_minute: 11
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: demand_12
+  title: Симметричный спрос 12 авто/мин/подход
+  description: 12 автомобиля в минуту на каждом подходе; development screen, не final test.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 12
+      south:
+        arrival_rate_per_minute: 12
+      east:
+        arrival_rate_per_minute: 12
+      west:
+        arrival_rate_per_minute: 12
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: demand_13
+  title: Симметричный спрос 13 авто/мин/подход
+  description: 13 автомобиля в минуту на каждом подходе; development screen, не final test.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 13
+      south:
+        arrival_rate_per_minute: 13
+      east:
+        arrival_rate_per_minute: 13
+      west:
+        arrival_rate_per_minute: 13
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: demand_14
+  title: Симметричный спрос 14 авто/мин/подход
+  description: 14 автомобиля в минуту на каждом подходе; development screen, не final test.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 14
+      south:
+        arrival_rate_per_minute: 14
+      east:
+        arrival_rate_per_minute: 14
+      west:
+        arrival_rate_per_minute: 14
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: demand_15
+  title: Симметричный спрос 15 авто/мин/подход
+  description: 15 автомобиля в минуту на каждом подходе; development screen, не final test.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 15
+      south:
+        arrival_rate_per_minute: 15
+      east:
+        arrival_rate_per_minute: 15
+      west:
+        arrival_rate_per_minute: 15
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: demand_16
+  title: Симметричный спрос 16 авто/мин/подход
+  description: 16 автомобиля в минуту на каждом подходе; development screen, не final test.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 16
+      south:
+        arrival_rate_per_minute: 16
+      east:
+        arrival_rate_per_minute: 16
+      west:
+        arrival_rate_per_minute: 16
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: demand_17
+  title: Симметричный спрос 17 авто/мин/подход
+  description: 17 автомобиля в минуту на каждом подходе; development screen, не final test.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 17
+      south:
+        arrival_rate_per_minute: 17
+      east:
+        arrival_rate_per_minute: 17
+      west:
+        arrival_rate_per_minute: 17
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: demand_18
+  title: Симметричный спрос 18 авто/мин/подход
+  description: 18 автомобиля в минуту на каждом подходе; development screen, не final test.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 18
+      south:
+        arrival_rate_per_minute: 18
+      east:
+        arrival_rate_per_minute: 18
+      west:
+        arrival_rate_per_minute: 18
+    min_green_seconds: 8
+    yellow_seconds: 3
+controllers:
+- type: fixed_8
+- type: fixed_15
+- type: fixed_35
+- type: fixed_webster
+- type: vehicle_actuated
+- type: queue_based
+  min_green_seconds: 8
+  max_green_seconds: 45
+- type: queue_based_improved
+  min_green_seconds: 8
+  max_green_seconds: 45
+  switching_margin: 1
+  relative_switching_margin: 0.1
+  congested_min_green_seconds: 25
+  congestion_queue_threshold: 14
+- type: queue_based
+  legacy_rule: true
+  min_green_seconds: 8
+  max_green_seconds: 45
+- type: queue_based_empty_gap_fix
+  min_green_seconds: 8
+  max_green_seconds: 45
+  switching_margin: 1
+  relative_switching_margin: 0.1
+  congested_min_green_seconds: 25
+  congestion_queue_threshold: 14
+  empty_gap_seconds: 1.0
+  result_name: queue_based_empty_gap_1s
+output:
+  path: outputs/total_improvement/capacity_boundary_1800.json
+  summary_csv: outputs/total_improvement/capacity_boundary_1800_summary.csv
+  report_markdown: outputs/total_improvement/capacity_boundary_1800_report.md

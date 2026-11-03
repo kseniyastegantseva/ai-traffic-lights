@@ -26,6 +26,43 @@ PHASE_LANES = {
 }
 
 
+def max_signal_red_by_phase(history: list[dict], duration_seconds: int) -> dict[str, float]:
+    """Derive the longest continuous red indication for each axis from phase starts.
+
+    This is signal red time, whether or not a vehicle was waiting on that axis; it
+    must not be interpreted as maximum vehicle waiting time or detector headway.
+    """
+    green_events = [
+        (float(event["at"]), event["phase"])
+        for event in history
+        if event["color"] == "green"
+    ]
+    result = {}
+    for phase in PHASE_LANES:
+        starts = [time for time, event_phase in green_events if event_phase == phase]
+        intervals: list[float] = []
+        if not starts or (starts[0] > 0 and history[0]["phase"] != phase):
+            intervals.append(starts[0] if starts else float(duration_seconds))
+        for start, event_phase in green_events:
+            if event_phase != phase:
+                continue
+            opposing = next(
+                (
+                    time
+                    for time, candidate in green_events
+                    if time > start and candidate != phase
+                ),
+                None,
+            )
+            if opposing is None:
+                continue
+            next_own = next((time for time in starts if time > opposing), None)
+            red_end = next_own if next_own is not None else float(duration_seconds)
+            intervals.append(max(0.0, red_end - opposing))
+        result[phase] = max(intervals, default=0.0)
+    return result
+
+
 def load_payload(path: Path) -> dict[str, Any]:
     opener = gzip.open if path.suffix == ".gz" else open
     with opener(path, "rt", encoding="utf-8") as handle:

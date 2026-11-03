@@ -1,7 +1,8 @@
-# Total improvement: empty-green development artifacts
+# Total improvement research artifacts
 
-This directory contains the first, exploratory stage of the next-generation controller audit.
-It does not replace or overwrite earlier PIERE/Queue-based outputs.
+This directory contains the reproducible exploratory stages completed so far in the
+next-generation controller audit. It does not replace or overwrite earlier PIERE/Queue-based
+outputs.
 
 ## Reproduction
 
@@ -14,9 +15,23 @@ python scripts/analyze_total_improvement_empty_gap.py
 python scripts/plot_total_improvement_empty_gap.py
 python scripts/audit_queue_based_results.py outputs/total_improvement/empty_gap_development_1800.json --replay-output outputs/total_improvement/empty_gap_development_1800_replay.json
 python scripts/audit_queue_based_statistics.py outputs/total_improvement/empty_gap_development_1800.json
+traffic-sim compare --config configs/total_improvement_capacity_boundary_1800.yaml
+traffic-sim compare --config configs/total_improvement_capacity_boundary_3600.yaml
+python scripts/analyze_total_improvement_capacity_boundary.py --duration 1800
+python scripts/analyze_total_improvement_capacity_boundary.py --duration 3600
+python scripts/plot_total_improvement_capacity_boundary.py --duration 1800
+python scripts/plot_total_improvement_capacity_boundary.py --duration 3600
+python scripts/audit_queue_based_results.py outputs/total_improvement/capacity_boundary_1800.json --replay-output outputs/total_improvement/capacity_boundary_1800_replay.json
+python scripts/audit_queue_based_statistics.py outputs/total_improvement/capacity_boundary_1800.json
+python scripts/audit_queue_based_results.py outputs/total_improvement/capacity_boundary_3600.json --replay-output outputs/total_improvement/capacity_boundary_3600_replay.json
+python scripts/audit_queue_based_statistics.py outputs/total_improvement/capacity_boundary_3600.json
 python scripts/finalize_total_improvement_artifacts.py
 python scripts/audit_queue_based_results.py outputs/total_improvement/empty_gap_development_1800.json.gz
 python scripts/audit_queue_based_statistics.py outputs/total_improvement/empty_gap_development_1800.json.gz
+python scripts/audit_queue_based_results.py outputs/total_improvement/capacity_boundary_1800.json.gz
+python scripts/audit_queue_based_statistics.py outputs/total_improvement/capacity_boundary_1800.json.gz
+python scripts/audit_queue_based_results.py outputs/total_improvement/capacity_boundary_3600.json.gz
+python scripts/audit_queue_based_statistics.py outputs/total_improvement/capacity_boundary_3600.json.gz
 ```
 
 The simulation used CPU only. Exact package versions and SHA-256 values are recorded in

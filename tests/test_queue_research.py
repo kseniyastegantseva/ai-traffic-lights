@@ -21,7 +21,12 @@ from traffic_light.controllers import (
     QueueBasedImprovedController,
 )
 from traffic_light.experiments import build_controller, build_paired_statistics, run_experiment
-from traffic_light.queue_audit import arrival_digest, regenerate_arrivals, replay_run
+from traffic_light.queue_audit import (
+    arrival_digest,
+    max_signal_red_by_phase,
+    regenerate_arrivals,
+    replay_run,
+)
 from traffic_light.simulation import run_simulation
 from traffic_light.statistics_audit import (
     _resolve_configured_path,
@@ -355,3 +360,18 @@ def test_statistics_audit_resolves_nested_output_paths_from_repository_root(tmp_
     monkeypatch.chdir(tmp_path)
 
     assert _resolve_configured_path(result_path, str(configured)) == configured
+
+
+def test_capacity_boundary_max_red_is_derived_from_phase_history():
+    history = [
+        {"at": 0.0, "phase": "north_south", "color": "green"},
+        {"at": 8.0, "phase": "north_south", "color": "yellow"},
+        {"at": 11.0, "phase": "east_west", "color": "green"},
+        {"at": 19.0, "phase": "east_west", "color": "yellow"},
+        {"at": 22.0, "phase": "north_south", "color": "green"},
+    ]
+
+    assert max_signal_red_by_phase(history, 25) == {
+        "north_south": 11.0,
+        "east_west": 11.0,
+    }

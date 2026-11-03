@@ -8,6 +8,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 SEEDS = list(range(2101, 2131))
+CAPACITY_SEEDS = list(range(3101, 3116))
 SCENARIOS = (
     "symmetric_low",
     "symmetric",
@@ -100,6 +101,99 @@ def main() -> None:
     target = ROOT / "configs/total_improvement_empty_gap_development_1800.yaml"
     target.write_text(
         yaml.safe_dump(config, allow_unicode=True, sort_keys=False, width=100),
+        encoding="utf-8",
+    )
+
+    capacity_scenario = deepcopy(next(s for s in source["scenarios"] if s["name"] == "symmetric_low"))
+    capacity_scenarios = []
+    for rate in range(9, 19):
+        scenario = deepcopy(capacity_scenario)
+        scenario["name"] = f"demand_{rate}"
+        scenario["title"] = f"Симметричный спрос {rate} авто/мин/подход"
+        scenario["description"] = (
+            f"{rate} автомобиля в минуту на каждом подходе; development screen, не final test."
+        )
+        for lane_config in scenario["intersection"]["lanes"].values():
+            lane_config["arrival_rate_per_minute"] = rate
+        capacity_scenarios.append(scenario)
+
+    capacity_controllers = [
+        {"type": "fixed_8"},
+        {"type": "fixed_15"},
+        {"type": "fixed_35"},
+        {"type": "fixed_webster"},
+        {"type": "vehicle_actuated"},
+        {"type": "queue_based", "min_green_seconds": 8, "max_green_seconds": 45},
+        {
+            "type": "queue_based_improved",
+            "min_green_seconds": 8,
+            "max_green_seconds": 45,
+            "switching_margin": 1,
+            "relative_switching_margin": 0.10,
+            "congested_min_green_seconds": 25,
+            "congestion_queue_threshold": 14,
+        },
+        {"type": "queue_based", "legacy_rule": True, "min_green_seconds": 8, "max_green_seconds": 45},
+        {
+            "type": "queue_based_empty_gap_fix",
+            "min_green_seconds": 8,
+            "max_green_seconds": 45,
+            "switching_margin": 1,
+            "relative_switching_margin": 0.10,
+            "congested_min_green_seconds": 25,
+            "congestion_queue_threshold": 14,
+            "empty_gap_seconds": 1.0,
+            "result_name": "queue_based_empty_gap_1s",
+        },
+    ]
+    capacity_config = {
+        "name": "total_improvement_capacity_boundary_1800",
+        "title": "Граница насыщения 9–18 авто/мин/подход, development, 1800 с",
+        "description": (
+            "Paired exploratory load sweep across 9–18 vehicles/minute/approach on seeds 3101–3115. "
+            "All controllers share arrivals within a demand/seed pair. The screen reports completed "
+            "wait together with queue area, residual, throughput, switching, yellow and signal-red "
+            "metrics; it is not an independent final test."
+        ),
+        "simulation": {
+            "duration_seconds": 1800,
+            "seeds": CAPACITY_SEEDS,
+            "service_time_seconds": 2.0,
+            "store_queue_series": False,
+        },
+        "scenarios": capacity_scenarios,
+        "controllers": capacity_controllers,
+        "output": {
+            "path": "outputs/total_improvement/capacity_boundary_1800.json",
+            "summary_csv": "outputs/total_improvement/capacity_boundary_1800_summary.csv",
+            "report_markdown": "outputs/total_improvement/capacity_boundary_1800_report.md",
+        },
+    }
+    capacity_target = ROOT / "configs/total_improvement_capacity_boundary_1800.yaml"
+    capacity_target.write_text(
+        yaml.safe_dump(capacity_config, allow_unicode=True, sort_keys=False, width=100),
+        encoding="utf-8",
+    )
+
+    extended_capacity = deepcopy(capacity_config)
+    extended_capacity.update(
+        name="total_improvement_capacity_boundary_3600",
+        title="Граница насыщения 9–18 авто/мин/подход, development, 3600 с",
+        description=(
+            "Extended-horizon paired development screen using the same 3101–3115 seed IDs and "
+            "arrival prefixes as the 1800-second sweep; results at each horizon are reported "
+            "separately and are not independent seed replications."
+        ),
+    )
+    extended_capacity["simulation"]["duration_seconds"] = 3600
+    extended_capacity["output"] = {
+        "path": "outputs/total_improvement/capacity_boundary_3600.json",
+        "summary_csv": "outputs/total_improvement/capacity_boundary_3600_summary.csv",
+        "report_markdown": "outputs/total_improvement/capacity_boundary_3600_report.md",
+    }
+    extended_target = ROOT / "configs/total_improvement_capacity_boundary_3600.yaml"
+    extended_target.write_text(
+        yaml.safe_dump(extended_capacity, allow_unicode=True, sort_keys=False, width=100),
         encoding="utf-8",
     )
 

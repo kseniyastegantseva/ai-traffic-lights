@@ -40,3 +40,25 @@ the development seeds are not an independent final test.»
 
 Эти данные пока не внесены в основную PIERE рукопись и не доказывают универсального преимущества
 нового алгоритма.
+
+## Capacity-boundary development screen
+
+An additional paired development screen evaluated nine signal strategies at symmetric demands
+from 9 to 18 vehicles per minute per approach. Each demand used 15 paired seeds; 1,800-second
+and 3,600-second horizons were reported separately. At 3,600 seconds, Vehicle-actuated served
+about 3,430 vehicles/hour at demand 16–18, while the mean residual queue increased from 79.8
+vehicles at demand 14 to 216.1 at 15 and 881.8 at 18. This suggests overload in the region
+around 14–15 vehicles/minute/approach for this model, but does not establish a stationary
+capacity threshold.
+
+The mean waiting time for Queue-based Improved was 383.00 s at demand 18, compared with 371.32 s
+for Vehicle-actuated (paired difference +11.68 s, 95% CI [+9.35, +14.01], Holm-adjusted p=0.0022
+within the demand-by-metric family of 36 contrasts). Improved also had higher wait at 14–17 after
+Holm correction; at 12 and 13 the corrected evidence did not establish a difference. Empty-gap
+1 s closely tracked Improved and did not remove its disadvantage to Vehicle-actuated. Results
+are exploratory: there were 15 development seed pairs, and the 3,600-second series reused the
+same seed IDs and 1,800-second arrival prefixes. Independent seeds and longer horizons are
+needed around 13–15 vehicles/minute/approach.
+
+This paragraph is a candidate for later author review; the main six-page PIERE manuscript remains
+unchanged. Full per-controller tables and audit artifacts are in `outputs/total_improvement/`.

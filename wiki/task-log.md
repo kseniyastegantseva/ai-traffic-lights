@@ -1,5 +1,15 @@
 # Журнал задач
 
+## 2026-11-03 — Capacity boundary 9–18 авто/мин (этап 2, продолжается)
+
+- Созданы явные YAML-конфигурации на горизонтах 1800/3600 с для уровней спроса 9–18 авто/мин/подход, 15 пар seed и 9 стратегий; полные JSON после gzip добавлены в `outputs/total_improvement/`, рядом находятся replay, summary, метрики, paired CSV и графики.
+- Replay для каждого горизонта: 1 350 прогонов, 150 групп, 0 duplicates/unpaired/mismatches. Statistics audit: 90 групп, 80 paired contrasts, 0 mismatches. Для 3600 с использованы те же seed IDs и 1800-с arrival-префиксы, поэтому горизонты анализируются отдельно и не считаются независимой выборкой.
+- Рассчитан max signal red по фазовой истории (это не maximum vehicle wait-on-red). При спросе 14–15 Vehicle-actuated residual вырос 79,8→216,1 авто; к 18 — 881,8 авто, throughput около 3 432 авто/ч. Наблюдение указывает на перегрузку около 14–15, но не устанавливает стационарную границу.
+- На 3600 с Queue-based Improved проиграл Vehicle-actuated по mean wait при 9–11 и 14–18 после Holm correction; при 12/13 подтверждённой разницы нет. При 18 разница +11,68 с (95% CI [+9,35;+14,01], Holm p=0,0022). Empty-gap 1 с почти полностью совпал с Improved и не дал выигрыша над baseline.
+- Обновлены системный аудит, сравнение алгоритмов, осторожное дополнение к будущей PIERE редакции и Wiki. Основная статья не изменялась. Архивы и метаданные проверены через gzip и SHA-256.
+- Gzip replay всех трёх опубликованных JSON: 1 920 + 1 350 + 1 350 прогонов, суммарно 0 duplicates, unpaired groups и metric mismatches; gzip statistics: 64/90/90 групп и 56/80/80 парных сравнений, mismatches 0. `gzip -t` и все SHA-256 проверки прошли.
+- `PYTHONPATH=src pytest -q` — 76 passed; `ruff check .` и `git diff --check` чисты. Docker daemon недоступен; CI workflow в проекте не обнаружен.
+
 ## 2026-11-03 — Аудит системы и empty-green gap-out (этап 1, продолжается)
 
 - Прочитаны `AGENTS.md`, Wiki, история Queue-based и контракты контроллеров/SimPy. Создан живой реестр `docs/TOTAL_SYSTEM_IMPROVEMENT_AUDIT.md`; зафиксированы подтверждённое empty-axis правило, ограничения queue-based gap proxy, проблема перекрытия in-service при service time > yellow clearance и исправленная ошибка путей в statistics audit.

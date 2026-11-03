@@ -1,4 +1,4 @@
-"""Record the reproducibility environment and hashes for the empty-gap stage."""
+"""Record reproducibility metadata and hashes for completed total-improvement screens."""
 from __future__ import annotations
 
 import gzip
@@ -36,23 +36,41 @@ HASH_PATHS = (
     OUT / "empty_gap_development_1800_summary.csv",
     OUT / "empty_gap_development_1800_metrics.csv",
     OUT / "empty_gap_development_1800_paired.csv",
+    ROOT / "configs/total_improvement_capacity_boundary_1800.yaml",
+    ROOT / "configs/total_improvement_capacity_boundary_3600.yaml",
+    OUT / "capacity_boundary_1800.json.gz",
+    OUT / "capacity_boundary_1800_replay.json",
+    OUT / "capacity_boundary_1800_summary.csv",
+    OUT / "capacity_boundary_1800_metrics.csv",
+    OUT / "capacity_boundary_1800_paired.csv",
+    OUT / "capacity_boundary_3600.json.gz",
+    OUT / "capacity_boundary_3600_replay.json",
+    OUT / "capacity_boundary_3600_summary.csv",
+    OUT / "capacity_boundary_3600_metrics.csv",
+    OUT / "capacity_boundary_3600_paired.csv",
 )
 
 
 def main() -> None:
-    raw_json = OUT / "empty_gap_development_1800.json"
-    compressed_json = OUT / "empty_gap_development_1800.json.gz"
-    if raw_json.exists():
-        with (
-            raw_json.open("rb") as source,
-            compressed_json.open("wb") as target,
-            gzip.GzipFile(fileobj=target, mode="wb", mtime=0) as compressed,
-        ):
-            shutil.copyfileobj(source, compressed)
-    if not compressed_json.exists():
-        raise FileNotFoundError("Run JSON or its gzip archive is required")
-    with gzip.open(compressed_json, "rb") as handle:
-        run_json_sha256 = hashlib.sha256(handle.read()).hexdigest()
+    uncompressed_hashes = {}
+    for name in (
+        "empty_gap_development_1800",
+        "capacity_boundary_1800",
+        "capacity_boundary_3600",
+    ):
+        raw_json = OUT / f"{name}.json"
+        compressed_json = OUT / f"{name}.json.gz"
+        if raw_json.exists():
+            with (
+                raw_json.open("rb") as source,
+                compressed_json.open("wb") as target,
+                gzip.GzipFile(fileobj=target, mode="wb", mtime=0) as compressed,
+            ):
+                shutil.copyfileobj(source, compressed)
+        if not compressed_json.exists():
+            raise FileNotFoundError(f"Run JSON or its gzip archive is required: {name}")
+        with gzip.open(compressed_json, "rb") as handle:
+            uncompressed_hashes[name] = hashlib.sha256(handle.read()).hexdigest()
 
     package_versions = {}
     for package in PACKAGES:
@@ -67,14 +85,36 @@ def main() -> None:
         "docker_daemon": "unavailable during this stage",
         "cuda_or_torch": "not installed or used; CPU simulation only",
         "random_seeds": list(range(2101, 2131)),
-        "duration_seconds": 1800,
-        "scenario_count": 8,
-        "controller_rows": 8,
-        "run_count": 1920,
         "run_json_storage": "gzip for publication; local uncompressed copy may remain ignored",
-        "uncompressed_run_json_sha256": run_json_sha256,
-        "replay_audit": "0 metric mismatches, 0 unpaired groups, 0 duplicate keys",
-        "statistics_audit": "64 groups, 56 paired comparisons, 0 mismatches",
+        "uncompressed_run_json_sha256": uncompressed_hashes,
+        "empty_gap_development": {
+            "duration_seconds": 1800,
+            "seeds": list(range(2101, 2131)),
+            "scenario_count": 8,
+            "controller_rows": 8,
+            "run_count": 1920,
+            "replay_audit": "0 metric mismatches, 0 unpaired groups, 0 duplicate keys",
+            "statistics_audit": "64 groups, 56 paired comparisons, 0 mismatches",
+        },
+        "capacity_boundary_1800": {
+            "duration_seconds": 1800,
+            "seeds": list(range(3101, 3116)),
+            "demand_levels_per_approach_vehicles_per_minute": list(range(9, 19)),
+            "controller_rows": 9,
+            "run_count": 1350,
+            "replay_audit": "0 metric mismatches, 0 unpaired groups, 0 duplicate keys",
+            "statistics_audit": "90 groups, 80 paired comparisons, 0 mismatches",
+        },
+        "capacity_boundary_3600": {
+            "duration_seconds": 3600,
+            "seeds": list(range(3101, 3116)),
+            "demand_levels_per_approach_vehicles_per_minute": list(range(9, 19)),
+            "controller_rows": 9,
+            "run_count": 1350,
+            "replay_audit": "0 metric mismatches, 0 unpaired groups, 0 duplicate keys",
+            "statistics_audit": "90 groups, 80 paired comparisons, 0 mismatches",
+            "seed_relation": "same seed IDs and 1800-second arrival prefixes as the shorter screen; not independent replications",
+        },
     }
     (OUT / "environment.json").write_text(
         json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
@@ -83,13 +123,17 @@ def main() -> None:
         f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.relative_to(ROOT)}"
         for path in HASH_PATHS
     ]
-    lines.append(f"# sha256 after decompressing run JSON: {run_json_sha256}")
+    lines.extend(
+        f"# sha256 after decompressing {name}.json.gz: {digest}"
+        for name, digest in uncompressed_hashes.items()
+    )
     (OUT / "SHA256SUMS.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
     (OUT / "README.md").write_text(
-        """# Total improvement: empty-green development artifacts
+        """# Total improvement research artifacts
 
-This directory contains the first, exploratory stage of the next-generation controller audit.
-It does not replace or overwrite earlier PIERE/Queue-based outputs.
+This directory contains the reproducible exploratory stages completed so far in the
+next-generation controller audit. It does not replace or overwrite earlier PIERE/Queue-based
+outputs.
 
 ## Reproduction
 
@@ -102,9 +146,23 @@ python scripts/analyze_total_improvement_empty_gap.py
 python scripts/plot_total_improvement_empty_gap.py
 python scripts/audit_queue_based_results.py outputs/total_improvement/empty_gap_development_1800.json --replay-output outputs/total_improvement/empty_gap_development_1800_replay.json
 python scripts/audit_queue_based_statistics.py outputs/total_improvement/empty_gap_development_1800.json
+traffic-sim compare --config configs/total_improvement_capacity_boundary_1800.yaml
+traffic-sim compare --config configs/total_improvement_capacity_boundary_3600.yaml
+python scripts/analyze_total_improvement_capacity_boundary.py --duration 1800
+python scripts/analyze_total_improvement_capacity_boundary.py --duration 3600
+python scripts/plot_total_improvement_capacity_boundary.py --duration 1800
+python scripts/plot_total_improvement_capacity_boundary.py --duration 3600
+python scripts/audit_queue_based_results.py outputs/total_improvement/capacity_boundary_1800.json --replay-output outputs/total_improvement/capacity_boundary_1800_replay.json
+python scripts/audit_queue_based_statistics.py outputs/total_improvement/capacity_boundary_1800.json
+python scripts/audit_queue_based_results.py outputs/total_improvement/capacity_boundary_3600.json --replay-output outputs/total_improvement/capacity_boundary_3600_replay.json
+python scripts/audit_queue_based_statistics.py outputs/total_improvement/capacity_boundary_3600.json
 python scripts/finalize_total_improvement_artifacts.py
 python scripts/audit_queue_based_results.py outputs/total_improvement/empty_gap_development_1800.json.gz
 python scripts/audit_queue_based_statistics.py outputs/total_improvement/empty_gap_development_1800.json.gz
+python scripts/audit_queue_based_results.py outputs/total_improvement/capacity_boundary_1800.json.gz
+python scripts/audit_queue_based_statistics.py outputs/total_improvement/capacity_boundary_1800.json.gz
+python scripts/audit_queue_based_results.py outputs/total_improvement/capacity_boundary_3600.json.gz
+python scripts/audit_queue_based_statistics.py outputs/total_improvement/capacity_boundary_3600.json.gz
 ```
 
 The simulation used CPU only. Exact package versions and SHA-256 values are recorded in
