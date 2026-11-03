@@ -1,0 +1,786 @@
+{
+  "development_file": "outputs/queue_based_development_1800.json",
+  "seeds": [
+    701,
+    702,
+    703,
+    704,
+    705,
+    706,
+    707,
+    708,
+    709,
+    710,
+    711,
+    712,
+    713,
+    714,
+    715
+  ],
+  "candidate_count": 18,
+  "eligible_candidates": [],
+  "selected_candidate": null,
+  "selection_rule": {
+    "overload": "lower mean average queue and lower residual, with throughput no lower than original",
+    "moderate": "mean completed wait and average queue no more than 10% above original",
+    "ranking": "lowest 18/min mean average queue; tie prefers smaller relative margin, shorter congested minimum, then shorter maximum"
+  },
+  "candidates": [
+    {
+      "name": "improved_min15_max35_rel0",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 15,
+        "max_green_seconds": 35,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.0,
+        "result_name": "improved_min15_max35_rel0",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": false,
+      "reasons": [
+        "symmetric_low: average_wait_seconds worsens by 28.35%",
+        "symmetric_low: average_queue_length worsens by 28.39%",
+        "symmetric: average_wait_seconds worsens by 29.46%",
+        "symmetric: average_queue_length worsens by 29.23%"
+      ],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 279.2042259853194,
+          "waiting_at_end": 545.0,
+          "throughput_per_hour": 3194.6666666666665
+        },
+        "true_oversaturated": {
+          "average_queue_length": 632.0765509946546,
+          "waiting_at_end": 1258.8,
+          "throughput_per_hour": 3204.9333333333334
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 6.87738793200233,
+          "average_queue_length": 1.3925315739293105
+        },
+        "symmetric": {
+          "average_wait_seconds": 7.828914940703905,
+          "average_queue_length": 3.124986023290411
+        }
+      }
+    },
+    {
+      "name": "improved_min15_max45_rel0",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 15,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.0,
+        "result_name": "improved_min15_max45_rel0",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": false,
+      "reasons": [
+        "symmetric_low: average_wait_seconds worsens by 28.81%",
+        "symmetric_low: average_queue_length worsens by 28.90%",
+        "symmetric: average_wait_seconds worsens by 30.46%",
+        "symmetric: average_queue_length worsens by 30.24%"
+      ],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 279.2042259853194,
+          "waiting_at_end": 545.0,
+          "throughput_per_hour": 3194.6666666666665
+        },
+        "true_oversaturated": {
+          "average_queue_length": 632.0865509946547,
+          "waiting_at_end": 1258.9333333333334,
+          "throughput_per_hour": 3204.6666666666665
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 6.901728467078278,
+          "average_queue_length": 1.3980276497584763
+        },
+        "symmetric": {
+          "average_wait_seconds": 7.889473244354319,
+          "average_queue_length": 3.149532264041378
+        }
+      }
+    },
+    {
+      "name": "improved_min15_max60_rel0",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 15,
+        "max_green_seconds": 60,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.0,
+        "result_name": "improved_min15_max60_rel0",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": false,
+      "reasons": [
+        "symmetric_low: average_wait_seconds worsens by 28.52%",
+        "symmetric_low: average_queue_length worsens by 28.63%",
+        "symmetric: average_wait_seconds worsens by 30.32%",
+        "symmetric: average_queue_length worsens by 30.10%"
+      ],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 279.2042259853194,
+          "waiting_at_end": 545.0,
+          "throughput_per_hour": 3194.6666666666665
+        },
+        "true_oversaturated": {
+          "average_queue_length": 632.0865509946547,
+          "waiting_at_end": 1258.9333333333334,
+          "throughput_per_hour": 3204.6666666666665
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 6.886092524983069,
+          "average_queue_length": 1.3950842449237175
+        },
+        "symmetric": {
+          "average_wait_seconds": 7.881232340006721,
+          "average_queue_length": 3.1462084326211803
+        }
+      }
+    },
+    {
+      "name": "improved_min15_max35_rel0.1",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 15,
+        "max_green_seconds": 35,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.1,
+        "result_name": "improved_min15_max35_rel0.1",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": false,
+      "reasons": [
+        "symmetric_low: average_wait_seconds worsens by 28.35%",
+        "symmetric_low: average_queue_length worsens by 28.39%",
+        "symmetric: average_wait_seconds worsens by 29.46%",
+        "symmetric: average_queue_length worsens by 29.23%"
+      ],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 247.83749276759957,
+          "waiting_at_end": 468.26666666666665,
+          "throughput_per_hour": 3347.866666666667
+        },
+        "true_oversaturated": {
+          "average_queue_length": 591.5122546983589,
+          "waiting_at_end": 1170.6,
+          "throughput_per_hour": 3380.8
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 6.87738793200233,
+          "average_queue_length": 1.3925315739293105
+        },
+        "symmetric": {
+          "average_wait_seconds": 7.828914940703905,
+          "average_queue_length": 3.124986023290411
+        }
+      }
+    },
+    {
+      "name": "improved_min15_max45_rel0.1",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 15,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.1,
+        "result_name": "improved_min15_max45_rel0.1",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": false,
+      "reasons": [
+        "symmetric_low: average_wait_seconds worsens by 28.81%",
+        "symmetric_low: average_queue_length worsens by 28.90%",
+        "symmetric: average_wait_seconds worsens by 30.46%",
+        "symmetric: average_queue_length worsens by 30.24%"
+      ],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 243.2962335083403,
+          "waiting_at_end": 454.93333333333334,
+          "throughput_per_hour": 3375.3333333333335
+        },
+        "true_oversaturated": {
+          "average_queue_length": 585.0411435872475,
+          "waiting_at_end": 1154.3333333333333,
+          "throughput_per_hour": 3413.3333333333335
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 6.901728467078278,
+          "average_queue_length": 1.3980276497584763
+        },
+        "symmetric": {
+          "average_wait_seconds": 7.889473244354319,
+          "average_queue_length": 3.149532264041378
+        }
+      }
+    },
+    {
+      "name": "improved_min15_max60_rel0.1",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 15,
+        "max_green_seconds": 60,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.1,
+        "result_name": "improved_min15_max60_rel0.1",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": false,
+      "reasons": [
+        "symmetric_low: average_wait_seconds worsens by 28.52%",
+        "symmetric_low: average_queue_length worsens by 28.63%",
+        "symmetric: average_wait_seconds worsens by 30.32%",
+        "symmetric: average_queue_length worsens by 30.10%"
+      ],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 242.67008536019233,
+          "waiting_at_end": 454.6666666666667,
+          "throughput_per_hour": 3375.0666666666666
+        },
+        "true_oversaturated": {
+          "average_queue_length": 586.9218843279884,
+          "waiting_at_end": 1160.6,
+          "throughput_per_hour": 3400.5333333333333
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 6.886092524983069,
+          "average_queue_length": 1.3950842449237175
+        },
+        "symmetric": {
+          "average_wait_seconds": 7.881232340006721,
+          "average_queue_length": 3.1462084326211803
+        }
+      }
+    },
+    {
+      "name": "improved_min20_max35_rel0",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 20,
+        "max_green_seconds": 35,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.0,
+        "result_name": "improved_min20_max35_rel0",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": false,
+      "reasons": [
+        "symmetric_low: average_wait_seconds worsens by 46.63%",
+        "symmetric_low: average_queue_length worsens by 46.93%",
+        "symmetric: average_wait_seconds worsens by 59.39%",
+        "symmetric: average_queue_length worsens by 59.15%"
+      ],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 290.49945437089593,
+          "waiting_at_end": 567.4,
+          "throughput_per_hour": 3150.133333333333
+        },
+        "true_oversaturated": {
+          "average_queue_length": 642.467685542604,
+          "waiting_at_end": 1279.0666666666666,
+          "throughput_per_hour": 3163.6
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 7.856667819467099,
+          "average_queue_length": 1.5935632902148982
+        },
+        "symmetric": {
+          "average_wait_seconds": 9.638773885087007,
+          "average_queue_length": 3.8485107534648977
+        }
+      }
+    },
+    {
+      "name": "improved_min20_max45_rel0",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 20,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.0,
+        "result_name": "improved_min20_max45_rel0",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": false,
+      "reasons": [
+        "symmetric_low: average_wait_seconds worsens by 49.38%",
+        "symmetric_low: average_queue_length worsens by 49.64%",
+        "symmetric: average_wait_seconds worsens by 59.59%",
+        "symmetric: average_queue_length worsens by 59.37%"
+      ],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 290.492491407933,
+          "waiting_at_end": 567.1333333333333,
+          "throughput_per_hour": 3150.6666666666665
+        },
+        "true_oversaturated": {
+          "average_queue_length": 642.6657596166781,
+          "waiting_at_end": 1279.0666666666666,
+          "throughput_per_hour": 3163.6
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 8.003961245176445,
+          "average_queue_length": 1.622908534287902
+        },
+        "symmetric": {
+          "average_wait_seconds": 9.651301456795974,
+          "average_queue_length": 3.853830713655317
+        }
+      }
+    },
+    {
+      "name": "improved_min20_max60_rel0",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 20,
+        "max_green_seconds": 60,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.0,
+        "result_name": "improved_min20_max60_rel0",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": false,
+      "reasons": [
+        "symmetric_low: average_wait_seconds worsens by 48.57%",
+        "symmetric_low: average_queue_length worsens by 49.06%",
+        "symmetric: average_wait_seconds worsens by 59.61%",
+        "symmetric: average_queue_length worsens by 59.38%"
+      ],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 290.492491407933,
+          "waiting_at_end": 567.1333333333333,
+          "throughput_per_hour": 3150.6666666666665
+        },
+        "true_oversaturated": {
+          "average_queue_length": 642.6657596166781,
+          "waiting_at_end": 1279.0666666666666,
+          "throughput_per_hour": 3163.6
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 7.960661916403633,
+          "average_queue_length": 1.616618955741927
+        },
+        "symmetric": {
+          "average_wait_seconds": 9.652206426638797,
+          "average_queue_length": 3.854251190074783
+        }
+      }
+    },
+    {
+      "name": "improved_min20_max35_rel0.1",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 20,
+        "max_green_seconds": 35,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.1,
+        "result_name": "improved_min20_max35_rel0.1",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": false,
+      "reasons": [
+        "symmetric_low: average_wait_seconds worsens by 46.63%",
+        "symmetric_low: average_queue_length worsens by 46.93%",
+        "symmetric: average_wait_seconds worsens by 59.39%",
+        "symmetric: average_queue_length worsens by 59.15%"
+      ],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 251.54177731813925,
+          "waiting_at_end": 472.46666666666664,
+          "throughput_per_hour": 3339.4666666666667
+        },
+        "true_oversaturated": {
+          "average_queue_length": 592.9053892463077,
+          "waiting_at_end": 1171.8666666666666,
+          "throughput_per_hour": 3378.266666666667
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 7.856667819467099,
+          "average_queue_length": 1.5935632902148982
+        },
+        "symmetric": {
+          "average_wait_seconds": 9.638773885087007,
+          "average_queue_length": 3.8485107534648977
+        }
+      }
+    },
+    {
+      "name": "improved_min20_max45_rel0.1",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 20,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.1,
+        "result_name": "improved_min20_max45_rel0.1",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": false,
+      "reasons": [
+        "symmetric_low: average_wait_seconds worsens by 49.38%",
+        "symmetric_low: average_queue_length worsens by 49.64%",
+        "symmetric: average_wait_seconds worsens by 59.59%",
+        "symmetric: average_queue_length worsens by 59.37%"
+      ],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 246.62874028110235,
+          "waiting_at_end": 458.6,
+          "throughput_per_hour": 3367.4666666666667
+        },
+        "true_oversaturated": {
+          "average_queue_length": 585.9167225796409,
+          "waiting_at_end": 1155.7333333333333,
+          "throughput_per_hour": 3410.266666666667
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 8.003961245176445,
+          "average_queue_length": 1.622908534287902
+        },
+        "symmetric": {
+          "average_wait_seconds": 9.651301456795974,
+          "average_queue_length": 3.853830713655317
+        }
+      }
+    },
+    {
+      "name": "improved_min20_max60_rel0.1",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 20,
+        "max_green_seconds": 60,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.1,
+        "result_name": "improved_min20_max60_rel0.1",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": false,
+      "reasons": [
+        "symmetric_low: average_wait_seconds worsens by 48.57%",
+        "symmetric_low: average_queue_length worsens by 49.06%",
+        "symmetric: average_wait_seconds worsens by 59.61%",
+        "symmetric: average_queue_length worsens by 59.38%"
+      ],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 246.12199954036168,
+          "waiting_at_end": 458.46666666666664,
+          "throughput_per_hour": 3367.4666666666667
+        },
+        "true_oversaturated": {
+          "average_queue_length": 587.8309448018633,
+          "waiting_at_end": 1162.2666666666667,
+          "throughput_per_hour": 3397.2
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 7.960661916403633,
+          "average_queue_length": 1.616618955741927
+        },
+        "symmetric": {
+          "average_wait_seconds": 9.652206426638797,
+          "average_queue_length": 3.854251190074783
+        }
+      }
+    },
+    {
+      "name": "improved_min25_max35_rel0",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 25,
+        "max_green_seconds": 35,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.0,
+        "result_name": "improved_min25_max35_rel0",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": false,
+      "reasons": [
+        "symmetric_low: average_wait_seconds worsens by 73.81%",
+        "symmetric_low: average_queue_length worsens by 74.09%",
+        "symmetric: average_wait_seconds worsens by 78.92%",
+        "symmetric: average_queue_length worsens by 78.61%"
+      ],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 249.09770905440232,
+          "waiting_at_end": 481.53333333333336,
+          "throughput_per_hour": 3321.3333333333335
+        },
+        "true_oversaturated": {
+          "average_queue_length": 600.6520536765272,
+          "waiting_at_end": 1193.9333333333334,
+          "throughput_per_hour": 3334.133333333333
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 9.312994887894183,
+          "average_queue_length": 1.8881475017597624
+        },
+        "symmetric": {
+          "average_wait_seconds": 10.819988189763778,
+          "average_queue_length": 4.319081129804555
+        }
+      }
+    },
+    {
+      "name": "improved_min25_max45_rel0",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 25,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.0,
+        "result_name": "improved_min25_max45_rel0",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": false,
+      "reasons": [
+        "symmetric_low: average_wait_seconds worsens by 76.14%",
+        "symmetric_low: average_queue_length worsens by 76.47%",
+        "symmetric: average_wait_seconds worsens by 79.10%",
+        "symmetric: average_queue_length worsens by 78.78%"
+      ],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 249.05222757292083,
+          "waiting_at_end": 481.53333333333336,
+          "throughput_per_hour": 3321.6
+        },
+        "true_oversaturated": {
+          "average_queue_length": 600.7482758987494,
+          "waiting_at_end": 1194.0666666666666,
+          "throughput_per_hour": 3333.866666666667
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 9.437810309856966,
+          "average_queue_length": 1.913894687543101
+        },
+        "symmetric": {
+          "average_wait_seconds": 10.830881960939012,
+          "average_queue_length": 4.323225541181597
+        }
+      }
+    },
+    {
+      "name": "improved_min25_max60_rel0",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 25,
+        "max_green_seconds": 60,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.0,
+        "result_name": "improved_min25_max60_rel0",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": false,
+      "reasons": [
+        "symmetric_low: average_wait_seconds worsens by 75.37%",
+        "symmetric_low: average_queue_length worsens by 75.83%",
+        "symmetric: average_wait_seconds worsens by 79.10%",
+        "symmetric: average_queue_length worsens by 78.78%"
+      ],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 249.0434868321801,
+          "waiting_at_end": 481.53333333333336,
+          "throughput_per_hour": 3321.6
+        },
+        "true_oversaturated": {
+          "average_queue_length": 600.84264626912,
+          "waiting_at_end": 1194.0666666666666,
+          "throughput_per_hour": 3333.866666666667
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 9.396429023848698,
+          "average_queue_length": 1.9069810578079116
+        },
+        "symmetric": {
+          "average_wait_seconds": 10.830881960939012,
+          "average_queue_length": 4.323225541181597
+        }
+      }
+    },
+    {
+      "name": "improved_min25_max35_rel0.1",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 25,
+        "max_green_seconds": 35,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.1,
+        "result_name": "improved_min25_max35_rel0.1",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": false,
+      "reasons": [
+        "symmetric_low: average_wait_seconds worsens by 73.81%",
+        "symmetric_low: average_queue_length worsens by 74.09%",
+        "symmetric: average_wait_seconds worsens by 78.92%",
+        "symmetric: average_queue_length worsens by 78.61%"
+      ],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 241.63516810870166,
+          "waiting_at_end": 460.8666666666667,
+          "throughput_per_hour": 3362.9333333333334
+        },
+        "true_oversaturated": {
+          "average_queue_length": 588.9402018246753,
+          "waiting_at_end": 1167.6666666666667,
+          "throughput_per_hour": 3386.4
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 9.312994887894183,
+          "average_queue_length": 1.8881475017597624
+        },
+        "symmetric": {
+          "average_wait_seconds": 10.819988189763778,
+          "average_queue_length": 4.319081129804555
+        }
+      }
+    },
+    {
+      "name": "improved_min25_max45_rel0.1",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 25,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.1,
+        "result_name": "improved_min25_max45_rel0.1",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": false,
+      "reasons": [
+        "symmetric_low: average_wait_seconds worsens by 76.14%",
+        "symmetric_low: average_queue_length worsens by 76.47%",
+        "symmetric: average_wait_seconds worsens by 79.10%",
+        "symmetric: average_queue_length worsens by 78.78%"
+      ],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 237.5758347753684,
+          "waiting_at_end": 449.0,
+          "throughput_per_hour": 3386.9333333333334
+        },
+        "true_oversaturated": {
+          "average_queue_length": 581.8402018246752,
+          "waiting_at_end": 1151.0,
+          "throughput_per_hour": 3420.266666666667
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 9.437810309856966,
+          "average_queue_length": 1.913894687543101
+        },
+        "symmetric": {
+          "average_wait_seconds": 10.830881960939012,
+          "average_queue_length": 4.323225541181597
+        }
+      }
+    },
+    {
+      "name": "improved_min25_max60_rel0.1",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 25,
+        "max_green_seconds": 60,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.1,
+        "result_name": "improved_min25_max60_rel0.1",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": false,
+      "reasons": [
+        "symmetric_low: average_wait_seconds worsens by 75.37%",
+        "symmetric_low: average_queue_length worsens by 75.83%",
+        "symmetric: average_wait_seconds worsens by 79.10%",
+        "symmetric: average_queue_length worsens by 78.78%"
+      ],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 236.82761255314628,
+          "waiting_at_end": 448.3333333333333,
+          "throughput_per_hour": 3388.266666666667
+        },
+        "true_oversaturated": {
+          "average_queue_length": 583.4009425654159,
+          "waiting_at_end": 1157.0,
+          "throughput_per_hour": 3407.733333333333
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 9.396429023848698,
+          "average_queue_length": 1.9069810578079116
+        },
+        "symmetric": {
+          "average_wait_seconds": 10.830881960939012,
+          "average_queue_length": 4.323225541181597
+        }
+      }
+    }
+  ]
+}

@@ -15,6 +15,7 @@
 - `architecture.md` — структура кода и публичные интерфейсы.
 - `experiments.md` — дизайн экспериментов и метрики.
 - `../docs/REVISION_COMPLETION_AUDIT.md` — итоговый проверяемый аудит рукописи PIERE revision.
+- `../docs/QUEUE_BASED_FINAL_VALIDATION.md` — журнал независимой проверки, Fixed 8 s и разработки Queue-based improved.
 - `../docs/STREAMLIT_DEPLOYMENT.md` — инструкция развёртывания дашборда на целевой ветке.
 - `../paper/reviewer_response.md` — ответы по 11 темам ревизии с ограничениями.
 - `../paper/revised_manuscript.md` и `../paper/revised_manuscript_ru.md` — английская статья и полный русский перевод.
@@ -23,6 +24,7 @@
 - `../scripts/generate_piere_figures.py` — воспроизводимая генерация комплектов PNG/SVG/PDF.
 - `../paper/perception_results.md` — проверка воспроизводимости и абляция YOLO.
 - Конфигурации экспериментов находятся в `../configs/`; расширенная чувствительность к ошибке детекции — `../configs/piere_perception_sensitivity_expanded.yaml`.
+- Отдельные seed-явные конфигурации проверки Queue-based находятся в `../configs/queue_based_*.yaml`; стандартные библиотечные аудиторские replay-скрипты — `../scripts/audit_queue_based_results.py` и `../scripts/audit_queue_based_statistics.py`.
 - Эмпирический bootstrap ошибок направленного подсчёта — `../configs/piere_perception_empirical_errors.yaml`.
 - `task-log.md` — хронологический журнал выполненных задач и ограничений среды.
 

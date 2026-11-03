@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from math import ceil
 from pathlib import Path
 
 from traffic_light.config import PhaseName
@@ -133,6 +134,48 @@ class QueueBasedController(BaseController):
         if elapsed < self.min_green_seconds:
             return state.current_phase
         return other if other_q > current_q + self.switching_margin else state.current_phase
+
+
+@dataclass
+class QueueBasedImprovedController(BaseController):
+    """Queue-pressure controller with congestion-aware green hold and hysteresis.
+
+    The absolute margin preserves the original queue rule at small queues. The
+    longer minimum green activates only once total observed queues cross the
+    configured threshold. The relative term scales the switching threshold as
+    queues grow. A competing queue still triggers a hard switch at maximum green.
+    """
+
+    min_green_seconds: int = 8
+    max_green_seconds: int = 45
+    switching_margin: int = 1
+    relative_switching_margin: float = 0.10
+    congested_min_green_seconds: int = 20
+    congestion_queue_threshold: int = 10
+    name: str = "queue_based_improved"
+
+    def choose_phase(self, state: ControllerState) -> PhaseName:
+        elapsed = state.now - state.phase_started_at
+        other = other_phase(state.current_phase)
+        current_q = sum(state.queues[lane] for lane in PHASE_LANES[state.current_phase])
+        other_q = sum(state.queues[lane] for lane in PHASE_LANES[other])
+        total_q = current_q + other_q
+        if other_q == 0:
+            return state.current_phase
+        if elapsed >= self.max_green_seconds:
+            return other
+        effective_min_green = (
+            self.congested_min_green_seconds
+            if total_q >= self.congestion_queue_threshold
+            else self.min_green_seconds
+        )
+        if elapsed < effective_min_green:
+            return state.current_phase
+        margin = max(
+            self.switching_margin,
+            ceil(self.relative_switching_margin * total_q),
+        )
+        return other if other_q > current_q + margin else state.current_phase
 
 
 @dataclass

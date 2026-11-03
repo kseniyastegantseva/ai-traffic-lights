@@ -1,0 +1,68 @@
+name: queue_based_diagnostic_traces_3600
+title: Queue-based diagnostic traces, 3600 s
+description: Matched one-second directional queue and in-service traces for selected
+  final seeds in overload scenarios; subset is diagnostic, full inference uses 30
+  seeds.
+simulation:
+  duration_seconds: 3600
+  seeds:
+  - 1001
+  - 1002
+  - 1003
+  service_time_seconds: 2.0
+  store_queue_series: true
+scenarios:
+- name: high_load
+  title: Высокая нагрузка
+  description: 18 автомобилей в минуту на каждом подходе; v/c оценивается относительно
+    расчетной мощности модели и должна быть подтверждена результатами очередей.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 18
+      south:
+        arrival_rate_per_minute: 18
+      east:
+        arrival_rate_per_minute: 18
+      west:
+        arrival_rate_per_minute: 18
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: true_oversaturated
+  title: Насыщенный спрос 24 авто/мин
+  description: 24 автомобиля в минуту на каждом подходе; явно сверх расчётной пропускной
+    способности модели.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 24
+      south:
+        arrival_rate_per_minute: 24
+      east:
+        arrival_rate_per_minute: 24
+      west:
+        arrival_rate_per_minute: 24
+    min_green_seconds: 8
+    yellow_seconds: 3
+controllers:
+- type: fixed_webster
+- type: vehicle_actuated
+- type: queue_based
+  min_green_seconds: 8
+  max_green_seconds: 45
+  switching_margin: 1
+- type: queue_based_improved
+  min_green_seconds: 8
+  max_green_seconds: 45
+  switching_margin: 1
+  relative_switching_margin: 0.1
+  congested_min_green_seconds: 25
+  congestion_queue_threshold: 14
+- type: queue_based
+  legacy_rule: true
+  min_green_seconds: 8
+  max_green_seconds: 45
+output:
+  path: outputs/queue_based_diagnostic_traces_3600.json
+  summary_csv: outputs/queue_based_diagnostic_traces_3600_summary.csv
+  report_markdown: outputs/queue_based_diagnostic_traces_3600_report.md

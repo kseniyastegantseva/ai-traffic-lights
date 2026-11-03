@@ -1,0 +1,250 @@
+name: queue_based_final_1800
+title: Queue-based final validation, 1800 s
+description: Locked controller parameters and unseen seeds 1001–1030. Includes the
+  nine predeclared PIERE demand scenarios; every controller within a scenario/seed
+  uses the same generated arrival stream. No warm-up is removed.
+simulation:
+  duration_seconds: 1800
+  seeds:
+  - 1001
+  - 1002
+  - 1003
+  - 1004
+  - 1005
+  - 1006
+  - 1007
+  - 1008
+  - 1009
+  - 1010
+  - 1011
+  - 1012
+  - 1013
+  - 1014
+  - 1015
+  - 1016
+  - 1017
+  - 1018
+  - 1019
+  - 1020
+  - 1021
+  - 1022
+  - 1023
+  - 1024
+  - 1025
+  - 1026
+  - 1027
+  - 1028
+  - 1029
+  - 1030
+  service_time_seconds: 2.0
+  store_queue_series: false
+scenarios:
+- name: symmetric
+  title: Симметричный спрос
+  description: 6 автомобилей в минуту на каждом подходе.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 6
+      south:
+        arrival_rate_per_minute: 6
+      east:
+        arrival_rate_per_minute: 6
+      west:
+        arrival_rate_per_minute: 6
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: asymmetric_ns
+  title: Асимметричный спрос Север–Юг
+  description: 10 автомобилей в минуту на N/S и 4 на E/W.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 10
+      south:
+        arrival_rate_per_minute: 10
+      east:
+        arrival_rate_per_minute: 4
+      west:
+        arrival_rate_per_minute: 4
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: variable_demand
+  title: Переменный спрос
+  description: В 900 s нагрузки меняются с равномерной на восточно-западную.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 6
+      south:
+        arrival_rate_per_minute: 6
+      east:
+        arrival_rate_per_minute: 6
+      west:
+        arrival_rate_per_minute: 6
+    min_green_seconds: 8
+    yellow_seconds: 3
+  demand_schedule:
+  - start_seconds: 0
+    end_seconds: 900
+    lanes:
+      north:
+        arrival_rate_per_minute: 6
+      south:
+        arrival_rate_per_minute: 6
+      east:
+        arrival_rate_per_minute: 6
+      west:
+        arrival_rate_per_minute: 6
+  - start_seconds: 900
+    end_seconds: 3600
+    lanes:
+      north:
+        arrival_rate_per_minute: 3
+      south:
+        arrival_rate_per_minute: 3
+      east:
+        arrival_rate_per_minute: 12
+      west:
+        arrival_rate_per_minute: 12
+- name: sudden_dominance_switch
+  title: Внезапная смена доминирующей оси
+  description: В 900 s максимум спроса переходит с N/S на E/W.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 10
+      south:
+        arrival_rate_per_minute: 10
+      east:
+        arrival_rate_per_minute: 4
+      west:
+        arrival_rate_per_minute: 4
+    min_green_seconds: 8
+    yellow_seconds: 3
+  demand_schedule:
+  - start_seconds: 0
+    end_seconds: 900
+    lanes:
+      north:
+        arrival_rate_per_minute: 10
+      south:
+        arrival_rate_per_minute: 10
+      east:
+        arrival_rate_per_minute: 4
+      west:
+        arrival_rate_per_minute: 4
+  - start_seconds: 900
+    end_seconds: 3600
+    lanes:
+      north:
+        arrival_rate_per_minute: 4
+      south:
+        arrival_rate_per_minute: 4
+      east:
+        arrival_rate_per_minute: 10
+      west:
+        arrival_rate_per_minute: 10
+- name: high_load
+  title: Высокая нагрузка
+  description: 18 автомобилей в минуту на каждом подходе; v/c оценивается относительно
+    расчетной мощности модели и должна быть подтверждена результатами очередей.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 18
+      south:
+        arrival_rate_per_minute: 18
+      east:
+        arrival_rate_per_minute: 18
+      west:
+        arrival_rate_per_minute: 18
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: symmetric_low
+  title: Низкий симметричный спрос
+  description: 3 автомобиля в минуту на каждом подходе.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 3
+      south:
+        arrival_rate_per_minute: 3
+      east:
+        arrival_rate_per_minute: 3
+      west:
+        arrival_rate_per_minute: 3
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: symmetric_9
+  title: Симметричный спрос 9 авто/мин
+  description: 9 автомобилей в минуту на каждом подходе; режим ниже прежнего кандидата
+    перегрузки 18 авто/мин.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 9
+      south:
+        arrival_rate_per_minute: 9
+      east:
+        arrival_rate_per_minute: 9
+      west:
+        arrival_rate_per_minute: 9
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: asymmetric_ew
+  title: Асимметричный спрос Восток–Запад
+  description: 4 автомобиля в минуту на N/S и 10 на E/W; зеркальный сценарий к asymmetric_ns.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 4
+      south:
+        arrival_rate_per_minute: 4
+      east:
+        arrival_rate_per_minute: 10
+      west:
+        arrival_rate_per_minute: 10
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: true_oversaturated
+  title: Насыщенный спрос 24 авто/мин
+  description: 24 автомобиля в минуту на каждом подходе; явно сверх расчётной пропускной
+    способности модели.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 24
+      south:
+        arrival_rate_per_minute: 24
+      east:
+        arrival_rate_per_minute: 24
+      west:
+        arrival_rate_per_minute: 24
+    min_green_seconds: 8
+    yellow_seconds: 3
+controllers:
+- type: fixed_8
+- type: fixed_15
+- type: fixed_35
+- type: fixed_webster
+- type: vehicle_actuated
+- type: queue_based
+  min_green_seconds: 8
+  max_green_seconds: 45
+  switching_margin: 1
+- type: queue_based_improved
+  min_green_seconds: 8
+  max_green_seconds: 45
+  switching_margin: 1
+  relative_switching_margin: 0.1
+  congested_min_green_seconds: 25
+  congestion_queue_threshold: 14
+- type: queue_based
+  legacy_rule: true
+  min_green_seconds: 8
+  max_green_seconds: 45
+output:
+  path: outputs/queue_based_final_1800.json
+  summary_csv: outputs/queue_based_final_1800_summary.csv
+  report_markdown: outputs/queue_based_final_1800_report.md

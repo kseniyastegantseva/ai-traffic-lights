@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import random
+from collections import deque
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from statistics import mean, median
@@ -122,7 +123,9 @@ class IntersectionSimulation:
         self.signal_color = "green"
         self.phase_history: list[dict] = [{"at": 0.0, "phase": initial_phase, "color": "green"}]
         self.phase_started_at = 0.0
-        self.queues: dict[str, list[Vehicle]] = {lane: [] for lane in intersection.lanes}
+        self.queues: dict[str, deque[Vehicle]] = {
+            lane: deque() for lane in intersection.lanes
+        }
         self.initial_vehicles = 0
         for lane, count in (initial_queues or {}).items():
             if lane not in self.queues or count < 0:
@@ -153,6 +156,7 @@ class IntersectionSimulation:
         self.departed = 0
         self.departed_by_lane = {lane: 0 for lane in LANES}
         self.in_service = 0
+        self.in_service_by_lane = {lane: 0 for lane in LANES}
         self.stops = 0
         self._last_event_time = 0.0
         self._queue_area = 0.0
@@ -187,14 +191,16 @@ class IntersectionSimulation:
         while True:
             if self.signal_color == "green" and lane in PHASE_LANES[self.current_phase] and self.queues[lane]:
                 self._integrate_queue_area()
-                vehicle = self.queues[lane].pop(0)
+                vehicle = self.queues[lane].popleft()
                 self.in_service += 1
+                self.in_service_by_lane[lane] += 1
                 wait = self.env.now - vehicle.arrived_at
                 self._observed_delay += wait
                 yield self.env.timeout(self.config.service_time_seconds)
                 if self.env.now < self.config.duration_seconds:
                     self._integrate_queue_area()
                     self.in_service -= 1
+                    self.in_service_by_lane[lane] -= 1
                     self.departed += 1
                     self.departed_by_lane[lane] += 1
                     self.waits.append(wait)
@@ -283,6 +289,7 @@ class IntersectionSimulation:
                             if is_initial_snapshot
                             else self.departed_by_lane.copy()
                         ),
+                        "in_service_by_lane": self.in_service_by_lane.copy(),
                     }
                 )
             yield self.env.timeout(1)

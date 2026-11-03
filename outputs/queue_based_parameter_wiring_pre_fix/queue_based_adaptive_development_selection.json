@@ -1,0 +1,751 @@
+{
+  "development_file": "outputs/queue_based_adaptive_development_1800.json",
+  "seeds": [
+    801,
+    802,
+    803,
+    804,
+    805,
+    806,
+    807,
+    808,
+    809,
+    810,
+    811,
+    812,
+    813,
+    814,
+    815
+  ],
+  "candidate_count": 18,
+  "eligible_candidates": [
+    "adaptive_high15_threshold6_rel0",
+    "adaptive_high15_threshold6_rel0.1",
+    "adaptive_high15_threshold10_rel0",
+    "adaptive_high15_threshold10_rel0.1",
+    "adaptive_high15_threshold14_rel0",
+    "adaptive_high15_threshold14_rel0.1",
+    "adaptive_high20_threshold6_rel0",
+    "adaptive_high20_threshold6_rel0.1",
+    "adaptive_high20_threshold10_rel0",
+    "adaptive_high20_threshold10_rel0.1",
+    "adaptive_high20_threshold14_rel0",
+    "adaptive_high20_threshold14_rel0.1",
+    "adaptive_high25_threshold6_rel0",
+    "adaptive_high25_threshold6_rel0.1",
+    "adaptive_high25_threshold10_rel0",
+    "adaptive_high25_threshold10_rel0.1",
+    "adaptive_high25_threshold14_rel0",
+    "adaptive_high25_threshold14_rel0.1"
+  ],
+  "selected_candidate": "adaptive_high15_threshold6_rel0.1",
+  "selection_rule": {
+    "overload": "lower mean average queue and lower residual, with throughput no lower than original",
+    "moderate": "mean completed wait and average queue no more than 10% above original",
+    "ranking": "lowest 18/min mean average queue; tie prefers smaller relative margin, shorter congested minimum, then shorter maximum; remaining ties retain explicit candidate order (threshold 6, 10, 14)"
+  },
+  "candidates": [
+    {
+      "name": "adaptive_high15_threshold6_rel0",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 8,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.0,
+        "congested_min_green_seconds": 15,
+        "congestion_queue_threshold": 6,
+        "result_name": "adaptive_high15_threshold6_rel0",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": true,
+      "reasons": [],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 293.4899450216079,
+          "waiting_at_end": 579.0666666666667,
+          "throughput_per_hour": 3145.3333333333335
+        },
+        "true_oversaturated": {
+          "average_queue_length": 643.7028020425587,
+          "waiting_at_end": 1277.4,
+          "throughput_per_hour": 3165.6
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 5.337345892570033,
+          "average_queue_length": 1.0574621803387156
+        },
+        "symmetric": {
+          "average_wait_seconds": 5.961076713749967,
+          "average_queue_length": 2.3496437279912024
+        }
+      }
+    },
+    {
+      "name": "adaptive_high15_threshold6_rel0.1",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 8,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.1,
+        "congested_min_green_seconds": 15,
+        "congestion_queue_threshold": 6,
+        "result_name": "adaptive_high15_threshold6_rel0.1",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": true,
+      "reasons": [],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 249.81092027526137,
+          "waiting_at_end": 470.53333333333336,
+          "throughput_per_hour": 3361.866666666667
+        },
+        "true_oversaturated": {
+          "average_queue_length": 588.2081203966391,
+          "waiting_at_end": 1155.6666666666667,
+          "throughput_per_hour": 3408.5333333333333
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 5.337345892570033,
+          "average_queue_length": 1.0574621803387156
+        },
+        "symmetric": {
+          "average_wait_seconds": 5.961076713749967,
+          "average_queue_length": 2.3496437279912024
+        }
+      }
+    },
+    {
+      "name": "adaptive_high15_threshold10_rel0",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 8,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.0,
+        "congested_min_green_seconds": 15,
+        "congestion_queue_threshold": 10,
+        "result_name": "adaptive_high15_threshold10_rel0",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": true,
+      "reasons": [],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 293.4899450216079,
+          "waiting_at_end": 579.0666666666667,
+          "throughput_per_hour": 3145.3333333333335
+        },
+        "true_oversaturated": {
+          "average_queue_length": 643.7028020425587,
+          "waiting_at_end": 1277.4,
+          "throughput_per_hour": 3165.6
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 5.337345892570033,
+          "average_queue_length": 1.0574621803387156
+        },
+        "symmetric": {
+          "average_wait_seconds": 5.961076713749967,
+          "average_queue_length": 2.3496437279912024
+        }
+      }
+    },
+    {
+      "name": "adaptive_high15_threshold10_rel0.1",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 8,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.1,
+        "congested_min_green_seconds": 15,
+        "congestion_queue_threshold": 10,
+        "result_name": "adaptive_high15_threshold10_rel0.1",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": true,
+      "reasons": [],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 249.81092027526137,
+          "waiting_at_end": 470.53333333333336,
+          "throughput_per_hour": 3361.866666666667
+        },
+        "true_oversaturated": {
+          "average_queue_length": 588.2081203966391,
+          "waiting_at_end": 1155.6666666666667,
+          "throughput_per_hour": 3408.5333333333333
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 5.337345892570033,
+          "average_queue_length": 1.0574621803387156
+        },
+        "symmetric": {
+          "average_wait_seconds": 5.961076713749967,
+          "average_queue_length": 2.3496437279912024
+        }
+      }
+    },
+    {
+      "name": "adaptive_high15_threshold14_rel0",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 8,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.0,
+        "congested_min_green_seconds": 15,
+        "congestion_queue_threshold": 14,
+        "result_name": "adaptive_high15_threshold14_rel0",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": true,
+      "reasons": [],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 293.4899450216079,
+          "waiting_at_end": 579.0666666666667,
+          "throughput_per_hour": 3145.3333333333335
+        },
+        "true_oversaturated": {
+          "average_queue_length": 643.7028020425587,
+          "waiting_at_end": 1277.4,
+          "throughput_per_hour": 3165.6
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 5.337345892570033,
+          "average_queue_length": 1.0574621803387156
+        },
+        "symmetric": {
+          "average_wait_seconds": 5.961076713749967,
+          "average_queue_length": 2.3496437279912024
+        }
+      }
+    },
+    {
+      "name": "adaptive_high15_threshold14_rel0.1",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 8,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.1,
+        "congested_min_green_seconds": 15,
+        "congestion_queue_threshold": 14,
+        "result_name": "adaptive_high15_threshold14_rel0.1",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": true,
+      "reasons": [],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 249.81092027526137,
+          "waiting_at_end": 470.53333333333336,
+          "throughput_per_hour": 3361.866666666667
+        },
+        "true_oversaturated": {
+          "average_queue_length": 588.2081203966391,
+          "waiting_at_end": 1155.6666666666667,
+          "throughput_per_hour": 3408.5333333333333
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 5.337345892570033,
+          "average_queue_length": 1.0574621803387156
+        },
+        "symmetric": {
+          "average_wait_seconds": 5.961076713749967,
+          "average_queue_length": 2.3496437279912024
+        }
+      }
+    },
+    {
+      "name": "adaptive_high20_threshold6_rel0",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 8,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.0,
+        "congested_min_green_seconds": 20,
+        "congestion_queue_threshold": 6,
+        "result_name": "adaptive_high20_threshold6_rel0",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": true,
+      "reasons": [],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 293.4899450216079,
+          "waiting_at_end": 579.0666666666667,
+          "throughput_per_hour": 3145.3333333333335
+        },
+        "true_oversaturated": {
+          "average_queue_length": 643.7028020425587,
+          "waiting_at_end": 1277.4,
+          "throughput_per_hour": 3165.6
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 5.337345892570033,
+          "average_queue_length": 1.0574621803387156
+        },
+        "symmetric": {
+          "average_wait_seconds": 5.961076713749967,
+          "average_queue_length": 2.3496437279912024
+        }
+      }
+    },
+    {
+      "name": "adaptive_high20_threshold6_rel0.1",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 8,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.1,
+        "congested_min_green_seconds": 20,
+        "congestion_queue_threshold": 6,
+        "result_name": "adaptive_high20_threshold6_rel0.1",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": true,
+      "reasons": [],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 249.81092027526137,
+          "waiting_at_end": 470.53333333333336,
+          "throughput_per_hour": 3361.866666666667
+        },
+        "true_oversaturated": {
+          "average_queue_length": 588.2081203966391,
+          "waiting_at_end": 1155.6666666666667,
+          "throughput_per_hour": 3408.5333333333333
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 5.337345892570033,
+          "average_queue_length": 1.0574621803387156
+        },
+        "symmetric": {
+          "average_wait_seconds": 5.961076713749967,
+          "average_queue_length": 2.3496437279912024
+        }
+      }
+    },
+    {
+      "name": "adaptive_high20_threshold10_rel0",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 8,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.0,
+        "congested_min_green_seconds": 20,
+        "congestion_queue_threshold": 10,
+        "result_name": "adaptive_high20_threshold10_rel0",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": true,
+      "reasons": [],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 293.4899450216079,
+          "waiting_at_end": 579.0666666666667,
+          "throughput_per_hour": 3145.3333333333335
+        },
+        "true_oversaturated": {
+          "average_queue_length": 643.7028020425587,
+          "waiting_at_end": 1277.4,
+          "throughput_per_hour": 3165.6
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 5.337345892570033,
+          "average_queue_length": 1.0574621803387156
+        },
+        "symmetric": {
+          "average_wait_seconds": 5.961076713749967,
+          "average_queue_length": 2.3496437279912024
+        }
+      }
+    },
+    {
+      "name": "adaptive_high20_threshold10_rel0.1",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 8,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.1,
+        "congested_min_green_seconds": 20,
+        "congestion_queue_threshold": 10,
+        "result_name": "adaptive_high20_threshold10_rel0.1",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": true,
+      "reasons": [],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 249.81092027526137,
+          "waiting_at_end": 470.53333333333336,
+          "throughput_per_hour": 3361.866666666667
+        },
+        "true_oversaturated": {
+          "average_queue_length": 588.2081203966391,
+          "waiting_at_end": 1155.6666666666667,
+          "throughput_per_hour": 3408.5333333333333
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 5.337345892570033,
+          "average_queue_length": 1.0574621803387156
+        },
+        "symmetric": {
+          "average_wait_seconds": 5.961076713749967,
+          "average_queue_length": 2.3496437279912024
+        }
+      }
+    },
+    {
+      "name": "adaptive_high20_threshold14_rel0",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 8,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.0,
+        "congested_min_green_seconds": 20,
+        "congestion_queue_threshold": 14,
+        "result_name": "adaptive_high20_threshold14_rel0",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": true,
+      "reasons": [],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 293.4899450216079,
+          "waiting_at_end": 579.0666666666667,
+          "throughput_per_hour": 3145.3333333333335
+        },
+        "true_oversaturated": {
+          "average_queue_length": 643.7028020425587,
+          "waiting_at_end": 1277.4,
+          "throughput_per_hour": 3165.6
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 5.337345892570033,
+          "average_queue_length": 1.0574621803387156
+        },
+        "symmetric": {
+          "average_wait_seconds": 5.961076713749967,
+          "average_queue_length": 2.3496437279912024
+        }
+      }
+    },
+    {
+      "name": "adaptive_high20_threshold14_rel0.1",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 8,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.1,
+        "congested_min_green_seconds": 20,
+        "congestion_queue_threshold": 14,
+        "result_name": "adaptive_high20_threshold14_rel0.1",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": true,
+      "reasons": [],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 249.81092027526137,
+          "waiting_at_end": 470.53333333333336,
+          "throughput_per_hour": 3361.866666666667
+        },
+        "true_oversaturated": {
+          "average_queue_length": 588.2081203966391,
+          "waiting_at_end": 1155.6666666666667,
+          "throughput_per_hour": 3408.5333333333333
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 5.337345892570033,
+          "average_queue_length": 1.0574621803387156
+        },
+        "symmetric": {
+          "average_wait_seconds": 5.961076713749967,
+          "average_queue_length": 2.3496437279912024
+        }
+      }
+    },
+    {
+      "name": "adaptive_high25_threshold6_rel0",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 8,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.0,
+        "congested_min_green_seconds": 25,
+        "congestion_queue_threshold": 6,
+        "result_name": "adaptive_high25_threshold6_rel0",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": true,
+      "reasons": [],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 293.4899450216079,
+          "waiting_at_end": 579.0666666666667,
+          "throughput_per_hour": 3145.3333333333335
+        },
+        "true_oversaturated": {
+          "average_queue_length": 643.7028020425587,
+          "waiting_at_end": 1277.4,
+          "throughput_per_hour": 3165.6
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 5.337345892570033,
+          "average_queue_length": 1.0574621803387156
+        },
+        "symmetric": {
+          "average_wait_seconds": 5.961076713749967,
+          "average_queue_length": 2.3496437279912024
+        }
+      }
+    },
+    {
+      "name": "adaptive_high25_threshold6_rel0.1",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 8,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.1,
+        "congested_min_green_seconds": 25,
+        "congestion_queue_threshold": 6,
+        "result_name": "adaptive_high25_threshold6_rel0.1",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": true,
+      "reasons": [],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 249.81092027526137,
+          "waiting_at_end": 470.53333333333336,
+          "throughput_per_hour": 3361.866666666667
+        },
+        "true_oversaturated": {
+          "average_queue_length": 588.2081203966391,
+          "waiting_at_end": 1155.6666666666667,
+          "throughput_per_hour": 3408.5333333333333
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 5.337345892570033,
+          "average_queue_length": 1.0574621803387156
+        },
+        "symmetric": {
+          "average_wait_seconds": 5.961076713749967,
+          "average_queue_length": 2.3496437279912024
+        }
+      }
+    },
+    {
+      "name": "adaptive_high25_threshold10_rel0",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 8,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.0,
+        "congested_min_green_seconds": 25,
+        "congestion_queue_threshold": 10,
+        "result_name": "adaptive_high25_threshold10_rel0",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": true,
+      "reasons": [],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 293.4899450216079,
+          "waiting_at_end": 579.0666666666667,
+          "throughput_per_hour": 3145.3333333333335
+        },
+        "true_oversaturated": {
+          "average_queue_length": 643.7028020425587,
+          "waiting_at_end": 1277.4,
+          "throughput_per_hour": 3165.6
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 5.337345892570033,
+          "average_queue_length": 1.0574621803387156
+        },
+        "symmetric": {
+          "average_wait_seconds": 5.961076713749967,
+          "average_queue_length": 2.3496437279912024
+        }
+      }
+    },
+    {
+      "name": "adaptive_high25_threshold10_rel0.1",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 8,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.1,
+        "congested_min_green_seconds": 25,
+        "congestion_queue_threshold": 10,
+        "result_name": "adaptive_high25_threshold10_rel0.1",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": true,
+      "reasons": [],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 249.81092027526137,
+          "waiting_at_end": 470.53333333333336,
+          "throughput_per_hour": 3361.866666666667
+        },
+        "true_oversaturated": {
+          "average_queue_length": 588.2081203966391,
+          "waiting_at_end": 1155.6666666666667,
+          "throughput_per_hour": 3408.5333333333333
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 5.337345892570033,
+          "average_queue_length": 1.0574621803387156
+        },
+        "symmetric": {
+          "average_wait_seconds": 5.961076713749967,
+          "average_queue_length": 2.3496437279912024
+        }
+      }
+    },
+    {
+      "name": "adaptive_high25_threshold14_rel0",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 8,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.0,
+        "congested_min_green_seconds": 25,
+        "congestion_queue_threshold": 14,
+        "result_name": "adaptive_high25_threshold14_rel0",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": true,
+      "reasons": [],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 293.4899450216079,
+          "waiting_at_end": 579.0666666666667,
+          "throughput_per_hour": 3145.3333333333335
+        },
+        "true_oversaturated": {
+          "average_queue_length": 643.7028020425587,
+          "waiting_at_end": 1277.4,
+          "throughput_per_hour": 3165.6
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 5.337345892570033,
+          "average_queue_length": 1.0574621803387156
+        },
+        "symmetric": {
+          "average_wait_seconds": 5.961076713749967,
+          "average_queue_length": 2.3496437279912024
+        }
+      }
+    },
+    {
+      "name": "adaptive_high25_threshold14_rel0.1",
+      "parameters": {
+        "type": "queue_based_improved",
+        "phase_duration_seconds": 35,
+        "decision_interval_seconds": 10,
+        "min_green_seconds": 8,
+        "max_green_seconds": 45,
+        "switching_margin": 1,
+        "relative_switching_margin": 0.1,
+        "congested_min_green_seconds": 25,
+        "congestion_queue_threshold": 14,
+        "result_name": "adaptive_high25_threshold14_rel0.1",
+        "legacy_rule": false,
+        "policy_path": "outputs/q_learning_policy.json"
+      },
+      "eligible": true,
+      "reasons": [],
+      "metrics": {
+        "high_load": {
+          "average_queue_length": 249.81092027526137,
+          "waiting_at_end": 470.53333333333336,
+          "throughput_per_hour": 3361.866666666667
+        },
+        "true_oversaturated": {
+          "average_queue_length": 588.2081203966391,
+          "waiting_at_end": 1155.6666666666667,
+          "throughput_per_hour": 3408.5333333333333
+        },
+        "symmetric_low": {
+          "average_wait_seconds": 5.337345892570033,
+          "average_queue_length": 1.0574621803387156
+        },
+        "symmetric": {
+          "average_wait_seconds": 5.961076713749967,
+          "average_queue_length": 2.3496437279912024
+        }
+      }
+    }
+  ]
+}

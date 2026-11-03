@@ -26,6 +26,7 @@ from traffic_light.controllers import (
     FixedWebsterController,
     QLearningPolicyController,
     QueueBasedController,
+    QueueBasedImprovedController,
     VehicleActuatedController,
 )
 from traffic_light.simulation import generate_arrivals, run_simulation
@@ -38,9 +39,11 @@ def build_controller(
     min_green_seconds: int,
     intersection: IntersectionConfig | None = None,
 ) -> BaseController:
-    if config.type in {"fixed", "fixed_15", "fixed_35"}:
+    if config.type in {"fixed", "fixed_8", "fixed_15", "fixed_35"}:
         duration = config.phase_duration_seconds
-        if config.type == "fixed_15":
+        if config.type == "fixed_8":
+            duration = 8
+        elif config.type == "fixed_15":
             duration = 15
         elif config.type == "fixed_35":
             duration = 35
@@ -77,6 +80,16 @@ def build_controller(
             switching_margin=config.switching_margin,
             legacy_rule=config.legacy_rule,
             name="queue_based_legacy" if config.legacy_rule else "queue_based",
+        )
+    if config.type == "queue_based_improved":
+        return QueueBasedImprovedController(
+            min_green_seconds=config.min_green_seconds,
+            max_green_seconds=config.max_green_seconds,
+            switching_margin=config.switching_margin,
+            relative_switching_margin=config.relative_switching_margin,
+            congested_min_green_seconds=config.congested_min_green_seconds,
+            congestion_queue_threshold=config.congestion_queue_threshold,
+            name=config.result_name or "queue_based_improved",
         )
     if config.type == "ai":
         return AIPhaseController(
@@ -119,12 +132,15 @@ def run_experiment(config: ExperimentConfig) -> tuple[list[dict], pd.DataFrame]:
                     initial_queues=scenario.get("initial_queues"),
                     arrivals=arrivals,
                 )
+                result_record = result.to_dict()
+                if not config.simulation.store_queue_series:
+                    result_record["queue_series"] = []
                 rows.append(
                     {
                         "scenario": scenario["name"],
                         "scenario_title": scenario["title"],
                         "scenario_description": scenario["description"],
-                        **result.to_dict(),
+                        **result_record,
                     }
                 )
 

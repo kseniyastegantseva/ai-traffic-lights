@@ -9,8 +9,8 @@ from pydantic import BaseModel, Field, model_validator
 LaneName = Literal["north", "south", "east", "west"]
 PhaseName = Literal["north_south", "east_west"]
 ControllerType = Literal[
-    "fixed", "fixed_15", "fixed_35", "fixed_webster", "vehicle_actuated", "queue_based",
-    "actuated", "ai", "q_learning",
+    "fixed", "fixed_8", "fixed_15", "fixed_35", "fixed_webster", "vehicle_actuated",
+    "queue_based", "queue_based_improved", "actuated", "ai", "q_learning",
 ]
 
 
@@ -45,6 +45,10 @@ class ControllerConfig(BaseModel):
     min_green_seconds: int = Field(default=8, ge=1)
     max_green_seconds: int = Field(default=45, ge=1)
     switching_margin: int = Field(default=1, ge=0)
+    relative_switching_margin: float = Field(default=0.10, ge=0.0, le=1.0)
+    congested_min_green_seconds: int = Field(default=20, ge=1)
+    congestion_queue_threshold: int = Field(default=10, ge=0)
+    result_name: str | None = None
     legacy_rule: bool = False
     policy_path: str = "outputs/q_learning_policy.json"
 
@@ -52,6 +56,13 @@ class ControllerConfig(BaseModel):
     def validate_green_bounds(self):
         if self.max_green_seconds < self.min_green_seconds:
             raise ValueError("max_green_seconds must be greater than or equal to min_green_seconds")
+        if (
+            self.type == "queue_based_improved"
+            and self.max_green_seconds < self.congested_min_green_seconds
+        ):
+            raise ValueError(
+                "max_green_seconds must be greater than or equal to congested_min_green_seconds"
+            )
         return self
 
 
@@ -67,6 +78,7 @@ class ExperimentSimulationConfig(BaseModel):
     seeds: list[int] = Field(default_factory=lambda: [1, 2, 3, 4, 5])
     service_time_seconds: float = Field(default=2.0, gt=0)
     empirical_observation_errors_by_lane: dict[LaneName, list[int]] = Field(default_factory=dict)
+    store_queue_series: bool = True
 
 
 class DemandPeriodConfig(BaseModel):

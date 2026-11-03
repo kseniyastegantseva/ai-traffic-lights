@@ -1,0 +1,24 @@
+{
+  "runs_1800": 2160,
+  "runs_3600": 2160,
+  "replay_groups_per_horizon": 270,
+  "paired_comparisons_per_horizon": 63,
+  "metric_mismatch_runs": 0,
+  "duplicate_run_keys": 0,
+  "arrival_stream_pairing_errors": 0,
+  "statistics_mismatches": 0,
+  "initial_state_runs": 240,
+  "initial_state_replay_mismatches": 0,
+  "initial_state_statistics_mismatches": 0,
+  "diagnostic_trace_runs_per_horizon": 30,
+  "diagnostic_trace_hash_mismatches": 0,
+  "locked_improved_parameters": {
+    "min_green_seconds": 8,
+    "congested_min_green_seconds": 25,
+    "congestion_queue_threshold": 14,
+    "max_green_seconds": 45,
+    "switching_margin": 1,
+    "relative_switching_margin": 0.1
+  },
+  "final_seeds": "1001-1030"
+}

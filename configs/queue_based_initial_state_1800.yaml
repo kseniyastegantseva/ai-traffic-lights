@@ -1,0 +1,94 @@
+name: queue_based_initial_state_1800
+title: Sensitivity to initial queues, 1800 s
+description: Matched arrivals and unseen seeds 1101–1130 compare the empty initial
+  state with five initial vehicles per approach. No warm-up is removed; queue samples
+  support a separate full-horizon versus post-300-s transient sensitivity summary.
+simulation:
+  duration_seconds: 1800
+  seeds:
+  - 1101
+  - 1102
+  - 1103
+  - 1104
+  - 1105
+  - 1106
+  - 1107
+  - 1108
+  - 1109
+  - 1110
+  - 1111
+  - 1112
+  - 1113
+  - 1114
+  - 1115
+  - 1116
+  - 1117
+  - 1118
+  - 1119
+  - 1120
+  - 1121
+  - 1122
+  - 1123
+  - 1124
+  - 1125
+  - 1126
+  - 1127
+  - 1128
+  - 1129
+  - 1130
+  service_time_seconds: 2.0
+  store_queue_series: true
+scenarios:
+- name: initial_empty
+  title: Пустое начальное состояние
+  description: 6 автомобилей в минуту на каждом подходе.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 6
+      south:
+        arrival_rate_per_minute: 6
+      east:
+        arrival_rate_per_minute: 6
+      west:
+        arrival_rate_per_minute: 6
+    min_green_seconds: 8
+    yellow_seconds: 3
+- name: initial_five_each
+  title: По пять автомобилей в начальной очереди каждого подхода
+  description: 6 автомобилей в минуту на каждом подходе.
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 6
+      south:
+        arrival_rate_per_minute: 6
+      east:
+        arrival_rate_per_minute: 6
+      west:
+        arrival_rate_per_minute: 6
+    min_green_seconds: 8
+    yellow_seconds: 3
+  initial_queues:
+    north: 5
+    south: 5
+    east: 5
+    west: 5
+controllers:
+- type: fixed_8
+- type: vehicle_actuated
+- type: queue_based
+  min_green_seconds: 8
+  max_green_seconds: 45
+  switching_margin: 1
+- type: queue_based_improved
+  min_green_seconds: 8
+  max_green_seconds: 45
+  switching_margin: 1
+  relative_switching_margin: 0.1
+  congested_min_green_seconds: 25
+  congestion_queue_threshold: 14
+output:
+  path: outputs/queue_based_initial_state_1800.json
+  summary_csv: outputs/queue_based_initial_state_1800_summary.csv
+  report_markdown: outputs/queue_based_initial_state_1800_report.md
