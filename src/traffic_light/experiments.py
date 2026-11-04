@@ -22,6 +22,7 @@ from traffic_light.controllers import (
     ActuatedController,
     AIPhaseController,
     BaseController,
+    DetectorVehicleActuatedController,
     FixedTimeController,
     FixedWebsterController,
     QLearningPolicyController,
@@ -83,6 +84,16 @@ def build_controller(
             gap_seconds=config.gap_seconds,
             name=config.result_name or "vehicle_actuated",
         )
+    if config.type == "detector_vehicle_actuated":
+        return DetectorVehicleActuatedController(
+            min_green_seconds=config.min_green_seconds,
+            max_green_seconds=config.max_green_seconds,
+            passage_gap_seconds=config.passage_gap_seconds,
+            use_preview=config.use_preview,
+            extension_eta_seconds=config.extension_eta_seconds,
+            call_ahead_seconds=config.call_ahead_seconds,
+            name=config.result_name or "detector_vehicle_actuated",
+        )
     if config.type == "queue_based_approach_preview":
         return QueueBasedApproachPreviewController(
             min_green_seconds=config.min_green_seconds,
@@ -90,6 +101,9 @@ def build_controller(
             planning_horizon_seconds=config.planning_horizon_seconds,
             max_switch_delay_seconds=config.max_switch_delay_seconds,
             continuation_min_green_seconds=config.continuation_min_green_seconds,
+            future_arrivals=config.future_arrivals,
+            eta_rounding=config.eta_rounding,
+            max_work_units=config.max_work_units,
             name=config.result_name or "queue_based_approach_preview",
         )
     if config.type == "queue_based":
@@ -204,21 +218,23 @@ def run_experiment(config: ExperimentConfig) -> tuple[list[dict], pd.DataFrame]:
     rows: list[dict] = []
     for scenario in _iter_scenarios(config):
         for seed in config.simulation.seeds:
+            shared = {
+                key: value
+                for key, value in config.simulation.model_dump().items()
+                if key in SimulationConfig.model_fields
+            }
             simulation = SimulationConfig(
-                duration_seconds=config.simulation.duration_seconds,
-                seed=seed,
-                service_time_seconds=config.simulation.service_time_seconds,
-                startup_lost_time_seconds=config.simulation.startup_lost_time_seconds,
-                observation_error_rate=scenario.get("observation_error_rate", 0.0),
-                empirical_observation_errors_by_lane=(
-                    config.simulation.empirical_observation_errors_by_lane
-                ),
-                preview_seconds=config.simulation.preview_seconds,
-                preview_detection_probability=config.simulation.preview_detection_probability,
-                preview_time_jitter_seconds=config.simulation.preview_time_jitter_seconds,
+                **{
+                    **shared,
+                    "seed": seed,
+                    "observation_error_rate": scenario.get("observation_error_rate", 0.0),
+                }
             )
             arrivals = generate_arrivals(
-                scenario["intersection"], simulation, scenario.get("demand_schedule")
+                scenario["intersection"],
+                simulation,
+                scenario.get("demand_schedule"),
+                scenario.get("arrival_process_params"),
             )
             for controller_config in config.controllers:
                 controller = build_controller(
@@ -615,6 +631,15 @@ def _iter_scenarios(config: ExperimentConfig) -> list[dict[str, str | Intersecti
                 "demand_schedule": scenario.demand_schedule,
                 "initial_queues": scenario.initial_queues,
                 "observation_error_rate": scenario.observation_error_rate,
+                "arrival_process_params": {
+                    "arrival_process": scenario.arrival_process,
+                    "platoon_mean_size": scenario.platoon_mean_size,
+                    "platoon_headway_seconds": scenario.platoon_headway_seconds,
+                    "burst_high_factor": scenario.burst_high_factor,
+                    "burst_low_factor": scenario.burst_low_factor,
+                    "burst_mean_state_seconds": scenario.burst_mean_state_seconds,
+                    "burst_shared_axis": scenario.burst_shared_axis,
+                },
             }
             for scenario in config.scenarios
         ]

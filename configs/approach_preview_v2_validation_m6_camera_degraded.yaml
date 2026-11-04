@@ -1,0 +1,280 @@
+name: approach_preview_v2_validation_m6_camera_degraded
+title: 'Approach Preview v2 (validation): датчик camera_degraded'
+description: Чувствительность к качеству датчика; oracle — теоретическая верхняя граница.
+simulation:
+  duration_seconds: 1800
+  seeds:
+  - 32101
+  - 32102
+  - 32103
+  - 32104
+  - 32105
+  - 32106
+  - 32107
+  - 32108
+  - 32109
+  - 32110
+  - 32111
+  - 32112
+  - 32113
+  - 32114
+  - 32115
+  - 32116
+  - 32117
+  - 32118
+  - 32119
+  - 32120
+  - 32121
+  - 32122
+  - 32123
+  - 32124
+  - 32125
+  - 32126
+  - 32127
+  - 32128
+  - 32129
+  - 32130
+  service_time_seconds: 2.0
+  startup_lost_time_seconds: 2.0
+  arrival_rate_tau_seconds: 120.0
+  store_queue_series: false
+  preview_seconds: 10.0
+  sensor_model: causal
+  sensor_detection_distance_m: 100.0
+  sensor_mean_speed_mps: 10.0
+  sensor_speed_cv: 0.2
+  sensor_profile_sd: 0.3
+  sensor_frame_period_seconds: 0.5
+  sensor_latency_seconds: 0.8
+  sensor_position_noise_m: 2.0
+  sensor_speed_noise_mps: 1.0
+  preview_detection_probability: 0.8
+  sensor_dropout_start_probability: 0.05
+  sensor_dropout_mean_frames: 4.0
+  sensor_false_positive_rate_per_minute: 2.0
+  sensor_duplicate_track_probability: 0.05
+  sensor_eta_bias_seconds: 0.5
+scenarios:
+- name: symmetric_low
+  title: Симметричный низкий спрос, 3/мин
+  description: Симметричный низкий спрос, 3/мин
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 3
+      south:
+        arrival_rate_per_minute: 3
+      east:
+        arrival_rate_per_minute: 3
+      west:
+        arrival_rate_per_minute: 3
+    min_green_seconds: 6
+    yellow_seconds: 3
+- name: symmetric_mid
+  title: Симметричный спрос, 6/мин
+  description: Симметричный спрос, 6/мин
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 6
+      south:
+        arrival_rate_per_minute: 6
+      east:
+        arrival_rate_per_minute: 6
+      west:
+        arrival_rate_per_minute: 6
+    min_green_seconds: 6
+    yellow_seconds: 3
+- name: symmetric_9
+  title: Симметричный спрос, 9/мин
+  description: Симметричный спрос, 9/мин
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 9
+      south:
+        arrival_rate_per_minute: 9
+      east:
+        arrival_rate_per_minute: 9
+      west:
+        arrival_rate_per_minute: 9
+    min_green_seconds: 6
+    yellow_seconds: 3
+- name: asymmetric_ns
+  title: 'Асимметрия Север–Юг: 10 против 4'
+  description: 'Асимметрия Север–Юг: 10 против 4'
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 10
+      south:
+        arrival_rate_per_minute: 10
+      east:
+        arrival_rate_per_minute: 4
+      west:
+        arrival_rate_per_minute: 4
+    min_green_seconds: 6
+    yellow_seconds: 3
+- name: asymmetric_low_ew
+  title: 'Слабый поперечный поток: 8 против 2'
+  description: 'Слабый поперечный поток: 8 против 2'
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 8
+      south:
+        arrival_rate_per_minute: 8
+      east:
+        arrival_rate_per_minute: 2
+      west:
+        arrival_rate_per_minute: 2
+    min_green_seconds: 6
+    yellow_seconds: 3
+- name: sudden_switch
+  title: Смена доминирующей оси на 900 с
+  description: Смена доминирующей оси на 900 с
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 6.5
+      south:
+        arrival_rate_per_minute: 6.5
+      east:
+        arrival_rate_per_minute: 6.5
+      west:
+        arrival_rate_per_minute: 6.5
+    min_green_seconds: 6
+    yellow_seconds: 3
+  demand_schedule:
+  - start_seconds: 0
+    end_seconds: 900
+    lanes:
+      north:
+        arrival_rate_per_minute: 10
+      south:
+        arrival_rate_per_minute: 10
+      east:
+        arrival_rate_per_minute: 3
+      west:
+        arrival_rate_per_minute: 3
+  - start_seconds: 900
+    end_seconds: 1800
+    lanes:
+      north:
+        arrival_rate_per_minute: 3
+      south:
+        arrival_rate_per_minute: 3
+      east:
+        arrival_rate_per_minute: 10
+      west:
+        arrival_rate_per_minute: 10
+- name: platoon_mid
+  title: Пачки по 4 автомобиля, средний 6/мин
+  description: Пачки по 4 автомобиля, средний 6/мин
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 6
+      south:
+        arrival_rate_per_minute: 6
+      east:
+        arrival_rate_per_minute: 6
+      west:
+        arrival_rate_per_minute: 6
+    min_green_seconds: 6
+    yellow_seconds: 3
+  arrival_process: platoon
+  platoon_mean_size: 4.0
+  platoon_headway_seconds: 1.8
+- name: bursty_shared_axis
+  title: Всплески, общие для оси, средний 6/мин
+  description: Всплески, общие для оси, средний 6/мин
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 6
+      south:
+        arrival_rate_per_minute: 6
+      east:
+        arrival_rate_per_minute: 6
+      west:
+        arrival_rate_per_minute: 6
+    min_green_seconds: 6
+    yellow_seconds: 3
+  arrival_process: bursty
+  burst_high_factor: 2.5
+  burst_low_factor: 0.2
+  burst_mean_state_seconds: 40.0
+  burst_shared_axis: true
+- name: initial_queue
+  title: Начальная очередь по 6 на подходе, 5/мин
+  description: Начальная очередь по 6 на подходе, 5/мин
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 5
+      south:
+        arrival_rate_per_minute: 5
+      east:
+        arrival_rate_per_minute: 5
+      west:
+        arrival_rate_per_minute: 5
+    min_green_seconds: 6
+    yellow_seconds: 3
+  initial_queues:
+    north: 6
+    south: 6
+    east: 6
+    west: 6
+- name: capacity_boundary
+  title: Граница ёмкости, 12/мин
+  description: Граница ёмкости, 12/мин
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 12
+      south:
+        arrival_rate_per_minute: 12
+      east:
+        arrival_rate_per_minute: 12
+      west:
+        arrival_rate_per_minute: 12
+    min_green_seconds: 6
+    yellow_seconds: 3
+- name: oversaturated
+  title: Перегрузка, 18/мин
+  description: Перегрузка, 18/мин
+  intersection:
+    lanes:
+      north:
+        arrival_rate_per_minute: 18
+      south:
+        arrival_rate_per_minute: 18
+      east:
+        arrival_rate_per_minute: 18
+      west:
+        arrival_rate_per_minute: 18
+    min_green_seconds: 6
+    yellow_seconds: 3
+controllers:
+- type: detector_vehicle_actuated
+  min_green_seconds: 6
+  max_green_seconds: 45
+  passage_gap_seconds: 0.0
+  use_preview: true
+  extension_eta_seconds: 2.0
+  call_ahead_seconds: 3.0
+  result_name: B_dva_pv_g0_e2
+- type: queue_based_approach_preview
+  min_green_seconds: 6
+  max_green_seconds: 45
+  planning_horizon_seconds: 50
+  max_switch_delay_seconds: 24
+  continuation_min_green_seconds: 6
+  future_arrivals: zero
+  eta_rounding: floor
+  result_name: D_roll_pv_c6_zero
+output:
+  path: outputs/approach_preview_v2/approach_preview_v2_validation_m6_camera_degraded.json
+  summary_csv: outputs/approach_preview_v2/approach_preview_v2_validation_m6_camera_degraded_summary.csv
+  report_markdown: outputs/approach_preview_v2/approach_preview_v2_validation_m6_camera_degraded_report.md
