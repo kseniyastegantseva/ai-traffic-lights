@@ -10,7 +10,7 @@ import json
 import math
 import statistics
 import sys
-from collections import Counter, defaultdict
+from collections import defaultdict
 from pathlib import Path
 
 from scipy.stats import t
@@ -75,8 +75,8 @@ for suffix, expected_scenarios in (("", 11), ("_3600", 6)):
             n = len(nonzero)
             k = min(sum(d > 0 for d in nonzero), sum(d < 0 for d in nonzero))
             p = min(1.0, 2 * sum(math.comb(n, i) for i in range(k+1)) / 2**n)
-            rows.append(dict(scenario=s, contrast=label, mean=avg, pct=100*avg/ref,
-                             low=100*(avg-margin)/ref, high=100*(avg+margin)/ref, p=p))
+            rows.append({"scenario": s, "contrast": label, "mean": avg, "pct": 100*avg/ref,
+                         "low": 100*(avg-margin)/ref, "high": 100*(avg+margin)/ref, "p": p})
     order = sorted(range(len(rows)), key=lambda i: rows[i]["p"])
     previous = 0
     for rank, i in enumerate(order):

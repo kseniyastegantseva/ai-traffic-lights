@@ -1,5 +1,7 @@
 # Аудит Approach Preview: причинность и оставшиеся работы
 
+> **Статус 2026-11-04:** документ исторический. Оракульный датчик заменён причинной моделью, остальные пункты закрыты или оформлены в `APPROACH_PREVIEW_V2_PROTOCOL.md`, `APPROACH_PREVIEW_V2_RESULTS.md` и `APPROACH_PREVIEW_V2_REMAINING_WORK.md`.
+
 Дата: 2026-11-04. Основа — исходники и история архивной ветки `feature/approach-preview`, коммит `d06f922`, и предоставленный автором `APPROACH_PREVIEW_RISKS_AND_ACTION_PLAN.md`. Архивные результаты в `outputs/approach_preview/` получены старым кодом; этот аудит не является повторным экспериментом.
 
 ## Проверенное и исправленное

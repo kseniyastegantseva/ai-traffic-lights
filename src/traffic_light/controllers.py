@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
-from math import ceil
+from dataclasses import dataclass, field
+from math import ceil, floor
 from pathlib import Path
 
 from traffic_light.config import PhaseName
@@ -31,6 +31,18 @@ class ControllerState:
     # Смещения (с, от now) ожидаемых прибытий по полосам по данным датчика подъезда;
     # None — датчика нет, пустой список — датчик есть, но машин в окне не видит.
     upcoming_arrival_offsets: dict[str, list[float]] | None = None
+    # Потеря времени на старт зелёного (с); нужна rollout для согласования с SimPy.
+    startup_lost_seconds: float = 0.0
+    # Остаток обслуживания автомобиля на полосе (с) по событию проезда стоп-линии; None — неизвестен.
+    service_remaining_by_lane: dict[str, float] | None = None
+    # Время с последнего события детектора (проезд или въезд в очередь) на текущей фазе, с.
+    detector_gap_seconds: float | None = None
+    # "ok" — лента датчика работает; "unavailable" — сработал watchdog; None — датчика нет.
+    preview_status: str | None = None
+    # Горизонт, на котором датчик видит отдельные автомобили (с).
+    preview_window_seconds: float = 0.0
+    # EWMA интенсивности прибытий (авто/с) по уже наблюдённым событиям; None — не вычисляется.
+    arrival_rate_per_second_by_lane: dict[str, float] | None = None
 
 
 class BaseController:
@@ -114,6 +126,62 @@ class VehicleActuatedController(BaseController):
 
 
 @dataclass
+class DetectorVehicleActuatedController(BaseController):
+    """Vehicle-actuated по событиям детектора (проезд/присутствие), а не по прокси очереди.
+
+    Зелёный продлевается, пока на текущем подходе есть автомобили (очередь или обслуживание),
+    и закрывается gap-out, когда присутствия нет, а интервал с последнего события детектора
+    не меньше ``passage_gap_seconds``. Max-green принудителен при конкурирующем запросе.
+    При ``use_preview`` дополнительно: (1) подъезжающий к текущей фазе автомобиль с
+    ETA ≤ ``extension_eta_seconds`` продлевает зелёный; (2) подъезжающий к конкурирующей фазе
+    с ETA ≤ ``call_ahead_seconds`` регистрирует запрос заранее. Других функций датчика нет.
+    """
+
+    min_green_seconds: int = 6
+    max_green_seconds: int = 45
+    passage_gap_seconds: float = 2.0
+    use_preview: bool = False
+    extension_eta_seconds: float = 3.0
+    call_ahead_seconds: float = 3.0
+    name: str = "detector_vehicle_actuated"
+
+    def choose_phase(self, state: ControllerState) -> PhaseName:
+        elapsed = state.now - state.phase_started_at
+        phase = state.current_phase
+        other = other_phase(phase)
+        current_lanes, other_lanes = PHASE_LANES[phase], PHASE_LANES[other]
+        other_q = sum(state.queues[lane] for lane in other_lanes)
+        current_q = sum(state.queues[lane] for lane in current_lanes)
+        busy = state.in_service_by_lane or {}
+        discharging = sum(busy.get(lane, 0) for lane in current_lanes)
+        etas = state.upcoming_arrival_offsets if self.use_preview else None
+        other_call = other_q > 0 or (
+            etas is not None
+            and any(
+                value <= self.call_ahead_seconds for lane in other_lanes for value in etas.get(lane, ())
+            )
+        )
+        if not other_call:
+            return phase
+        if elapsed >= self.max_green_seconds:
+            return other
+        if elapsed < self.min_green_seconds:
+            return phase
+        if current_q > 0 or discharging > 0:
+            return phase
+        if etas is not None and any(
+            value <= self.extension_eta_seconds
+            for lane in current_lanes
+            for value in etas.get(lane, ())
+        ):
+            return phase
+        gap = state.detector_gap_seconds
+        if gap is None:
+            gap = state.current_gap_seconds
+        return other if gap >= self.passage_gap_seconds else phase
+
+
+@dataclass
 class QueueBasedApproachPreviewController(BaseController):
     """Rollout-управление по очередям и подъезжающим автомобилям.
 
@@ -122,7 +190,12 @@ class QueueBasedApproachPreviewController(BaseController):
     прибытия по датчику подъезда, дальше — правило gap-out. Выбирает вариант с наименьшей
     площадью очереди. При равной оценке удерживает текущий зелёный. Максимальный зелёный
     при конкурирующей очереди принудительный, поэтому ось не может быть заморожена.
-    Без датчика (``upcoming_arrival_offsets is None``) прибытия в прогоне нулевые.
+    Без датчика (``upcoming_arrival_offsets is None``) наблюдаемых подъезжающих машин нет.
+
+    Модель rollout воспроизводит правила SimPy на тактовой сетке 1 с: остаток обслуживания,
+    потерю времени на старт зелёного, жёлтый (в том числе нулевой) и динамический all-red
+    до освобождения обслуживаемых машин. Прибытия за пределами окна датчика по умолчанию
+    нулевые (``future_arrivals="zero"``) либо задаются исторической интенсивностью.
     """
 
     min_green_seconds: int = 4
@@ -130,7 +203,11 @@ class QueueBasedApproachPreviewController(BaseController):
     planning_horizon_seconds: int = 50
     max_switch_delay_seconds: int = 24
     continuation_min_green_seconds: int = 8
+    future_arrivals: str = "zero"
+    eta_rounding: str = "floor"
+    max_work_units: int | None = None
     name: str = "queue_based_approach_preview"
+    last_diagnostics: dict = field(default_factory=dict, repr=False, compare=False)
 
     def choose_phase(self, state: ControllerState) -> PhaseName:
         elapsed = state.now - state.phase_started_at
@@ -141,9 +218,17 @@ class QueueBasedApproachPreviewController(BaseController):
         other_q = sum(state.queues[lane] for lane in other_lanes)
         upcoming = state.upcoming_arrival_offsets or {}
         other_expected = sum(len(upcoming.get(lane, ())) for lane in other_lanes)
+        self.last_diagnostics = {
+            "now": state.now,
+            "preview_status": state.preview_status,
+            "decision": "hold",
+            "reason": "",
+        }
         if elapsed < self.min_green_seconds or (other_q == 0 and other_expected == 0):
+            self.last_diagnostics["reason"] = "min_green_or_no_competing_demand"
             return phase
         if elapsed >= self.max_green_seconds and other_q > 0:
+            self.last_diagnostics.update(decision="switch", reason="max_green")
             return other
 
         base_switch_now = other_q > 0 and (
@@ -153,58 +238,148 @@ class QueueBasedApproachPreviewController(BaseController):
         candidates: list[int | None] = list(range(self.max_switch_delay_seconds + 1))
         if not base_switch_now:
             candidates.append(None)
+        work_units = len(candidates) * self.planning_horizon_seconds
+        if self.max_work_units is not None and work_units > self.max_work_units:
+            # Детерминированный fallback: бюджет задан числом шагов rollout, не временем.
+            decision = other if base_switch_now else phase
+            self.last_diagnostics.update(
+                decision="switch" if decision == other else "hold",
+                reason="work_budget_fallback",
+                work_units=work_units,
+            )
+            return decision
+        costs: dict[int | None, float] = {}
         best_cost, best_delay = None, None
         for delay in candidates:
             cost = self._rollout(state, elapsed, delay)
+            costs[delay] = cost
             if best_cost is None or cost <= best_cost + 1e-9:
                 best_cost, best_delay = cost, delay
+        self.last_diagnostics.update(
+            decision="switch" if best_delay == 0 else "hold",
+            reason="rollout",
+            best_delay=best_delay,
+            costs=costs,
+            work_units=work_units,
+        )
         return other if best_delay == 0 else phase
 
-    def _rollout(self, state: ControllerState, elapsed: float, switch_delay: int | None) -> float:
+    def _rollout(
+        self,
+        state: ControllerState,
+        elapsed: float,
+        switch_delay: int | None,
+        explicit_switch_steps: tuple[int, ...] | None = None,
+    ) -> float:
+        return sum(self.rollout_trajectory(state, elapsed, switch_delay, explicit_switch_steps))
+
+    def rollout_trajectory(
+        self,
+        state: ControllerState,
+        elapsed: float,
+        switch_delay: int | None,
+        explicit_switch_steps: tuple[int, ...] | None = None,
+        before_service: bool = False,
+    ) -> list[float]:
+        """Суммарная очередь после каждого шага прогноза.
+
+        По умолчанию — после старта обслуживания в такте (это оценка площади очереди на
+        интервале [k, k+1)); ``before_service=True`` даёт очередь до старта обслуживания
+        — именно её фиксирует ``SimulationResult.queue_series`` в SimPy.
+
+        ``switch_delay`` — первое переключение, дальше правило gap-out/max-green;
+        ``explicit_switch_steps`` — жёсткий план без правила продолжения (для аудита).
+        """
         lanes = tuple(state.queues)
         queue = {lane: float(state.queues[lane]) for lane in lanes}
         service = max(state.service_seconds, 1e-9)
+        yellow = int(state.yellow_seconds)
+        startup = max(0.0, state.startup_lost_seconds)
         busy = state.in_service_by_lane or {}
-        free_at = {lane: (1.0 if busy.get(lane) else 0.0) for lane in lanes}
+        remaining = state.service_remaining_by_lane
+        free_at = {
+            lane: (
+                max(0.0, remaining.get(lane, 0.0))
+                if remaining is not None
+                else (1.0 if busy.get(lane) else 0.0)
+            )
+            for lane in lanes
+        }
+        green = state.current_phase
+        for lane in PHASE_LANES[green]:
+            free_at[lane] = max(free_at[lane], startup - elapsed)
+
         arrivals: dict[str, dict[int, int]] = {lane: {} for lane in lanes}
         for lane, offsets in (state.upcoming_arrival_offsets or {}).items():
             for offset in offsets:
-                second = int(offset)
+                second = self._eta_slot(offset)
                 if second < self.planning_horizon_seconds:
                     arrivals[lane][second] = arrivals[lane].get(second, 0) + 1
+        rates = (
+            state.arrival_rate_per_second_by_lane
+            if self.future_arrivals == "historical_rate"
+            else None
+        ) or {}
+        rate_from = (
+            ceil(state.preview_window_seconds - 1e-9)
+            if state.upcoming_arrival_offsets is not None
+            else 0
+        )
 
-        green = state.current_phase
-        yellow_until: float | None = None
-        plan_done = switch_delay is None
-        cost = 0.0
+        pending_green_at: int | None = None
+        plan_done = switch_delay is None and explicit_switch_steps is None
+        trajectory: list[float] = []
         for step in range(self.planning_horizon_seconds):
             for lane in lanes:
                 queue[lane] += arrivals[lane].get(step, 0)
-            if yellow_until is not None and step >= yellow_until:
-                green, yellow_until, elapsed = other_phase(green), None, 0.0
+                if step >= rate_from:
+                    queue[lane] += rates.get(lane, 0.0)
+            flipped = False
+            if pending_green_at is not None and step >= pending_green_at:
+                green, elapsed, pending_green_at, flipped = other_phase(green), 0.0, None, True
                 for lane in PHASE_LANES[green]:
-                    free_at[lane] = max(free_at[lane], float(step))
-            if yellow_until is None:
+                    free_at[lane] = max(free_at[lane], step + startup)
+            if pending_green_at is None and not flipped:
                 current = sum(queue[lane] for lane in PHASE_LANES[green])
                 competing = sum(queue[lane] for lane in PHASE_LANES[other_phase(green)])
-                switch = False
-                if not plan_done and step == switch_delay:
+                if explicit_switch_steps is not None:
+                    switch = step in explicit_switch_steps
+                elif not plan_done and step == switch_delay:
                     switch, plan_done = True, True
-                elif plan_done and competing > 0 and (
-                    elapsed >= self.max_green_seconds
-                    or (elapsed >= self.continuation_min_green_seconds and current == 0)
-                ):
-                    switch = True
-                if switch:
-                    yellow_until = step + state.yellow_seconds
                 else:
-                    for lane in PHASE_LANES[green]:
-                        if queue[lane] >= 1.0 and free_at[lane] <= step:
-                            queue[lane] -= 1.0
-                            free_at[lane] = step + service
-                    elapsed += 1
-            cost += sum(queue.values())
-        return cost
+                    switch = (
+                        plan_done
+                        and competing >= 1.0 - 1e-9
+                        and (
+                            elapsed >= self.max_green_seconds
+                            or (elapsed >= self.continuation_min_green_seconds and current < 1.0 - 1e-9)
+                        )
+                    )
+                if switch:
+                    release = max(free_at[lane] for lane in PHASE_LANES[green])
+                    pending_green_at = max(step + yellow, ceil(release - 1e-9))
+                    if pending_green_at <= step:
+                        green, elapsed, pending_green_at = other_phase(green), 0.0, None
+                        for lane in PHASE_LANES[green]:
+                            free_at[lane] = max(free_at[lane], step + startup)
+            if before_service:
+                trajectory.append(sum(queue.values()))
+            if pending_green_at is None:
+                for lane in PHASE_LANES[green]:
+                    if queue[lane] >= 1.0 - 1e-9 and free_at[lane] <= step + 1e-9:
+                        queue[lane] -= 1.0
+                        free_at[lane] = step + service
+                elapsed += 1
+            if not before_service:
+                trajectory.append(sum(queue.values()))
+        return trajectory
+
+    def _eta_slot(self, offset: float) -> int:
+        if self.eta_rounding == "ceil":
+            return max(0, ceil(offset - 1e-9))
+        if self.eta_rounding == "round":
+            return max(0, floor(offset + 0.5))
+        return max(0, int(offset))
 
 
 @dataclass

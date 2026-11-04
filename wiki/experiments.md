@@ -160,3 +160,11 @@ Axis-specific не улучшил Improved: среднее ожидание вы
 - Dashboard и рукопись не обновлялись.
 
 Воспроизведение: `python scripts/create_approach_preview_configs.py` (development) и `... --validation --preview-min-green 2` (validation), запуск `traffic-light compare configs/approach_preview_*.yaml`, анализ `python scripts/analyze_approach_preview.py --mode development|validation --stems ...`. Артефакты: `../configs/approach_preview_*.yaml`, `../outputs/approach_preview/` (CSV, отчёты, `*_analysis.md`, сжатые `*.json.gz`). Код: `src/traffic_light/controllers.py`, `src/traffic_light/simulation.py`, тесты `tests/test_approach_preview.py`.
+
+## Approach Preview v2: причинный датчик и факторный дизайн (2026-11-04)
+
+Ответ на критический разбор контроллера (P01–P20). Протокол, seed и правила выбора заданы до запуска validation (`../docs/APPROACH_PREVIEW_V2_PROTOCOL.md`); результаты — `../docs/APPROACH_PREVIEW_V2_RESULTS.md`; то, что не закрыто, — `../docs/APPROACH_PREVIEW_V2_REMAINING_WORK.md`.
+
+Дизайн: arms A (detector-based Vehicle-actuated), B (то же с датчиком), C (rollout без датчика), D (rollout с датчиком), одинаковый регламент (жёлтый 3 с, max-green 45 с, старт 2 с, min-green 6 с, исследовательские 4/8 — sensitivity), 11 сценариев (пачки, общие всплески, смена оси, начальная очередь, граница ёмкости, перегрузка), seed development 31101–31120, validation 32101–32130, final 33101–33130 после `FREEZE.json`. Основная метрика — площадь очереди; Holm по семье «контраст × сценарий».
+
+Итог final (m=6, камера nominal): D−A −1,5…−44 % (в 10 сценариях из 11 практически значимо, перегрузка −1,5 %), D−B −17…−31 % ниже перегрузки, C−A −1…−12 %, B−A от −19 % до +8 % (вредно вблизи ёмкости). Максимальный красный при очереди растёт у D в слабых режимах. Результаты относятся к синтетическому датчику и не переносятся на реальную камеру. Воспроизведение: `scripts/create_approach_preview_v2_configs.py`, `scripts/run_approach_preview_v2.py`, `scripts/analyze_approach_preview_v2.py` (+`..._long.py` для 3600 с), аудиты `scripts/audit_rollout_vs_simpy.py`, `scripts/measure_approach_preview_runtime.py`; тесты `tests/test_approach_preview_v2.py`.
