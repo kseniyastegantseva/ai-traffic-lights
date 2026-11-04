@@ -1,0 +1,162 @@
+[
+  {
+    "seed": 0,
+    "fractional": false,
+    "available": true,
+    "max_step_error": 0.0,
+    "sum_error": 0.0,
+    "actual_area": 459.0
+  },
+  {
+    "seed": 1,
+    "fractional": false,
+    "available": true,
+    "max_step_error": 0.0,
+    "sum_error": 0.0,
+    "actual_area": 251.0
+  },
+  {
+    "seed": 2,
+    "fractional": false,
+    "available": true,
+    "max_step_error": 0.0,
+    "sum_error": 0.0,
+    "actual_area": 391.0
+  },
+  {
+    "seed": 3,
+    "fractional": false,
+    "available": true,
+    "max_step_error": 0.0,
+    "sum_error": 0.0,
+    "actual_area": 238.0
+  },
+  {
+    "seed": 4,
+    "fractional": false,
+    "available": true,
+    "max_step_error": 0.0,
+    "sum_error": 0.0,
+    "actual_area": 400.0
+  },
+  {
+    "seed": 5,
+    "fractional": false,
+    "available": true,
+    "max_step_error": 0.0,
+    "sum_error": 0.0,
+    "actual_area": 289.0
+  },
+  {
+    "seed": 6,
+    "fractional": false,
+    "available": true,
+    "max_step_error": 0.0,
+    "sum_error": 0.0,
+    "actual_area": 407.0
+  },
+  {
+    "seed": 7,
+    "fractional": false,
+    "available": true,
+    "max_step_error": 0.0,
+    "sum_error": 0.0,
+    "actual_area": 339.0
+  },
+  {
+    "seed": 8,
+    "fractional": false,
+    "available": true,
+    "max_step_error": 0.0,
+    "sum_error": 0.0,
+    "actual_area": 460.0
+  },
+  {
+    "seed": 9,
+    "fractional": false,
+    "available": true,
+    "max_step_error": 0.0,
+    "sum_error": 0.0,
+    "actual_area": 182.0
+  },
+  {
+    "seed": 0,
+    "fractional": true,
+    "available": true,
+    "max_step_error": 1.0309722130664625,
+    "sum_error": 4.379757309201295,
+    "actual_area": 439.6202426907987
+  },
+  {
+    "seed": 1,
+    "fractional": true,
+    "available": true,
+    "max_step_error": 0.8865148699653389,
+    "sum_error": 2.7205226377235476,
+    "actual_area": 391.27947736227645
+  },
+  {
+    "seed": 2,
+    "fractional": true,
+    "available": true,
+    "max_step_error": 0.9863213359337522,
+    "sum_error": 1.086082364410231,
+    "actual_area": 234.91391763558977
+  },
+  {
+    "seed": 3,
+    "fractional": true,
+    "available": true,
+    "max_step_error": 0.0,
+    "sum_error": 0.0,
+    "actual_area": 85.0
+  },
+  {
+    "seed": 4,
+    "fractional": true,
+    "available": true,
+    "max_step_error": 1.0985726081423763,
+    "sum_error": 3.926166842317855,
+    "actual_area": 403.07383315768215
+  },
+  {
+    "seed": 5,
+    "fractional": true,
+    "available": true,
+    "max_step_error": 0.8349395180815122,
+    "sum_error": 5.379802312038919,
+    "actual_area": 373.6201976879611
+  },
+  {
+    "seed": 6,
+    "fractional": true,
+    "available": true,
+    "max_step_error": 1.0738690240829953,
+    "sum_error": 3.9157316769587283,
+    "actual_area": 417.0842683230413
+  },
+  {
+    "seed": 7,
+    "fractional": true,
+    "available": true,
+    "max_step_error": 1.0812474414221356,
+    "sum_error": 7.8133727876353305,
+    "actual_area": 411.18662721236467
+  },
+  {
+    "seed": 8,
+    "fractional": true,
+    "available": true,
+    "max_step_error": 0.9627318806132621,
+    "sum_error": 3.488878070970486,
+    "actual_area": 414.5111219290295
+  },
+  {
+    "seed": 9,
+    "fractional": true,
+    "available": true,
+    "max_step_error": 1.539908077328306,
+    "sum_error": 2.431443029578304,
+    "actual_area": 222.5685569704217
+  }
+]

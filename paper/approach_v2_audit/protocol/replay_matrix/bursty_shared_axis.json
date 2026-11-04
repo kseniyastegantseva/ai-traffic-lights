@@ -1,0 +1,62 @@
+[
+  {
+    "controller": "A_dva_g0",
+    "seed": 33101,
+    "different_fields": []
+  },
+  {
+    "controller": "C_roll_c6_zero",
+    "seed": 33101,
+    "different_fields": []
+  },
+  {
+    "controller": "A_dva_g0",
+    "seed": 33102,
+    "different_fields": []
+  },
+  {
+    "controller": "C_roll_c6_zero",
+    "seed": 33102,
+    "different_fields": []
+  },
+  {
+    "controller": "A_dva_g0",
+    "seed": 33103,
+    "different_fields": []
+  },
+  {
+    "controller": "C_roll_c6_zero",
+    "seed": 33103,
+    "different_fields": []
+  },
+  {
+    "controller": "B_dva_pv_g0_e2",
+    "seed": 33101,
+    "different_fields": []
+  },
+  {
+    "controller": "D_roll_pv_c6_zero",
+    "seed": 33101,
+    "different_fields": []
+  },
+  {
+    "controller": "B_dva_pv_g0_e2",
+    "seed": 33102,
+    "different_fields": []
+  },
+  {
+    "controller": "D_roll_pv_c6_zero",
+    "seed": 33102,
+    "different_fields": []
+  },
+  {
+    "controller": "B_dva_pv_g0_e2",
+    "seed": 33103,
+    "different_fields": []
+  },
+  {
+    "controller": "D_roll_pv_c6_zero",
+    "seed": 33103,
+    "different_fields": []
+  }
+]

@@ -30,6 +30,7 @@
 - Эмпирический bootstrap ошибок направленного подсчёта — `../configs/piere_perception_empirical_errors.yaml`.
 - `../docs/APPROACH_PREVIEW_CAUSALITY_AUDIT.md` — аудит preview и оставшиеся исследовательские задачи.
 - `../docs/APPROACH_PREVIEW_V2_PUBLICATION_READINESS.md` — независимый пересчёт основных контрастов v2, происхождение данных и пробелы перед публикацией; связанные план и обзор вклада находятся рядом.
+- `../docs/APPROACH_PREVIEW_V2_COMPLETION_AUDIT.md` — дополнительный аудит воспроизводимости, baseline, fairness и отдельного пилота на новых seed; проверочные таблицы и график — `../paper/approach_v2_audit/`.
 - `../docs/APPROACH_PREVIEW_V2_PROTOCOL.md` — протокол Approach Preview v2 (причинный датчик, факторный дизайн A/B/C/D, seed, правила выбора и статистика); `../docs/APPROACH_PREVIEW_V2_INTEGRATION.md` — схема интеграции, fallback и статус dashboard; `../docs/APPROACH_PREVIEW_V2_RESULTS.md` — результаты validation/final; `../docs/APPROACH_PREVIEW_V2_REMAINING_WORK.md` — что не закрыто.
 - `task-log.md` — хронологический журнал выполненных задач и ограничений среды.
 

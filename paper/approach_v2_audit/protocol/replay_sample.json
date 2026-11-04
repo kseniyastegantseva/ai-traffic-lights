@@ -1,0 +1,18 @@
+[
+  {
+    "controller": "A_dva_g0",
+    "different_fields": []
+  },
+  {
+    "controller": "C_roll_c6_zero",
+    "different_fields": []
+  },
+  {
+    "controller": "B_dva_pv_g0_e2",
+    "different_fields": []
+  },
+  {
+    "controller": "D_roll_pv_c6_zero",
+    "different_fields": []
+  }
+]
